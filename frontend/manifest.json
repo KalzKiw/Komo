@@ -1,0 +1,17 @@
+{
+  "name": "CafES - Cafeteria Escolar",
+  "short_name": "CafES",
+  "description": "Gestión de pedidos para la cafetería escolar",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f996f",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ]
+}

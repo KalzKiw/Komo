@@ -1,0 +1,92 @@
+erDiagram
+    COURSES ||--o{ USERS : has
+    USERS ||--o{ FAMILY_LINKS : parent
+    USERS ||--o{ FAMILY_LINKS : student
+    USERS ||--o{ USER_ALLERGIES : declares
+    ALLERGENS ||--o{ USER_ALLERGIES : belongs_to
+    PRODUCTS ||--o{ PRODUCT_ALLERGENS : contains
+    ALLERGENS ||--o{ PRODUCT_ALLERGENS : labels
+    USERS ||--o{ ORDERS : places
+    USERS ||--o{ ORDERS : places_for
+    ORDERS ||--o{ ORDER_ITEMS : includes
+    PRODUCTS ||--o{ ORDER_ITEMS : references
+
+    COURSES {
+        uuid id PK
+        text code UK
+        text name
+        timestamptz created_at
+    }
+
+    USERS {
+        uuid id PK
+        text email UK
+        text full_name
+        user_role role
+        uuid course_id FK
+        boolean is_beneficiary
+        numeric wallet_balance
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    FAMILY_LINKS {
+        uuid id PK
+        uuid parent_user_id FK
+        uuid student_user_id FK
+        family_relation relation
+        timestamptz created_at
+    }
+
+    PRODUCTS {
+        uuid id PK
+        text name
+        text description
+        numeric price
+        boolean is_official_menu
+        boolean is_active
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    ALLERGENS {
+        uuid id PK
+        text code UK
+        text name UK
+    }
+
+    PRODUCT_ALLERGENS {
+        uuid product_id PK, FK
+        uuid allergen_id PK, FK
+    }
+
+    USER_ALLERGIES {
+        uuid user_id PK, FK
+        uuid allergen_id PK, FK
+    }
+
+    ORDERS {
+        uuid id PK
+        uuid user_id FK
+        uuid placed_by_user_id FK
+        order_shift shift
+        date scheduled_for
+        order_status status
+        numeric subtotal
+        numeric total
+        timestamptz cancellation_deadline
+        timestamptz cancelled_at
+        boolean credited_to_wallet
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    ORDER_ITEMS {
+        uuid id PK
+        uuid order_id FK
+        uuid product_id FK
+        int quantity
+        numeric unit_price
+        numeric line_total
+        timestamptz created_at
+    }

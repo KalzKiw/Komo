@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CafES | Cafeteria Escolar Digital</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="./manifest.json" />
+    <meta name="theme-color" content="#0f996f" />
+  </head>
+  <body>
+    <header class="topbar" id="globalTopbar">
+      <div class="brand-wrap">
+        <span class="brand-pill">CafES</span>
+        <div>
+          <h1>Cafeteria Escolar</h1>
+          <p>Acceso por cuenta</p>
+        </div>
+      </div>
+      <button id="logoutBtn" class="ghost-btn hidden" type="button">Cerrar sesion</button>
+    </header>
+
+    <main class="login-layout" id="loginView">
+      <section class="card login-card">
+        <h2>Iniciar sesion</h2>
+        <p class="muted">Ingresa con tu correo institucional.</p>
+
+        <form id="loginForm" class="login-form">
+          <label>
+            Correo
+            <input id="emailInput" type="email" placeholder="student1@cafes.app" required />
+          </label>
+          <label>
+            Contraseña
+            <input id="passwordInput" type="password" placeholder="********" required />
+          </label>
+          <button class="primary-btn" type="submit">Entrar</button>
+        </form>
+
+        <div class="quick-login-wrap">
+          <p class="muted">Acceso rápido de pruebas</p>
+          <div class="quick-login-actions">
+            <button id="quickAdminBtn" class="ghost-btn" type="button">Entrar como Admin</button>
+            <button id="quickFamilyBtn" class="ghost-btn" type="button">Entrar como Estudiante/Padre</button>
+          </div>
+        </div>
+
+        <p id="loginMessage" class="muted"></p>
+      </section>
+    </main>
+
+    <section class="dashboard hidden" id="adminView">
+      <div class="admin-shell">
+        <div class="admin-topbar">
+          <div class="admin-brand-wrap">
+            <span class="admin-brand-icon">◫</span>
+            <div>
+              <h3>Panel de Administración</h3>
+              <p id="activeRoleLabel">CafES - Previsión y Control</p>
+            </div>
+          </div>
+          <div class="admin-topbar-actions">
+            <button id="goKdsBtn" class="kds-jump-btn" type="button">Ir a Cocina (KDS)</button>
+            <button id="adminLogoutBtn" class="icon-btn" type="button" aria-label="Cerrar sesión">↪</button>
+          </div>
+        </div>
+
+        <nav class="admin-tabs" id="adminTabs">
+          <button class="admin-tab active" data-admin-tab="FORECAST" type="button">Previsión</button>
+          <button class="admin-tab" data-admin-tab="PRODUCTS" type="button">Productos</button>
+          <button class="admin-tab" data-admin-tab="KDS" type="button">KDS</button>
+          <button class="admin-tab" data-admin-tab="ORDERS" type="button">Pedidos</button>
+          <button class="admin-tab" data-admin-tab="DELEGATES" type="button">Delegados</button>
+          <button class="admin-tab" data-admin-tab="CALENDAR" type="button">Calendario</button>
+          <button class="admin-tab" data-admin-tab="SETTINGS" type="button">Ajustes</button>
+        </nav>
+
+        <div id="adminForecastPanel" class="admin-panel">
+          <section class="forecast-date-card">
+            <div>
+              <p class="muted-inline">Previsión para</p>
+              <strong id="forecastDate">--</strong>
+            </div>
+            <span class="forecast-total" id="forecastTotalUnits">0 unidades</span>
+          </section>
+
+          <section class="forecast-categories" id="forecastCategories"></section>
+
+          <section class="card production-card">
+            <h3>Detalle de Producción</h3>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Categoría</th>
+                    <th>Cantidad</th>
+                  </tr>
+                </thead>
+                <tbody id="productionTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <div id="adminDelegatesPanel" class="admin-panel hidden">
+          <section class="card table-card">
+            <div class="products-head">
+              <h3>Gestión de Delegados</h3>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Alumno</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>Delegado</th>
+                  </tr>
+                </thead>
+                <tbody id="studentsTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <div id="adminCalendarPanel" class="admin-panel hidden">
+          <section class="admin-calendar-grid">
+            <article class="card admin-calendar-card">
+              <h3>Seleccionar Fecha</h3>
+              <p class="muted">Módulo de calendario listo para conectar con previsión por día.</p>
+              <div class="calendar-placeholder">Marzo 2026</div>
+            </article>
+            <article class="card admin-calendar-card">
+              <h3>Resumen del Día</h3>
+              <p class="muted">Selecciona una fecha para ver resumen detallado de pedidos.</p>
+              <button class="primary-btn" id="calendarForecastBtn" type="button">Ver previsión detallada</button>
+            </article>
+          </section>
+        </div>
+
+        <div id="adminSettingsPanel" class="admin-panel hidden">
+          <section class="card">
+            <h3>Horarios de corte de pedidos</h3>
+            <p class="muted">Los pedidos no se admiten después de la hora de corte (+ minutos de gracia) del turno correspondiente.</p>
+            <form id="scheduleForm" class="schedule-form">
+              <div class="schedule-row">
+                <label for="cutoffMorning">Turno mañana</label>
+                <input id="cutoffMorning" name="morning" type="time" required aria-label="Hora de corte turno mañana" />
+              </div>
+              <div class="schedule-row">
+                <label for="cutoffAfternoon">Turno tarde</label>
+                <input id="cutoffAfternoon" name="afternoon" type="time" required aria-label="Hora de corte turno tarde" />
+              </div>
+              <div class="schedule-row">
+                <label for="cutoffNight">Turno noche</label>
+                <input id="cutoffNight" name="night" type="time" required aria-label="Hora de corte turno noche" />
+              </div>
+              <div class="schedule-row">
+                <label for="graceMinutes">Minutos de gracia</label>
+                <input id="graceMinutes" name="graceMinutes" type="number" min="0" max="60" required />
+              </div>
+              <div class="schedule-actions">
+                <button class="primary-btn" type="submit">Guardar horarios</button>
+                <span id="scheduleFormMsg" class="schedule-msg"></span>
+              </div>
+            </form>
+          </section>
+        </div>
+
+        <section class="card kds-card hidden" id="adminKdsSection">
+          <h3>KDS Cocina</h3>
+          <div id="kdsLane" class="kds-lane"></div>
+        </section>
+
+        <section class="card products-card" id="adminProductsSection">
+          <div class="products-head">
+            <h3>Gestión de productos</h3>
+            <button id="openCreateProductModalBtn" class="primary-btn small" type="button">+ Añadir producto</button>
+          </div>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Precio</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="productsTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card products-card hidden" id="adminOrdersSection">
+          <div class="products-head">
+            <h3>Histórico de pedidos</h3>
+          </div>
+
+          <div class="admin-orders-toolbar">
+            <div class="admin-orders-counters">
+              <span class="counter-pill">Pendientes: <strong id="pendingCount">0</strong></span>
+              <span class="counter-pill">En curso: <strong id="inProgressCount">0</strong></span>
+            </div>
+            <div class="admin-orders-filters">
+              <input id="adminOrdersSearchInput" type="search" placeholder="Buscar alumno o producto" />
+              <select id="adminOrdersShiftFilter">
+                <option value="ALL">Todos los turnos</option>
+                <option value="MORNING">Morning</option>
+                <option value="AFTERNOON">Afternoon</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="adminOrdersCards" class="admin-orders-cards"></div>
+        </section>
+
+        <nav class="admin-bottom-nav" id="adminBottomNav" aria-label="Navegación administración">
+          <button class="admin-mobile-tab active" data-admin-tab="FORECAST" type="button">Previsión</button>
+          <button class="admin-mobile-tab" data-admin-tab="KDS" type="button">KDS</button>
+          <button class="admin-mobile-tab" data-admin-tab="PRODUCTS" type="button">Productos</button>
+          <button class="admin-mobile-tab" data-admin-tab="ORDERS" type="button">Pedidos</button>
+          <button class="admin-mobile-tab" data-admin-tab="DELEGATES" type="button">Delegados</button>
+          <button class="admin-mobile-tab" data-admin-tab="CALENDAR" type="button">Calendario</button>
+          <button class="admin-mobile-tab" data-admin-tab="SETTINGS" type="button">Ajustes</button>
+        </nav>
+      </div>
+    </section>
+
+    <!-- Modal para crear/editar productos -->
+    <div class="modal hidden" id="productFormModal">
+      <div class="modal-panel product-form-panel">
+        <header>
+          <h3 id="productFormTitle">Crear producto</h3>
+          <button id="closeProductFormBtn" class="icon-btn" type="button" aria-label="Cerrar">✕</button>
+        </header>
+        
+        <form id="productFormElement" class="product-form">
+          <div class="form-group">
+            <label>Nombre *</label>
+            <input id="productFormName" type="text" placeholder="Ej: Bocadillo de jamón" required />
+          </div>
+
+          <div class="form-group">
+            <label>Descripción</label>
+            <textarea id="productFormDescription" rows="3" placeholder="Descripción del producto"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Precio (€) *</label>
+            <input id="productFormPrice" type="number" min="0" step="0.01" placeholder="0.00" required />
+          </div>
+
+          <div class="form-group">
+            <label>Alérgenos</label>
+            <div id="productFormAllergens" class="allergen-checkboxes"></div>
+          </div>
+
+          <div class="form-actions">
+            <button id="productFormCancel" class="action-btn" type="button">Cancelar</button>
+            <button class="primary-btn" type="submit">Guardar producto</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal hidden" id="adminOrderModal">
+      <div class="modal-panel admin-order-modal-panel">
+        <header>
+          <h3 id="adminOrderModalTitle">Pedido</h3>
+          <button id="closeAdminOrderModalBtn" class="icon-btn" type="button" aria-label="Cerrar">✕</button>
+        </header>
+
+        <div id="adminOrderModalMeta" class="admin-order-modal-meta"></div>
+        <div id="adminOrderModalItems" class="admin-order-modal-items"></div>
+
+        <div class="admin-order-modal-actions" id="adminOrderModalActions"></div>
+      </div>
+    </div>
+
+    <section class="consumer-app hidden" id="consumerView">
+      <header class="consumer-header-shell">
+        <div class="consumer-topbar">
+          <div class="consumer-user-block">
+            <img
+              class="consumer-avatar-img"
+              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop"
+              alt="Avatar"
+            />
+            <div>
+              <strong class="consumer-user-name" id="consumerName">CafeApp</strong>
+              <p class="consumer-meta hidden"><span id="walletBalance">0.00 EUR</span> · <span id="courseName">Curso</span></p>
+            </div>
+          </div>
+          <div class="consumer-profile">
+            <button id="consumerLogoutBtn" class="consumer-exit-btn" type="button" aria-label="Cerrar sesión">↪</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="mobile-shell">
+        <p id="cutoffText" class="cutoff-text">Cierre a las 09:05</p>
+        <p id="countdown" class="countdown-text">--h --m</p>
+
+        <section class="notice-card danger" id="allergyCard">
+          <div>
+            <h4>Alérgenos registrados</h4>
+            <div id="allergyTags" class="tags"></div>
+          </div>
+        </section>
+
+        <nav class="chip-nav" id="categoryNav">
+          <button class="chip active" data-category="ALL" type="button"><span>Todos</span></button>
+          <button class="chip" data-category="BOCADILLO" type="button"><span class="chip-icon">🧺</span><span>Bocadillos</span></button>
+          <button class="chip" data-category="BEBIDA" type="button"><span class="chip-icon">☕</span><span>Bebidas</span></button>
+          <button class="chip" data-category="SNACK" type="button"><span class="chip-icon">🍪</span><span>Snacks</span></button>
+        </nav>
+
+        <section class="product-grid" id="productGrid"></section>
+
+        <section class="orders-screen hidden" id="ordersPanel">
+          <div id="ordersListView">
+            <div class="orders-screen-head">
+              <h4>Gestion de pedidos</h4>
+              <p id="ordersSummary" class="muted-inline">0 pedidos · 0 en curso</p>
+            </div>
+
+            <nav class="chip-nav" id="ordersFilterNav">
+              <button class="chip active" data-order-filter="ALL" type="button">Todos</button>
+              <button class="chip" data-order-filter="IN_PROGRESS" type="button">En curso</button>
+              <button class="chip" data-order-filter="DONE" type="button">Entregados</button>
+              <button class="chip" data-order-filter="CANCELLED" type="button">Cancelados</button>
+            </nav>
+
+            <div class="orders-manager-list" id="ordersList"></div>
+          </div>
+
+          <div id="ordersDetailView" class="orders-detail-view hidden">
+            <div class="orders-detail-head">
+              <button id="ordersBackBtn" class="action-btn" type="button">← Volver</button>
+              <div>
+                <h4 id="ordersDetailHeading">Pedido</h4>
+                <p id="ordersDetailMeta" class="muted-inline">--</p>
+              </div>
+            </div>
+            <div class="detail-body" id="ordersDetailBodyInline"></div>
+            <div class="order-detail-actions">
+              <button id="ordersDetailRepeatBtn" class="action-btn" type="button">Repetir pedido</button>
+              <button id="ordersDetailCancelBtn" class="action-btn danger" type="button">Cancelar pedido</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="profile-screen hidden" id="profilePanel">
+          <article class="wallet-card">
+            <p>Saldo disponible</p>
+            <strong id="profileWallet">0.00€</strong>
+            <p class="muted-inline">Curso: <span id="profileCourse">--</span></p>
+          </article>
+
+          <article class="family-highlight-card">
+            <div class="family-highlight-head">
+              <h4>Familiares</h4>
+              <span id="profileFamilyStatus" class="family-status-chip">Sin vincular</span>
+            </div>
+            <p id="profileFamilyNote" class="muted-inline">Vincula una cuenta familiar para gestionar recargas y aprobaciones.</p>
+            <div class="family-wallet-box">
+              <span>Monedero familiar</span>
+              <strong id="profileFamilyWallet">0.00€</strong>
+            </div>
+          </article>
+
+          <div class="settings-list">
+            <div class="settings-row">
+              <span>Nombre</span>
+              <strong id="profileFullName">Alumno</strong>
+            </div>
+            <div class="settings-row">
+              <span>Teléfono de contacto</span>
+              <strong id="profilePhone">--</strong>
+            </div>
+            <div class="settings-row">
+              <span>Métodos de pago</span>
+              <strong id="profilePaymentSummary">No configurado</strong>
+            </div>
+            <div class="settings-row settings-row-stack">
+              <span>Alérgenos registrados</span>
+              <div id="profileAllergyTags" class="tags"></div>
+            </div>
+            <div class="settings-row">
+              <span>Pedidos totales</span>
+              <strong id="profileStatsOrders">0</strong>
+            </div>
+            <div class="settings-row">
+              <span>En curso</span>
+              <strong id="profileStatsInProgress">0</strong>
+            </div>
+            <div class="settings-row">
+              <span>Gasto total</span>
+              <strong id="profileStatsSpent">0.00€</strong>
+            </div>
+          </div>
+
+          <div class="profile-actions">
+            <button id="profileLogoutBtn" class="profile-logout-btn" type="button">Cerrar sesión</button>
+          </div>
+        </section>
+      </div>
+
+      <footer class="bottom-nav">
+        <button class="nav-btn active" data-tab="HOME" type="button" aria-label="Inicio">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M4 11.5L12 4l8 7.5" />
+              <path d="M6.5 10.5V20h11V10.5" />
+            </svg>
+          </span>
+          <span class="nav-label">Inicio</span>
+        </button>
+        <button class="nav-btn" data-tab="SEARCH" type="button" aria-label="Buscar">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="11" cy="11" r="6.5" />
+              <path d="M16 16l4 4" />
+            </svg>
+          </span>
+          <span class="nav-label">Buscar</span>
+        </button>
+        <button class="cart-fab" id="openCartBtn" type="button" aria-label="Carrito">
+          <span class="cart-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="10" cy="19" r="1.5" />
+              <circle cx="17" cy="19" r="1.5" />
+              <path d="M3 4h2l2.1 9.2a1 1 0 0 0 1 .8h8.5a1 1 0 0 0 1-.8L19 7H7" />
+            </svg>
+          </span>
+        </button>
+        <button class="nav-btn" data-tab="ORDERS" type="button" aria-label="Pedidos">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="8" />
+              <path d="M12 8v5l3 2" />
+            </svg>
+          </span>
+          <span class="nav-label">Pedidos</span>
+        </button>
+        <button class="nav-btn" data-tab="PROFILE" type="button" aria-label="Perfil">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="8" r="3.5" />
+              <path d="M5.5 19c1.7-3 4-4.5 6.5-4.5s4.8 1.5 6.5 4.5" />
+            </svg>
+          </span>
+          <span class="nav-label">Perfil</span>
+        </button>
+      </footer>
+    </section>
+
+    <div class="modal hidden" id="cartModal">
+      <div class="modal-panel">
+        <header>
+          <h3>Tu Pedido</h3>
+          <button id="closeCartBtn" class="icon-btn" type="button" aria-label="Cerrar carrito">✕</button>
+        </header>
+        <div id="cartItems" class="cart-items"></div>
+        <div class="cart-total">
+          <span>Total</span>
+          <strong id="cartTotal">0.00 EUR</strong>
+        </div>
+        <p id="cartFeedback" class="muted-inline" aria-live="polite"></p>
+        <button id="checkoutBtn" class="primary-btn" type="button">Continuar al pago</button>
+      </div>
+    </div>
+
+    <div class="modal hidden" id="customizeModal">
+      <div class="modal-panel customize-panel">
+        <header class="customize-head">
+          <div class="customize-head-actions">
+            <button id="openNutritionBtn" class="info-head-btn" type="button" aria-label="Ver información del producto">
+              <span class="info-btn-icon" aria-hidden="true">!</span>
+              <span>Info</span>
+            </button>
+            <button id="closeCustomizeBtn" class="icon-btn" type="button" aria-label="Cerrar">✕</button>
+          </div>
+        </header>
+        <div class="customize-content">
+          <div class="customize-product-media">
+            <img id="customizeProductImage" src="" alt="Producto" loading="lazy" />
+          </div>
+
+          <div class="customize-product-info">
+            <span class="customize-popular hidden" id="customizePopularTag">Popular</span>
+            <h3 id="customizeTitle">Personalizar producto</h3>
+            <p class="customize-price" id="customizePrice">0.00€</p>
+          </div>
+
+          <section class="allergen-banner">
+            <div id="customizeAllergenTags" class="allergen-tags-grid"></div>
+          </section>
+
+          <section class="customize-section">
+            <h4 class="customize-section-title">Personalizar ingredientes</h4>
+            <div id="ingredientOptions" class="option-list"></div>
+          </section>
+
+          <div class="customize-qty">
+            <span>Cantidad</span>
+            <div class="qty-wrap">
+              <button id="customizeQtyMinus" class="qty-btn" type="button" aria-label="Reducir cantidad">−</button>
+              <strong id="customizeQtyValue">1</strong>
+              <button id="customizeQtyPlus" class="qty-btn" type="button" aria-label="Aumentar cantidad">+</button>
+            </div>
+          </div>
+
+          <label class="kitchen-note-label">
+            <span>Nota para cocina</span>
+            <textarea id="kitchenNoteInput" rows="2" placeholder="Ej: sin cebolla, tostado suave…"></textarea>
+          </label>
+        </div>
+
+        <div class="customize-footer">
+          <button id="confirmCustomizeBtn" class="customize-add-btn" type="button">Añadir al carrito</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal hidden" id="nutritionModal">
+      <div class="modal-panel nutrition-panel">
+        <header>
+          <h3>Informacion del producto</h3>
+          <button id="closeNutritionBtn" class="icon-btn" type="button" aria-label="Cerrar información">✕</button>
+        </header>
+
+        <div class="detail-box">
+          <p class="muted-inline" id="nutritionDescription">--</p>
+        </div>
+
+        <div class="detail-box">
+          <div class="detail-line"><span>Kcal</span><strong id="nutritionKcal">--</strong></div>
+          <div class="detail-line"><span>Grasas</span><strong id="nutritionFat">--</strong></div>
+          <div class="detail-line"><span>Hidratos</span><strong id="nutritionCarbs">--</strong></div>
+          <div class="detail-line"><span>Azúcares</span><strong id="nutritionSugars">--</strong></div>
+          <div class="detail-line"><span>Proteínas</span><strong id="nutritionProtein">--</strong></div>
+          <div class="detail-line"><span>Sal</span><strong id="nutritionSalt">--</strong></div>
+        </div>
+
+        <div class="detail-box">
+          <h4>Ingredientes</h4>
+          <p id="customizeIngredientsText" class="muted-inline"></p>
+        </div>
+
+        <div class="detail-box">
+          <h4>Conservacion y caducidad</h4>
+          <p id="customizeConservationText" class="muted-inline"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal hidden" id="historyModal">
+      <div class="modal-panel history-panel">
+        <header>
+          <h3>Historial de pedidos</h3>
+          <button id="closeHistoryBtn" class="icon-btn" type="button" aria-label="Cerrar historial">✕</button>
+        </header>
+        <div id="historyList" class="history-list"></div>
+      </div>
+    </div>
+
+    <div class="modal hidden" id="orderDetailModal">
+      <div class="modal-panel detail-panel">
+        <header>
+          <h3 id="orderDetailTitle">Pedido</h3>
+          <button id="closeOrderDetailBtn" class="icon-btn" type="button" aria-label="Cerrar detalle">✕</button>
+        </header>
+        <div id="orderDetailBody" class="detail-body"></div>
+      </div>
+    </div>
+
+    <footer class="global-footer">© 2026 CafES - Sistema de Cafeteria Escolar</footer>
+
+    <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
