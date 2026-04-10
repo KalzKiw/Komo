@@ -74,9 +74,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { message?: string };
+        const fallbackError =
+          res.status === 401
+            ? "Credenciales incorrectas"
+            : "No se pudo conectar con el backend. Verifica que esté iniciado.";
         setState({
           status: "unauthenticated",
-          error: body.message ?? "Credenciales incorrectas",
+          error: body.message ?? fallbackError,
         });
         return;
       }
