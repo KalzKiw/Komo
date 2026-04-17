@@ -1,3 +1,5 @@
+// Reexportar addItemToOrder para mantener consistencia de imports
+export { addItemToOrder } from "./add-item.service";
 import { supabase } from "../config/supabase";
 import { AppError } from "../errors/app-error";
 import { AuthUser, OrderShift, OrderStatus } from "../types/domain";
@@ -228,38 +230,33 @@ export async function createOrder(user: AuthUser, payload: unknown): Promise<Rec
 }
 
 export async function cancelOrder(user: AuthUser, orderId: string): Promise<Record<string, unknown>> {
+  if (user.role !== "ADMIN" && user.role !== "STAFF") {
+    throw new AppError("Only admin/staff can cancel orders", 403);
+  }
   const { data, error } = await supabase.rpc("cancel_order_atomic", {
     p_order_id: orderId,
     p_actor_user_id: user.id,
     p_actor_role: user.role
   });
-
   if (error) {
     if (error.message.includes("ORDER_NOT_FOUND")) {
       throw new AppError("Order not found", 404);
     }
-
     if (error.message.includes("FORBIDDEN")) {
       throw new AppError("You are not allowed to cancel this order", 403);
     }
-
     if (error.message.includes("ALREADY_CANCELLED")) {
       throw new AppError("Order is already cancelled", 409);
     }
-
     if (error.message.includes("INVALID_STATUS")) {
       throw new AppError("Order cannot be cancelled in current state", 409);
     }
-
     throw new AppError("Unable to cancel order", 500);
   }
-
   const result = (data as { order_id: string; status: string; credited_to_wallet: boolean }[] | null)?.[0];
-
   if (!result) {
     throw new AppError("Unable to cancel order", 500);
   }
-
   return {
     id: result.order_id,
     status: result.status,

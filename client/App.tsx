@@ -10,6 +10,7 @@ import ProfileScreenWrapper from "./screens/ProfileScreenWrapper";
 import AdminScreen from "./screens/AdminScreen";
 import WalletScreen from "./screens/WalletScreen";
 import CartModal from "./components/CartModal";
+import OrderSummaryModal from "./components/OrderSummaryModal";
 import type { UserRole } from "./context/AuthContext";
 
 type Tab = "home" | "wallet" | "orders" | "profile";
@@ -29,14 +30,70 @@ function ConsumerApp({ role }: { role: UserRole }) {
   const [cartOpen, setCartOpen] = useState(false);
   const { itemCount } = useCart();
 
+  // Estado global para el resumen de pedido
+  const [orderSummary, setOrderSummary] = useState<null | {
+    items: any[];
+    total: number;
+    feedback: string;
+  }>(null);
+  const [showOrderSummary, setShowOrderSummary] = useState(false);
+
+  // Función para mostrar el resumen desde CartModal
+  function handleShowOrderSummary(summary: { items: any[]; total: number; feedback: string }) {
+    if (summary.feedback === "goToOrders") {
+      setShowOrderSummary(false);
+      setOrderSummary(null);
+      setCartOpen(false);
+      setTab("orders");
+      // Forzar navegación en la URL si no se usa react-router
+      if (window.location.pathname !== "/orders") {
+        window.history.pushState({}, "", "/orders");
+      }
+      return;
+    }
+    setOrderSummary(summary);
+    setShowOrderSummary(true);
+  }
+
+  function handleCloseOrderSummary() {
+    setShowOrderSummary(false);
+    setOrderSummary(null);
+    setCartOpen(false); // Cierra el carrito al cerrar el resumen
+  }
+
+  function handleGoToOrders() {
+    setShowOrderSummary(false);
+    setOrderSummary(null);
+    setCartOpen(false);
+    setTab("orders");
+  }
+
   return (
     <div className="h-svh w-full overflow-hidden bg-gray-50">
       {/* ── Screen area ──────────────────────────────────────────── */}
       <div className="h-full w-full overflow-hidden pb-16">
         {tab === "home" && <HomeScreen />}
         {tab === "wallet" && <WalletScreen role={role} />}
-        {tab === "orders" && <OrdersScreen />}
+        {tab === "orders" && <OrdersScreen onShowOrderSummary={handleShowOrderSummary} />}
         {tab === "profile" && <ProfileScreenWrapper />}
+        {/* CartModal solo si está abierto y NO se muestra el resumen */}
+        {cartOpen && !showOrderSummary && (
+          <CartModal
+            onClose={() => setCartOpen(false)}
+            onShowOrderSummary={handleShowOrderSummary}
+          />
+        )}
+        {/* Modal de resumen de pedido */}
+        {showOrderSummary && orderSummary && (
+          <OrderSummaryModal
+            open={showOrderSummary}
+            items={orderSummary.items}
+            total={orderSummary.total}
+            feedback={orderSummary.feedback}
+            onClose={handleCloseOrderSummary}
+            onGoToOrders={handleGoToOrders}
+          />
+        )}
       </div>
 
       {/* ── Bottom Nav ───────────────────────────────────────────── */}
@@ -95,7 +152,19 @@ function ConsumerApp({ role }: { role: UserRole }) {
       </nav>
 
       {/* Cart modal */}
-      {cartOpen && <CartModal onClose={() => setCartOpen(false)} />}
+      {cartOpen && <CartModal onClose={() => setCartOpen(false)} onShowOrderSummary={handleShowOrderSummary} />}
+
+      {/* Modal global de resumen de pedido */}
+      {showOrderSummary && orderSummary && (
+        <OrderSummaryModal
+          open={showOrderSummary}
+          items={orderSummary.items}
+          total={orderSummary.total}
+          feedback={orderSummary.feedback}
+          onClose={handleCloseOrderSummary}
+          onGoToOrders={handleGoToOrders}
+        />
+      )}
     </div>
   );
 }

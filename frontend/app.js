@@ -953,8 +953,15 @@ function renderOrderDetailScreen(detail, orderSummary) {
   const total = detail.total ?? orderSummary?.total ?? 0;
   const createdText = createdAt ? new Date(createdAt).toLocaleString() : "Sin fecha";
 
-  ordersDetailHeading.textContent = `Pedido #${String(orderId).slice(0, 8).toUpperCase()}`;
-  ordersDetailMeta.textContent = `${shift} · ${createdText}`;
+  // Feedback visual y motivo de cancelación
+  if (status === "CANCELLED") {
+    ordersDetailHeading.innerHTML = `<span style="color:#E53935;display:flex;align-items:center;gap:8px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E53935" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Cancelado</span>`;
+    let motivo = detail.cancelReason || detail.cancel_reason || "Pedido cancelado por el usuario o la administración.";
+    ordersDetailMeta.innerHTML = `<span style="color:#E53935">${motivo}</span><br><span class="muted-inline">${shift} · ${createdText}</span>`;
+  } else {
+    ordersDetailHeading.textContent = `Pedido #${String(orderId).slice(0, 8).toUpperCase()}`;
+    ordersDetailMeta.textContent = `${shift} · ${createdText}`;
+  }
 
   const itemLines = (detail.items || [])
     .map((item) => {
@@ -987,9 +994,9 @@ function renderOrderDetailScreen(detail, orderSummary) {
     ordersDetailRepeatBtn.dataset.orderId = orderId;
   }
 
+  // Eliminar botón cancelar completamente
   if (ordersDetailCancelBtn) {
-    ordersDetailCancelBtn.dataset.orderId = orderId;
-    ordersDetailCancelBtn.classList.toggle("hidden", !isCancellableStatus(status));
+    ordersDetailCancelBtn.classList.add("hidden");
   }
 
   setOrdersView("DETAIL");
@@ -1038,7 +1045,6 @@ function renderOrdersManager() {
   filtered.forEach((order) => {
     const card = document.createElement("article");
     card.className = "order-manager-card";
-    const canCancel = isCancellableStatus(order.status);
     const dateStr = new Date(order.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "short" });
 
     card.innerHTML = `
@@ -1055,7 +1061,6 @@ function renderOrdersManager() {
           <span class="order-card-arrow">›</span>
         </div>
       </div>
-      ${canCancel ? `<div class="order-manager-actions" style="margin-top:10px"><button class="action-btn danger" data-order-action="cancel" data-order-id="${order.id}">Cancelar pedido</button></div>` : ""}
     `;
 
     ordersList.appendChild(card);

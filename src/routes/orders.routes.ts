@@ -7,6 +7,7 @@ import {
 	listOrdersController,
 	updateOrderStatusController
 } from "../controllers/orders.controller";
+import { addItemToOrderController } from "../controllers/add-item.controller";
 import { mockAuthMiddleware } from "../middlewares/auth.middleware";
 import { orderCutoffMiddleware } from "../middlewares/order-time-window.middleware";
 
@@ -35,7 +36,31 @@ export const ordersRouter = Router();
  *       409:
  *         description: Cutoff time exceeded
  */
+
 ordersRouter.post("/orders", mockAuthMiddleware, orderCutoffMiddleware, createOrderController);
+
+/**
+ * @swagger
+ * /api/orders/{orderId}/cancel:
+ *   patch:
+ *     tags:
+ *       - Orders
+ *     summary: Cancel an order
+ *     security:
+ *       - roleHeaderAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: orderId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Order cancelled
+ *       404:
+ *         description: Order not found
+ */
+ordersRouter.patch("/orders/:orderId/cancel", mockAuthMiddleware, cancelOrderController);
 
 /**
  * @swagger
@@ -166,3 +191,4 @@ ordersRouter.delete("/orders/:orderId", mockAuthMiddleware, cancelOrderControlle
  *         description: Invalid state transition
  */
 ordersRouter.patch("/orders/:orderId/status", mockAuthMiddleware, updateOrderStatusController);
+ordersRouter.patch("/orders/:orderId/add-item", mockAuthMiddleware, addItemToOrderController);
