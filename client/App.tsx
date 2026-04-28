@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Home, Wallet, UserCircle, Clock, ShoppingCart } from "lucide-react";
 
 import { useAuth } from "./context/AuthContext";
 import { useCart } from "./context/CartContext";
 import LoginScreen from "./screens/LoginScreen";
+import RegisterScreen from "./screens/RegisterScreen";
 import HomeScreen from "./screens/HomeScreen";
 import OrdersScreen from "./screens/OrdersScreen";
 import ProfileScreenWrapper from "./screens/ProfileScreenWrapper";
@@ -151,10 +152,13 @@ function ConsumerApp({ role }: { role: UserRole }) {
         })}
       </nav>
 
-      {/* Cart modal */}
-      {cartOpen && <CartModal onClose={() => setCartOpen(false)} onShowOrderSummary={handleShowOrderSummary} />}
-
-      {/* Modal global de resumen de pedido */}
+      {/* Cart modal y resumen de pedido (solo una instancia de cada uno) */}
+      {cartOpen && !showOrderSummary && (
+        <CartModal
+          onClose={() => setCartOpen(false)}
+          onShowOrderSummary={handleShowOrderSummary}
+        />
+      )}
       {showOrderSummary && orderSummary && (
         <OrderSummaryModal
           open={showOrderSummary}
@@ -180,6 +184,22 @@ function AuthenticatedApp() {
   return <ConsumerApp role={role} />;
 }
 
+function AuthScreen() {
+  const [showRegister, setShowRegister] = useState(false);
+
+  useEffect(() => {
+    const handleSwitchToRegister = () => setShowRegister(true);
+    window.addEventListener("switchToRegister", handleSwitchToRegister);
+    return () => window.removeEventListener("switchToRegister", handleSwitchToRegister);
+  }, []);
+
+  if (showRegister) {
+    return <RegisterScreen onBackToLogin={() => setShowRegister(false)} />;
+  }
+
+  return <LoginScreen />;
+}
+
 export default function App() {
   const { state } = useAuth();
 
@@ -195,5 +215,5 @@ export default function App() {
     return <AuthenticatedApp />;
   }
 
-  return <LoginScreen />;
+  return <AuthScreen />;
 }

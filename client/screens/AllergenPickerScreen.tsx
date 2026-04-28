@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, ArrowLeft } from "lucide-react";
+import { Check } from "lucide-react";
 import { useApi } from "../hooks/useApi";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -36,13 +36,14 @@ function allergenEmoji(code: string) {
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface Props {
-  onBack: () => void;
+  open: boolean;
+  onClose: () => void;
   onSaved: (newLabel: string) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function AllergenPickerScreen({ onBack, onSaved }: Props) {
+export default function AllergenPickerScreen({ open, onClose, onSaved }: Props) {
   const { apiFetch } = useApi();
 
   const [allAllergens, setAllAllergens] = useState<Allergen[]>([]);
@@ -52,17 +53,19 @@ export default function AllergenPickerScreen({ onBack, onSaved }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!open) return;
+    setLoading(true);
     Promise.all([
-      apiFetch<{ data: Allergen[] }>("/api/allergens"),
+      fetch("/api/allergens").then((res) => res.json()),
       apiFetch<{ data: Allergen[] }>("/api/me/allergies"),
     ])
       .then(([all, mine]) => {
-        setAllAllergens(all.data);
+        setAllAllergens(all.data ?? []);
         setSelected(new Set(mine.data.map((a) => a.id)));
       })
       .catch(() => setError("Error al cargar los alérgenos"))
       .finally(() => setLoading(false));
-  }, [apiFetch]);
+  }, [apiFetch, open]);
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -98,107 +101,98 @@ export default function AllergenPickerScreen({ onBack, onSaved }: Props) {
     }
   }
 
+  if (!open) return null;
+
   return (
-    <div className="flex h-full flex-col bg-gray-50">
-      {/* Header */}
-      <div className="shrink-0 flex items-center gap-3 bg-white px-4 py-3 shadow-sm">
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label="Volver"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-slate-500 transition-all active:scale-90 hover:bg-gray-200"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <div className="flex-1">
-          <h2 className="font-bold text-slate-900">Mis alérgenos</h2>
-          <p className="text-xs text-slate-400">Marca los que aplican a ti</p>
-        </div>
-        <button
-          type="button"
-          disabled={saving || loading}
-          onClick={handleSave}
-          className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition-all hover:bg-emerald-700 active:scale-[0.97] disabled:opacity-60"
-        >
-          {saving ? (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-          ) : (
-            <Check className="h-4 w-4" />
-          )}
-          Guardar
-        </button>
-      </div>
-
-      {/* Body */}
-      <div className="flex-1 overflow-y-auto px-4 py-5 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none" }}>
-        {error && (
-          <p className="mb-3 rounded-xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600">{error}</p>
-        )}
-
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <span className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+      <div className="w-full max-w-lg rounded-3xl bg-white shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Mis alérgenos</h2>
+            <p className="text-xs text-slate-500">Marca los que aplican a ti</p>
           </div>
-        ) : (
-          <>
-            {/* Selected count badge */}
-            <div className="mb-4 flex items-center justify-between">
-              <p className="text-xs text-slate-400">
-                {selected.size === 0 ? "Ninguno seleccionado" : `${selected.size} seleccionado${selected.size !== 1 ? "s" : ""}`}
-              </p>
-              {selected.size > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setSelected(new Set())}
-                  className="text-xs font-semibold text-red-400 hover:text-red-500"
-                >
-                  Limpiar todo
-                </button>
-              )}
-            </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full bg-slate-100 p-2 text-slate-600 transition hover:bg-slate-200"
+            aria-label="Cerrar"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current">
+              <path d="M18.3 5.71a1 1 0 0 0-1.42 0L12 10.59 7.12 5.71A1 1 0 1 0 5.7 7.12L10.59 12l-4.88 4.88a1 1 0 1 0 1.42 1.42L12 13.41l4.88 4.89a1 1 0 0 0 1.42-1.42L13.41 12l4.89-4.88a1 1 0 0 0 0-1.41Z" />
+            </svg>
+          </button>
+        </div>
 
-            <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
-              {allAllergens.map((allergen, i) => {
-                const isActive = selected.has(allergen.id);
-                return (
+        <div className="border-b border-slate-200 px-5 py-4">
+          <button
+            type="button"
+            disabled={saving || loading}
+            onClick={handleSave}
+            className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+          >
+            {saving ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+            ) : (
+              <Check className="h-4 w-4" />
+            )}
+            Guardar
+          </button>
+        </div>
+
+        <div className="max-h-[70vh] overflow-y-auto px-5 py-5">
+          {error && (
+            <p className="mb-3 rounded-2xl bg-red-50 px-4 py-3 text-sm font-medium text-red-600">{error}</p>
+          )}
+
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <span className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" />
+            </div>
+          ) : (
+            <>
+              <div className="mb-4 flex items-center justify-between text-xs text-slate-500">
+                <span>{selected.size === 0 ? "Ninguno seleccionado" : `${selected.size} seleccionado${selected.size !== 1 ? "s" : ""}`}</span>
+                {selected.size > 0 && (
                   <button
-                    key={allergen.id}
                     type="button"
-                    onClick={() => toggle(allergen.id)}
-                    className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors ${
-                      i < allAllergens.length - 1 ? "border-b border-gray-50" : ""
-                    } ${isActive ? "bg-emerald-50" : "hover:bg-gray-50"}`}
+                    onClick={() => setSelected(new Set())}
+                    className="font-semibold text-red-500 hover:text-red-600"
                   >
-                    {/* Emoji */}
-                    <span className="w-8 text-center text-xl leading-none">
-                      {allergenEmoji(allergen.code)}
-                    </span>
-
-                    {/* Name */}
-                    <span className={`flex-1 text-sm font-semibold ${isActive ? "text-emerald-800" : "text-slate-700"}`}>
-                      {allergen.name}
-                    </span>
-
-                    {/* Checkbox */}
-                    <span
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all ${
-                        isActive
-                          ? "border-emerald-500 bg-emerald-500"
-                          : "border-gray-300 bg-white"
-                      }`}
-                    >
-                      {isActive && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
-                    </span>
+                    Limpiar todo
                   </button>
-                );
-              })}
-            </div>
+                )}
+              </div>
 
-            <p className="mt-4 text-center text-xs text-slate-400">
-              Esta información permite al personal de cocina identificar alérgenos en tus pedidos.
-            </p>
-          </>
-        )}
+              <div className="rounded-3xl bg-slate-50 p-1">
+                {allAllergens.map((allergen, i) => {
+                  const isActive = selected.has(allergen.id);
+                  return (
+                    <button
+                      key={allergen.id}
+                      type="button"
+                      onClick={() => toggle(allergen.id)}
+                      className={`flex w-full items-center gap-3 rounded-3xl px-4 py-4 text-left transition ${
+                        isActive ? "bg-emerald-50" : "hover:bg-slate-100"
+                      } ${i < allAllergens.length - 1 ? "mb-1" : ""}`}
+                    >
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-white text-slate-600 text-sm font-semibold">
+                        {allergen.code.slice(0, 2).toUpperCase()}
+                      </span>
+                      <span className={`flex-1 text-sm font-medium ${isActive ? "text-emerald-700" : "text-slate-700"}`}>
+                        {allergen.name}
+                      </span>
+                      <span className={`h-5 w-5 rounded-full border-2 ${isActive ? "border-emerald-500 bg-emerald-500" : "border-slate-300 bg-white"}`} />
+                    </button>
+                  );
+                })}
+              </div>
+
+              <p className="mt-4 text-center text-xs text-slate-400">
+                Esta información permite al personal de cocina identificar alérgenos en tus pedidos.
+              </p>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

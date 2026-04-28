@@ -301,7 +301,7 @@ function buildProductionSnapshot() {
     Bebidas: 0,
     Snacks: 0,
     Fruta: 0,
-    "Menu del dia": 0
+    Productos: 0
   };
 
   items.forEach((item) => {
@@ -544,7 +544,7 @@ function renderAdmin() {
   forecastDate.textContent = today.charAt(0).toUpperCase() + today.slice(1);
   forecastTotalUnits.textContent = `${snapshot.totalUnits} unidades`;
 
-  ["Bocadillos", "Bebidas", "Snacks", "Fruta", "Menu del dia"].forEach((label) => {
+  ["Bocadillos", "Bebidas", "Snacks", "Fruta", "Productos"].forEach((label) => {
     const card = document.createElement("article");
     card.className = "forecast-category-card";
     card.innerHTML = `<p>${label}</p><strong>${snapshot.totalsByCategory[label] || 0}</strong>`;

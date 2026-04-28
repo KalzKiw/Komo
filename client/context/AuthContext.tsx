@@ -21,6 +21,13 @@ type AuthState =
 type AuthContextValue = {
   state: AuthState;
   login: (email: string, password: string) => Promise<void>;
+  register: (options: {
+    email: string;
+    password?: string;
+    fullName: string;
+    role: "STUDENT" | "PARENT";
+    allergenIds: string[];
+  }) => Promise<void>;
   logout: () => void;
   /** Headers required by mockAuthMiddleware */
   authHeaders: Record<string, string>;
@@ -93,13 +100,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const register = useCallback(
+    async ({ email, password, fullName, role, allergenIds }: {
+      email: string;
+      password?: string;
+      fullName: string;
+      role: "STUDENT" | "PARENT";
+      allergenIds: string[];
+    }) => {
+      setState({ status: "loading" });
+      try {
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, fullName, role, allergenIds }),
+        });
+
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { message?: string };
+          setState({
+            status: "unauthenticated",
+            error: body.message ?? "No se pudo crear la cuenta.",
+          });
+          return;
+        }
+
+        const data = (await res.json()) as { user: AuthUser };
+        persist(data.user);
+        setState({ status: "authenticated", user: data.user });
+      } catch {
+        setState({ status: "unauthenticated", error: "Error de red. Inténtalo de nuevo." });
+      }
+    },
+    []
+  );
+
   const logout = useCallback(() => {
     sessionStorage.removeItem(STORAGE_KEY);
     setState({ status: "unauthenticated" });
   }, []);
 
   return (
-    <AuthContext.Provider value={{ state, login, logout, authHeaders }}>
+    <AuthContext.Provider value={{ state, login, register, logout, authHeaders }}>
       {children}
     </AuthContext.Provider>
   );

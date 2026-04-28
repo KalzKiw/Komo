@@ -105,4 +105,4 @@ mainAppRouter.get("/me/orders", mockAuthMiddleware, listMyOrdersController);
  */
 mainAppRouter.get("/me/allergies", mockAuthMiddleware, listMyAllergiesController);
 mainAppRouter.put("/me/allergies", mockAuthMiddleware, updateMyAllergiesController);
-mainAppRouter.get("/allergens", mockAuthMiddleware, listAllAllergensController);
+mainAppRouter.get("/allergens", listAllAllergensController);

@@ -66,7 +66,7 @@ export function computeCutoffCountdown() {
 
 export function adminProductCategory(name) {
   const text = String(name || "").toLowerCase();
-  if (text.includes("menu")) return "Menu del dia";
+  if (text.includes("menu")) return "Productos";
   if (text.includes("platano") || text.includes("manzana") || text.includes("fruta")) return "Fruta";
   if (text.includes("zumo") || text.includes("agua") || text.includes("bebida") || text.includes("batido")) return "Bebidas";
   if (text.includes("bocadillo") || text.includes("sandwich")) return "Bocadillos";

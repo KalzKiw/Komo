@@ -79,8 +79,7 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
     setShowSummary(false);
     setLastOrder(null);
     setFeedback("");
-    // Solo cerrar CartModal si el usuario cierra el resumen
-    onClose();
+    onClose(); // Cierra el modal inmediatamente
   }
 
   function handleGoToOrders() {
@@ -88,9 +87,9 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
     setLastOrder(null);
     setFeedback("");
     if (typeof onShowOrderSummary === "function") {
-      // Notifica al padre para cambiar de tab
       onShowOrderSummary({ items: [], total: 0, feedback: "goToOrders" });
     }
+    onClose(); // Cierra el modal inmediatamente
   }
   const role = state.status === "authenticated" ? state.user.role : "";
 

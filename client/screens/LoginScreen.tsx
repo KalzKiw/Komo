@@ -100,6 +100,18 @@ export default function LoginScreen() {
             ))}
           </div>
         </div>
+
+        {/* Register link */}
+        <div className="mt-6 text-center">
+          <p className="text-xs text-slate-500">¿No tienes cuenta?</p>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("switchToRegister"))}
+            className="mt-2 font-semibold text-emerald-600 hover:text-emerald-700 text-sm"
+          >
+            Crear cuenta
+          </button>
+        </div>
       </div>
     </div>
   );

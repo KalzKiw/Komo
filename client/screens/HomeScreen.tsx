@@ -116,7 +116,7 @@ export default function HomeScreen() {
       {/* Header */}
       <div className="shrink-0 bg-white px-4 pt-5 pb-3 shadow-sm">
         <div className="mb-3">
-          <h1 className="text-xl font-bold text-slate-900">Menú del día</h1>
+          <h1 className="text-xl font-bold text-slate-900">Productos</h1>
           <p className="text-xs text-slate-400">Cierre a las 09:05</p>
         </div>
 

@@ -210,7 +210,7 @@ function ForecastTab({ kds }: { kds: KdsOrder[] }) {
     month: "long",
   });
 
-  const categoryLabels = ["Bocadillos", "Bebidas", "Snacks", "Fruta", "Menu del día"];
+  const categoryLabels = ["Bocadillos", "Bebidas", "Snacks", "Fruta", "Productos"];
 
   return (
     <div className="px-4 py-4 space-y-4">
