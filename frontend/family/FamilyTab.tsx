@@ -86,7 +86,7 @@ export default function FamilyTab({
                   <button
                     type="button"
                     onClick={() => handleRecharge(child.id)}
-                    className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
+                    className="rounded-lg bg-#1C9690 px-3 py-2 text-xs font-semibold text-white hover:bg-#169486"
                   >
                     Recargar +5.00 EUR
                   </button>
@@ -134,11 +134,11 @@ export default function FamilyTab({
               value={tokenInput}
               onChange={(event) => setTokenInput(event.target.value)}
               placeholder="Ejemplo: FAM-84JQK1"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-emerald-500 focus:ring"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-#2da38f focus:ring"
             />
             <button
               type="submit"
-              className="w-full rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+              className="w-full rounded-lg bg-#1C9690 px-3 py-2 text-sm font-semibold text-white hover:bg-#169486"
             >
               Vincular cuenta
             </button>
@@ -150,9 +150,9 @@ export default function FamilyTab({
         <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-md">
           <h3 className="text-sm font-semibold text-slate-900">Cuenta familiar vinculada</h3>
           <p className="mt-1 text-sm text-slate-600">Padre vinculado: {linkedParentName}</p>
-          <div className="mt-3 rounded-lg bg-emerald-50 p-3">
-            <p className="text-xs text-emerald-700">Saldo actual del monedero</p>
-            <p className="text-2xl font-bold text-emerald-700">{centsToEur(childWallet)}</p>
+          <div className="mt-3 rounded-lg bg-#d9f4ee p-3">
+            <p className="text-xs text-#169486">Saldo actual del monedero</p>
+            <p className="text-2xl font-bold text-#169486">{centsToEur(childWallet)}</p>
           </div>
         </article>
       ) : null}

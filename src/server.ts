@@ -1,21 +1,24 @@
 import { app } from "./app";
 import { env } from "./config/env";
 
-const preferredPort = env.PORT;
+const HOST = env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1";
 
-const server = app.listen(preferredPort, () => {
-  console.log(`CafES APP backend listening on port ${preferredPort}`);
-});
+const startServer = (port: number): void => {
+  const server = app.listen(port, HOST, () => {
+    console.log(`CafES APP backend listening on http://${HOST}:${port}`);
+  });
 
-server.on("error", (error: NodeJS.ErrnoException) => {
-  if (error.code === "EADDRINUSE") {
-    const fallbackPort = preferredPort + 1;
-    console.warn(`Port ${preferredPort} is busy. Retrying on ${fallbackPort}...`);
-    app.listen(fallbackPort, () => {
-      console.log(`CafES APP backend listening on port ${fallbackPort}`);
-    });
-    return;
-  }
+  server.on("error", (error: NodeJS.ErrnoException) => {
+    if (error.code === "EADDRINUSE") {
+      console.warn(`Port ${port} is busy. Attempting port ${port + 1}...`);
+      server.close();
+      startServer(port + 1);
+      return;
+    }
 
-  throw error;
-});
+    console.error(`Server error on port ${port}:`, error);
+    process.exit(1);
+  });
+};
+
+startServer(env.PORT);

@@ -52,7 +52,7 @@ npm install
 npm run dev
 ```
 
-Swagger disponible en `http://localhost:3000/api-docs`.
+Swagger disponible en `http://localhost:3001/api-docs`.
 
 Nota: en el entorno actual los endpoints protegidos usan la cabecera `x-user-role` (autenticacion mock para desarrollo).
 

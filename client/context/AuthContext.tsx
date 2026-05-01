@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { apiUrl } from "../lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -73,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     setState({ status: "loading" });
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch(apiUrl("/api/auth/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -110,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }) => {
       setState({ status: "loading" });
       try {
-        const res = await fetch("/api/auth/register", {
+        const res = await fetch(apiUrl("/api/auth/register"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password, fullName, role, allergenIds }),

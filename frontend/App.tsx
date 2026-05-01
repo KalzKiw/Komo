@@ -72,7 +72,7 @@ export default function App(): JSX.Element {
     <div className="h-screen w-full flex flex-col bg-gray-50">
       <header className="h-16 shrink-0 bg-white shadow-sm z-50 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-emerald-600 text-white grid place-items-center font-bold">C</div>
+          <div className="h-10 w-10 rounded-xl bg-#1C9690 text-white grid place-items-center font-bold">C</div>
           <div>
             <p className="text-slate-800 font-semibold leading-tight">CafeAP</p>
             <p className="text-xs text-slate-500 leading-tight">Alumno / Padre</p>
@@ -89,7 +89,7 @@ export default function App(): JSX.Element {
           </button>
           <button
             type="button"
-            className="h-10 w-10 rounded-full bg-emerald-50 text-emerald-600 grid place-items-center font-semibold transition-all active:scale-95"
+            className="h-10 w-10 rounded-full bg-#d9f4ee text-#1C9690 grid place-items-center font-semibold transition-all active:scale-95"
             aria-label="Perfil"
           >
             AU
@@ -98,10 +98,10 @@ export default function App(): JSX.Element {
       </header>
 
       <main className="flex-1 overflow-y-auto p-4 pb-6">
-        <section className="rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white p-4 shadow-sm">
-          <p className="text-sm/5 text-emerald-50">Monedero virtual</p>
+        <section className="rounded-2xl bg-gradient-to-r from-#1C9690 to-#2da38f text-white p-4 shadow-sm">
+          <p className="text-sm/5 text-#d9f4ee">Monedero virtual</p>
           <p className="mt-1 text-3xl font-bold">5,00 EUR</p>
-          <p className="mt-1 text-xs text-emerald-100">Curso: 3 ESO A</p>
+          <p className="mt-1 text-xs text-#c6efe7">Curso: 3 ESO A</p>
         </section>
 
         <section className="mt-4 rounded-2xl bg-white p-3 shadow-sm border border-slate-100">
@@ -123,7 +123,7 @@ export default function App(): JSX.Element {
               key={product.id}
               className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden"
             >
-              <div className="h-24 bg-gradient-to-br from-slate-200 via-slate-100 to-emerald-100 relative">
+              <div className="h-24 bg-gradient-to-br from-slate-200 via-slate-100 to-#c6efe7 relative">
                 {product.badge ? (
                   <span className="absolute top-2 left-2 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-semibold text-white">
                     {product.badge}
@@ -135,10 +135,10 @@ export default function App(): JSX.Element {
                 <h3 className="text-slate-800 font-semibold text-sm leading-tight">{product.name}</h3>
                 <p className="mt-1 text-xs text-slate-500">{product.description}</p>
                 <div className="mt-3 flex items-center justify-between">
-                  <span className="text-emerald-600 text-xl font-bold">{product.price.toFixed(2)} EUR</span>
+                  <span className="text-#1C9690 text-xl font-bold">{product.price.toFixed(2)} EUR</span>
                   <button
                     type="button"
-                    className="h-9 w-9 rounded-full bg-emerald-600 text-white text-lg leading-none grid place-items-center transition-all active:scale-95"
+                    className="h-9 w-9 rounded-full bg-#1C9690 text-white text-lg leading-none grid place-items-center transition-all active:scale-95"
                     aria-label={`Agregar ${product.name}`}
                   >
                     +
@@ -157,7 +157,7 @@ export default function App(): JSX.Element {
               type="button"
               onClick={() => setActiveTab("home")}
               className={`h-full w-full flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
-                activeTab === "home" ? "text-emerald-600" : "text-slate-400"
+                activeTab === "home" ? "text-#1C9690" : "text-slate-400"
               }`}
             >
               <House className="h-5 w-5" />
@@ -169,7 +169,7 @@ export default function App(): JSX.Element {
               type="button"
               onClick={() => setActiveTab("pedidos")}
               className={`h-full w-full flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
-                activeTab === "pedidos" ? "text-emerald-600" : "text-slate-400"
+                activeTab === "pedidos" ? "text-#1C9690" : "text-slate-400"
               }`}
             >
               <ClipboardList className="h-5 w-5" />
@@ -181,7 +181,7 @@ export default function App(): JSX.Element {
               type="button"
               onClick={() => setActiveTab("billetera")}
               className={`h-full w-full flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
-                activeTab === "billetera" ? "text-emerald-600" : "text-slate-400"
+                activeTab === "billetera" ? "text-#1C9690" : "text-slate-400"
               }`}
             >
               <Wallet className="h-5 w-5" />
@@ -193,7 +193,7 @@ export default function App(): JSX.Element {
               type="button"
               onClick={() => setActiveTab("perfil")}
               className={`h-full w-full flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
-                activeTab === "perfil" ? "text-emerald-600" : "text-slate-400"
+                activeTab === "perfil" ? "text-#1C9690" : "text-slate-400"
               }`}
             >
               <UserRound className="h-5 w-5" />

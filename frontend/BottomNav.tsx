@@ -12,7 +12,7 @@ const baseButtonClass =
 
 function iconClass(active: boolean): string {
   return active
-    ? "h-7 w-7 text-emerald-600 drop-shadow-[0_2px_6px_rgba(16,185,129,0.35)]"
+    ? "h-7 w-7 text-#1C9690 drop-shadow-[0_2px_6px_rgba(16,185,129,0.35)]"
     : "h-7 w-7 text-slate-400 group-hover:text-slate-500";
 }
 

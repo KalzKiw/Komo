@@ -1,0 +1,16 @@
+export const ALLERGENS = [
+  { code: "GLUTEN", name: "Gluten" },
+  { code: "CRUSTACEANS", name: "Crustáceos" },
+  { code: "EGGS", name: "Huevos" },
+  { code: "FISH", name: "Pescado" },
+  { code: "PEANUTS", name: "Cacahuetes" },
+  { code: "SOYBEANS", name: "Soja" },
+  { code: "MILK", name: "Leche" },
+  { code: "TREE_NUTS", name: "Frutos secos" },
+  { code: "CELERY", name: "Apio" },
+  { code: "MUSTARD", name: "Mostaza" },
+  { code: "SESAME", name: "Sésamo" },
+  { code: "SULPHITES", name: "Sulfitos" },
+  { code: "LUPINS", name: "Altramuces" },
+  { code: "MOLLUSCS", name: "Moluscos" },
+];

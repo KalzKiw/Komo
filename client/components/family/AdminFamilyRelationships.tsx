@@ -98,7 +98,7 @@ export default function AdminFamilyRelationships() {
         {/* ── List ────────────────────────────────────────────────────── */}
         {loading ? (
           <div className="flex justify-center py-10">
-            <span className="h-7 w-7 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" />
+            <span className="h-7 w-7 animate-spin rounded-full border-4 border-#92dbc8 border-t-#1C9690" />
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-12 text-center text-slate-400">
@@ -122,7 +122,7 @@ export default function AdminFamilyRelationships() {
                       <p className="truncate text-sm font-bold text-slate-900">{row.parentName}</p>
                     </div>
                     <div className="mt-2 flex items-center gap-2 pl-10">
-                      <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                      <span className="inline-flex items-center rounded-full bg-#d9f4ee px-2.5 py-1 text-xs font-semibold text-#169486">
                         {row.studentName}
                       </span>
                       <span className="flex items-center gap-0.5 text-xs text-slate-400">
@@ -154,7 +154,7 @@ export default function AdminFamilyRelationships() {
                 <div
                   className={`h-1 w-full ${
                     row.status === "ACTIVE"
-                      ? "bg-emerald-400"
+                      ? "bg-#44b6a1"
                       : "bg-red-300"
                   }`}
                 />

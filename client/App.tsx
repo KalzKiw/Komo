@@ -3,8 +3,7 @@ import { Home, Wallet, UserCircle, Clock, ShoppingCart } from "lucide-react";
 
 import { useAuth } from "./context/AuthContext";
 import { useCart } from "./context/CartContext";
-import LoginScreen from "./screens/LoginScreen";
-import RegisterScreen from "./screens/RegisterScreen";
+import LoginModern from "./components/LoginModern";
 import HomeScreen from "./screens/HomeScreen";
 import OrdersScreen from "./screens/OrdersScreen";
 import ProfileScreenWrapper from "./screens/ProfileScreenWrapper";
@@ -109,8 +108,8 @@ function ConsumerApp({ role }: { role: UserRole }) {
               onClick={() => setTab(id)}
               className="flex flex-1 flex-col items-center gap-0.5 pb-2 pt-2 transition-all active:scale-90"
             >
-              <Icon className={`h-5 w-5 transition-colors ${active ? "text-emerald-600" : "text-slate-400"}`} />
-              <span className={`text-[10px] font-semibold transition-colors ${active ? "text-emerald-600" : "text-slate-400"}`}>
+              <Icon className={`h-5 w-5 transition-colors ${active ? "text-#1C9690" : "text-slate-400"}`} />
+              <span className={`text-[10px] font-semibold transition-colors ${active ? "text-#1C9690" : "text-slate-400"}`}>
                 {label}
               </span>
             </button>
@@ -122,7 +121,7 @@ function ConsumerApp({ role }: { role: UserRole }) {
           <button
             type="button"
             onClick={() => setCartOpen(true)}
-            className="relative -translate-y-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 shadow-[0_4px_20px_rgba(5,150,105,0.45)] ring-4 ring-white transition-all active:scale-90 hover:bg-emerald-600"
+            className="relative -translate-y-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#1C9690] shadow-[0_4px_20px_rgba(28,150,144,0.45)] ring-4 ring-white transition-all active:scale-90 hover:bg-[#169486]"
           >
             <ShoppingCart className="h-6 w-6 text-white" />
             {itemCount > 0 && (
@@ -143,8 +142,8 @@ function ConsumerApp({ role }: { role: UserRole }) {
               onClick={() => setTab(id)}
               className="flex flex-1 flex-col items-center gap-0.5 pb-2 pt-2 transition-all active:scale-90"
             >
-              <Icon className={`h-5 w-5 transition-colors ${active ? "text-emerald-600" : "text-slate-400"}`} />
-              <span className={`text-[10px] font-semibold transition-colors ${active ? "text-emerald-600" : "text-slate-400"}`}>
+              <Icon className={`h-5 w-5 transition-colors ${active ? "text-#1C9690" : "text-slate-400"}`} />
+              <span className={`text-[10px] font-semibold transition-colors ${active ? "text-#1C9690" : "text-slate-400"}`}>
                 {label}
               </span>
             </button>
@@ -185,19 +184,7 @@ function AuthenticatedApp() {
 }
 
 function AuthScreen() {
-  const [showRegister, setShowRegister] = useState(false);
-
-  useEffect(() => {
-    const handleSwitchToRegister = () => setShowRegister(true);
-    window.addEventListener("switchToRegister", handleSwitchToRegister);
-    return () => window.removeEventListener("switchToRegister", handleSwitchToRegister);
-  }, []);
-
-  if (showRegister) {
-    return <RegisterScreen onBackToLogin={() => setShowRegister(false)} />;
-  }
-
-  return <LoginScreen />;
+  return <LoginModern />;
 }
 
 export default function App() {
@@ -205,7 +192,7 @@ export default function App() {
 
   if (state.status === "loading") {
     return (
-      <div className="flex h-svh items-center justify-center bg-gradient-to-b from-emerald-700 to-emerald-900">
+      <div className="flex h-svh items-center justify-center bg-gradient-to-b from-#169486 to-#0f4b47">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-white/30 border-t-white" />
       </div>
     );

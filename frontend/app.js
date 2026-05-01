@@ -532,7 +532,7 @@ function renderAdmin() {
     adminOrdersShiftFilter.value = state.adminOrdersShift;
   }
 
-  activeRoleLabel.textContent = `CafES - Previsión y Control · ${state.session.user.role}`;
+  activeRoleLabel.textContent = `KOMO - Previsión y Control · ${state.session.user.role}`;
 
   const today = new Date().toLocaleDateString("es-ES", {
     weekday: "long",

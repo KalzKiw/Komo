@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import OrderSummaryModal from "./OrderSummaryModal";
+import AllergenWarningModal from "./AllergenWarningModal";
 import { X, Minus, Plus, ShoppingCart } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
@@ -12,6 +13,29 @@ type Props = {
   onShowOrderSummary?: (summary: { items: any[]; total: number; feedback: string }) => void;
 };
 
+interface ApiProduct {
+  id: string;
+  name: string;
+  allergens?: Array<{
+    id: string;
+    code: string;
+    name: string;
+  }>;
+}
+
+interface UserAllergen {
+  id: string;
+  code: string;
+  name: string;
+}
+
+interface AllergenWarning {
+  allergenId: string;
+  allergenName: string;
+  allergenCode: string;
+  productNames: string[];
+}
+
 export default function CartModal({ onClose, onOrderPlaced }: Props) {
   const { cart, updateQty, total, clear } = useCart();
   const { state } = useAuth();
@@ -21,10 +45,81 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
   const [showSummary, setShowSummary] = useState(false);
   const [lastOrder, setLastOrder] = useState<any>(null);
 
+  // Allergen warning state
+  const [showAllergenWarning, setShowAllergenWarning] = useState(false);
+  const [allergenWarnings, setAllergenWarnings] = useState<AllergenWarning[]>([]);
+  const [userAllergens, setUserAllergens] = useState<UserAllergen[]>([]);
+  const [confirmedWarning, setConfirmedWarning] = useState(false);
+  const [productsMap, setProductsMap] = useState<Map<string, ApiProduct>>(new Map());
+
+  // Load products and user allergies on mount
+  useEffect(() => {
+    Promise.all([
+      apiFetch<{ data: ApiProduct[] }>("/api/products"),
+      apiFetch<{ data: UserAllergen[] }>("/api/me/allergies"),
+    ])
+      .then(([productsRes, allergiesRes]) => {
+        const pMap = new Map(productsRes.data.map((p) => [p.id, p]));
+        setProductsMap(pMap);
+        setUserAllergens(allergiesRes.data ?? []);
+      })
+      .catch(() => {
+        // Silently fail, warnings will just not show
+      });
+  }, [apiFetch]);
+
+  function detectAllergenWarnings(): AllergenWarning[] {
+    if (userAllergens.length === 0) return [];
+
+    const userAllergenIds = new Set(userAllergens.map((a) => a.id));
+    const warningMap = new Map<string, AllergenWarning>();
+
+    // Check each product in cart
+    for (const line of cart) {
+      const product = productsMap.get(line.id);
+      if (!product || !product.allergens) continue;
+
+      // Check if product has any user allergens
+      for (const allergen of product.allergens) {
+        if (userAllergenIds.has(allergen.id)) {
+          if (!warningMap.has(allergen.id)) {
+            warningMap.set(allergen.id, {
+              allergenId: allergen.id,
+              allergenName: allergen.name,
+              allergenCode: allergen.code,
+              productNames: [],
+            });
+          }
+          const warning = warningMap.get(allergen.id)!;
+          if (!warning.productNames.includes(line.name)) {
+            warning.productNames.push(line.name);
+          }
+        }
+      }
+    }
+
+    return Array.from(warningMap.values());
+  }
+
+  async function handleCheckoutClick() {
+    const warnings = detectAllergenWarnings();
+
+    if (warnings.length > 0 && !confirmedWarning) {
+      setAllergenWarnings(warnings);
+      setShowAllergenWarning(true);
+      return;
+    }
+
+    // Proceed with checkout
+    await checkout();
+  }
+
   async function checkout() {
     if (cart.length === 0) return;
     setFeedback("");
     setLoading(true);
+    setShowAllergenWarning(false);
+    setConfirmedWarning(false);
     try {
       const payload = {
         shift: "MORNING",
@@ -35,6 +130,7 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
           customizations: line.options ?? [],
           kitchenNote: line.note || undefined,
         })),
+        acknowledgedAllergenWarning: confirmedWarning,
       };
       const res = await apiFetch("/api/orders", { method: "POST", body: JSON.stringify(payload) });
       const summary = {
@@ -91,6 +187,7 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
     }
     onClose(); // Cierra el modal inmediatamente
   }
+
   const role = state.status === "authenticated" ? state.user.role : "";
 
   return (
@@ -103,7 +200,7 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
           {/* Header */}
           <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
             <div className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5 text-emerald-600" />
+              <ShoppingCart className="h-5 w-5 text-#1C9690" />
               <h2 className="font-bold text-lg text-slate-900">Tu carrito</h2>
             </div>
             <button
@@ -148,9 +245,9 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
                     <button
                       type="button"
                       onClick={() => updateQty(line.signature, 1)}
-                      className="h-7 w-7 rounded-full bg-emerald-100 flex items-center justify-center hover:bg-emerald-200 transition-colors"
+                      className="h-7 w-7 rounded-full bg-#c6efe7 flex items-center justify-center hover:bg-#92dbc8 transition-colors"
                     >
-                      <Plus className="h-3.5 w-3.5 text-emerald-700" />
+                      <Plus className="h-3.5 w-3.5 text-#169486" />
                     </button>
                   </div>
                   <span className="text-sm font-bold text-slate-900 w-14 text-right shrink-0">
@@ -169,7 +266,7 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
                 <span className="text-xl font-bold text-slate-900">{money(total)}</span>
               </div>
               {feedback && !showSummary && (
-                <p className={`text-sm text-center ${feedback.startsWith("✓") ? "text-emerald-600" : "text-red-500"}`}>
+                <p className={`text-sm text-center ${feedback.startsWith("✓") ? "text-#1C9690" : "text-red-500"}`}>
                   {feedback}
                 </p>
               )}
@@ -177,8 +274,8 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
                 <button
                   type="button"
                   disabled={loading}
-                  onClick={checkout}
-                  className="w-full rounded-2xl bg-emerald-600 py-3.5 text-center font-bold text-white shadow-lg shadow-emerald-200 hover:bg-emerald-700 active:scale-95 transition-all disabled:opacity-60"
+                  onClick={handleCheckoutClick}
+                  className="w-full rounded-2xl bg-#1C9690 py-3.5 text-center font-bold text-white shadow-lg shadow-#92dbc8 hover:bg-#169486 active:scale-95 transition-all disabled:opacity-60"
                 >
                   {loading ? "Procesando..." : `Confirmar pedido · ${money(total)}`}
                 </button>
@@ -187,6 +284,25 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
           )}
         </div>
       </div>
+
+      {/* Allergen Warning Modal */}
+      <AllergenWarningModal
+        open={showAllergenWarning}
+        warnings={allergenWarnings}
+        userAllergens={userAllergens}
+        onConfirm={() => {
+          setConfirmedWarning(true);
+          setShowAllergenWarning(false);
+          // Call checkout after confirming
+          checkout();
+        }}
+        onCancel={() => {
+          setShowAllergenWarning(false);
+          setConfirmedWarning(false);
+        }}
+        isLoading={loading}
+      />
+
       {/* Modal de resumen SIEMPRE por encima */}
       {showSummary && lastOrder && (
         <div style={{ zIndex: 9999, position: 'fixed', inset: 0 }}>

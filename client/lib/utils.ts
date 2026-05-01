@@ -115,7 +115,7 @@ export function statusColor(status: string): string {
   const map: Record<string, string> = {
     PENDING: "bg-amber-100 text-amber-800",
     IN_PREPARATION: "bg-blue-100 text-blue-800",
-    READY: "bg-emerald-100 text-emerald-700",
+    READY: "bg-#c6efe7 text-#169486",
     DELIVERED: "bg-slate-100 text-slate-600",
     COMPLETED: "bg-slate-100 text-slate-600",
     CANCELLED: "bg-red-100 text-red-700",

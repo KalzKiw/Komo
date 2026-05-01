@@ -3,6 +3,7 @@ import { AppError } from "../errors/app-error";
 import { AuthUser, UserRole, OrderShift, OrderStatus } from "../types/domain";
 import { ListMyOrdersQuery, ListProductsQuery } from "../validators/main-app.validator";
 import { roundMoney } from "../utils/money";
+import { ALLERGENS } from "../data/allergens";
 
 interface UserProfileRow {
   id: string;
@@ -111,7 +112,13 @@ export async function listProductsForMainApp(
 ): Promise<Record<string, unknown>> {
   let statement = supabase
     .from("products")
-    .select("id, name, description, price, is_active")
+    .select(
+      `id, name, description, price, is_active,
+       product_allergens (
+         allergen_id,
+         allergens!product_allergens_allergen_id_fkey (id, code, name)
+       )`
+    )
     .eq("is_active", true)
     .order("name", { ascending: true })
     .limit(query.limit ?? 100);
@@ -122,18 +129,24 @@ export async function listProductsForMainApp(
     throw new AppError("Unable to list products", 500);
   }
 
-  const products = (data ?? []) as ProductRow[];
+  const products = (data ?? []) as any[];
 
   return {
     data: products.map((product) => {
       const displayPrice = roundMoney(Number(product.price));
+      const allergenList = (product.product_allergens ?? []).map((pa: any) => ({
+        id: pa.allergens?.id,
+        code: pa.allergens?.code,
+        name: pa.allergens?.name
+      })).filter((a: any) => a.id);
 
       return {
         id: product.id,
         name: product.name,
         description: product.description,
         price: displayPrice,
-        originalPrice: roundMoney(Number(product.price))
+        originalPrice: roundMoney(Number(product.price)),
+        allergens: allergenList
       };
     })
   };
@@ -182,7 +195,19 @@ export async function listMyOrders(user: AuthUser, query: ListMyOrdersQuery): Pr
 
 // ─── List ALL available allergens ───────────────────────────────────────────────
 
+async function ensureAllergensSeeded(): Promise<void> {
+  const { error } = await supabase
+    .from("allergens")
+    .upsert(ALLERGENS, { onConflict: "code" });
+
+  if (error) {
+    throw new AppError("Unable to seed allergens", 500);
+  }
+}
+
 export async function listAllAllergens(): Promise<Record<string, unknown>> {
+  await ensureAllergensSeeded();
+
   const { data, error } = await supabase
     .from("allergens")
     .select("id, code, name")

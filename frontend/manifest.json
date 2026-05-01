@@ -1,11 +1,11 @@
 {
-  "name": "CafES - Cafeteria Escolar",
-  "short_name": "CafES",
+  "name": "KOMO - Cafetería Escolar",
+  "short_name": "KOMO",
   "description": "Gestión de pedidos para la cafetería escolar",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0f996f",
+  "background_color": "#2D3748",
+  "theme_color": "#1C9690",
   "icons": [
     {
       "src": "/favicon.svg",

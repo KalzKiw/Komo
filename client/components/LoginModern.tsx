@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { allergenVisual } from "../lib/allergens";
+import { apiUrl } from "../lib/api";
 
 const QUICK_USERS = [
   { label: "Alumno", email: "student1@cafes.app", color: "bg-sky-50 text-sky-700 border-sky-200" },
@@ -19,7 +21,7 @@ const LoginModern: React.FC = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<(typeof ACCOUNT_ROLES)[number]["value"]>("STUDENT");
-  const [allAllergens, setAllAllergens] = useState<Array<{ id: string; name: string }>>([]);
+  const [allAllergens, setAllAllergens] = useState<Array<{ id: string; code: string; name: string }>>([]);
   const [selectedAllergens, setSelectedAllergens] = useState<Set<string>>(new Set());
   const [loadingAllergens, setLoadingAllergens] = useState(false);
   const isLoading = state.status === "loading";
@@ -28,7 +30,7 @@ const LoginModern: React.FC = () => {
   useEffect(() => {
     if (mode !== "register") return;
     setLoadingAllergens(true);
-    fetch("/api/allergens")
+    fetch(apiUrl("/api/allergens"))
       .then((res) => res.json())
       .then((data) => setAllAllergens(data.data ?? []))
       .catch(() => setAllAllergens([]))
@@ -90,9 +92,9 @@ const LoginModern: React.FC = () => {
       <main className="w-full max-w-md mt-2">
         <header className="mb-10 text-center">
           <div className="inline-flex items-center justify-center mb-6">
-            <h1 className="text-primary font-bold italic text-3xl tracking-tight">CafES</h1>
+            <h1 className="text-[#1C9690] font-bold italic text-3xl tracking-tight">KOMO</h1>
           </div>
-          <p className="text-on-surface-variant font-body text-lg leading-relaxed">
+          <p className="text-[#2D3748] font-body text-lg leading-relaxed">
             Cafetería Escolar Digital
           </p>
         </header>
@@ -106,7 +108,7 @@ const LoginModern: React.FC = () => {
                 onClick={() => setMode(tab.id as "login" | "register")}
                 className={`rounded-3xl py-3 text-sm font-semibold transition ${
                   mode === tab.id
-                    ? "bg-emerald-600 text-white"
+                    ? "bg-[#1C9690] text-white"
                     : "bg-transparent text-slate-600 hover:bg-slate-100"
                 }`}
               >
@@ -127,7 +129,7 @@ const LoginModern: React.FC = () => {
                     value={fullName}
                     onChange={(event) => setFullName(event.target.value)}
                     placeholder="Ej. Ana Pérez"
-                    className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                    className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-[#1C9690] focus:ring-2 focus:ring-[#1C9690]/20"
                     required
                   />
                 </label>
@@ -140,7 +142,7 @@ const LoginModern: React.FC = () => {
                   onChange={(event) => setEmail(event.target.value)}
                   type="email"
                   placeholder="usuario@colegio.edu"
-                  className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-#2da38f focus:ring-2 focus:ring-#2da38f/20"
                   required
                 />
               </label>
@@ -152,7 +154,7 @@ const LoginModern: React.FC = () => {
                   onChange={(event) => setPassword(event.target.value)}
                   type="password"
                   placeholder={mode === "login" ? "••••••••" : "Opcional para registro"}
-                  className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-#2da38f focus:ring-2 focus:ring-#2da38f/20"
                   required={mode === "login"}
                 />
               </label>
@@ -168,8 +170,8 @@ const LoginModern: React.FC = () => {
                         onClick={() => setRole(item.value)}
                         className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
                           role === item.value
-                            ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                            : "border-gray-200 bg-white text-slate-700 hover:border-emerald-300"
+                            ? "border-[#1C9690] bg-[#d9f4ee] text-[#2D3748]"
+                            : "border-gray-200 bg-white text-slate-700 hover:border-[#1C9690]"
                         }`}
                       >
                         {item.label}
@@ -185,17 +187,21 @@ const LoginModern: React.FC = () => {
                       ) : (
                         allAllergens.map((allergen) => {
                           const active = selectedAllergens.has(allergen.id);
+                          const visual = allergenVisual(allergen.name);
                           return (
                             <button
                               key={allergen.id}
                               type="button"
                               onClick={() => toggleAllergen(allergen.id)}
-                              className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm transition ${
-                                active ? "border-emerald-500 bg-emerald-50" : "border-gray-200 bg-white hover:bg-slate-50"
+                              className={`flex items-center justify-between gap-2 rounded-2xl border px-4 py-3 text-left text-sm transition ${
+                                active ? "border-#2da38f bg-#d9f4ee" : "border-gray-200 bg-white hover:bg-slate-50"
                               }`}
                             >
-                              <span>{allergen.name}</span>
-                              <span className={`h-5 w-5 rounded-full border-2 ${active ? "border-emerald-600 bg-emerald-600" : "border-gray-300"}`} />
+                              <span className="flex items-center gap-2 flex-1 min-w-0">
+                                <span className="text-lg shrink-0">{visual.icon}</span>
+                                <span className="truncate">{allergen.name}</span>
+                              </span>
+                              <span className={`h-5 w-5 rounded-full border-2 shrink-0 ${active ? "border-[#1C9690] bg-[#1C9690]" : "border-gray-300"}`} />
                             </button>
                           );
                         })
@@ -213,7 +219,7 @@ const LoginModern: React.FC = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full rounded-[1.5rem] bg-emerald-600 py-4 text-lg font-bold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+                className="w-full rounded-[1.5rem] bg-[#1C9690] py-4 text-lg font-bold text-white transition hover:bg-[#169486] disabled:opacity-60"
               >
                 {isLoading ? "Procesando…" : buttonLabel}
               </button>

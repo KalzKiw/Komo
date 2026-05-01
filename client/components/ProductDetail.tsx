@@ -193,7 +193,7 @@ function CheckboxRow({
       <span className="select-none text-sm text-slate-800">{option.label}</span>
       <div className="flex shrink-0 items-center gap-3">
         {showPrice && option.priceAdd != null && option.priceAdd > 0 && (
-          <span className="text-sm font-semibold text-emerald-600">
+          <span className="text-sm font-semibold text-#1C9690">
             +{formatEuros(option.priceAdd)}
           </span>
         )}
@@ -201,7 +201,7 @@ function CheckboxRow({
           type="checkbox"
           checked={checked}
           onChange={(e) => onChange(option.id, e.target.checked)}
-          className="h-5 w-5 cursor-pointer rounded accent-emerald-600"
+          className="h-5 w-5 cursor-pointer rounded accent-#1C9690"
         />
       </div>
     </label>
@@ -227,7 +227,7 @@ function RadioRow({
         name={name}
         checked={checked}
         onChange={() => onChange(option.id)}
-        className="h-5 w-5 cursor-pointer accent-emerald-600"
+        className="h-5 w-5 cursor-pointer accent-#1C9690"
       />
     </label>
   );
@@ -439,7 +439,7 @@ export default function ProductDetail({
               <p className="mt-1 text-sm leading-relaxed text-slate-500">{product.description}</p>
             )}
           </div>
-          <p className="shrink-0 text-xl font-semibold text-emerald-600 tabular-nums">
+          <p className="shrink-0 text-xl font-semibold text-#1C9690 tabular-nums">
             {formatEuros(product.price)}
           </p>
         </div>
@@ -478,7 +478,7 @@ export default function ProductDetail({
               placeholder="Ej: sin aceite, bien caliente, para llevar…"
               rows={2}
               maxLength={200}
-              className="mt-2 w-full resize-none rounded-xl border border-gray-100 bg-gray-50 p-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              className="mt-2 w-full resize-none rounded-xl border border-gray-100 bg-gray-50 p-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-#44b6a1 focus:outline-none focus:ring-2 focus:ring-#2da38f/20"
             />
           </label>
         </div>
@@ -515,7 +515,7 @@ export default function ProductDetail({
           <button
             type="button"
             onClick={handleAdd}
-            className="flex flex-1 items-center justify-between rounded-2xl bg-emerald-600 px-5 py-3 font-bold text-white shadow-[0_8px_20px_rgba(5,150,105,0.35)] transition-colors active:bg-emerald-700"
+            className="flex flex-1 items-center justify-between rounded-2xl bg-#1C9690 px-5 py-3 font-bold text-white shadow-[0_8px_20px_rgba(5,150,105,0.35)] transition-colors active:bg-#169486"
           >
             <span className="text-[0.95rem]">Añadir al carrito</span>
             <span className="tabular-nums">{formatEuros(total)}</span>

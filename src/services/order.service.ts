@@ -124,7 +124,7 @@ export async function createOrder(user: AuthUser, payload: unknown): Promise<Rec
   const userAllergenSet = new Set((userAllergies ?? []).map((row) => row.allergen_id));
   const allergicConflict = (productAllergens ?? []).some((link) => userAllergenSet.has(link.allergen_id));
 
-  if (allergicConflict) {
+  if (allergicConflict && !data.acknowledgedAllergenWarning) {
     throw new AppError("Order rejected: selected products contain allergens in your profile", 409);
   }
 

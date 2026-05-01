@@ -67,7 +67,7 @@ Variables requeridas:
 - Produccion: npm run start
 
 ## 7. Swagger / OpenAPI
-- URL local: http://localhost:3000/api-docs
+- URL local: http://localhost:3001/api-docs
 - La API protegida usa cabecera x-user-role (no JWT real en este entorno).
 - Valores permitidos de x-user-role:
   - ADMIN

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Wallet, ShoppingBag, Coffee, UtensilsCrossed, ArrowDownCircle, AlertTriangle, GraduationCap, CheckCircle } from "lucide-react";
 import { useApi } from "../hooks/useApi";
 import { money } from "../lib/utils";
+import { allergenVisual } from "../lib/allergens";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -38,7 +39,7 @@ const STATUS_LABEL: Record<string, string> = {
 const STATUS_COLOR: Record<string, string> = {
   PENDING:        "bg-amber-100 text-amber-700",
   IN_PREPARATION: "bg-blue-100 text-blue-700",
-  READY:          "bg-emerald-100 text-emerald-700",
+  READY:          "bg-#c6efe7 text-#169486",
   DELIVERED:      "bg-gray-100 text-slate-500",
   CANCELLED:      "bg-red-100 text-red-600",
 };
@@ -151,7 +152,7 @@ export default function ChildProfileScreen({ studentId, studentName, onBack }: P
             {/* Stats row */}
             <div className="grid grid-cols-3 divide-x divide-gray-50 border-t border-gray-50">
               <div className="flex flex-col items-center py-3">
-                <Wallet className="h-4 w-4 text-emerald-500" />
+                <Wallet className="h-4 w-4 text-#2da38f" />
                 <p className="mt-1 font-mono text-base font-black tabular-nums text-slate-900">
                   {money(profile.walletBalance)}
                 </p>
@@ -177,7 +178,7 @@ export default function ChildProfileScreen({ studentId, studentName, onBack }: P
             {(profile.isBeneficiary || activeOrders > 0) && (
               <div className="flex gap-2 px-4 pb-4 pt-1">
                 {profile.isBeneficiary && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-#d9f4ee px-2.5 py-1 text-xs font-semibold text-#169486">
                     <CheckCircle className="h-3 w-3" />
                     Beneficiario
                   </span>
@@ -207,14 +208,18 @@ export default function ChildProfileScreen({ studentId, studentName, onBack }: P
               <p className="px-4 py-3 text-sm text-slate-400">Sin alérgenos registrados</p>
             ) : (
               <div className="flex flex-wrap gap-2 px-4 py-3">
-                {profile.allergens.map((a) => (
-                  <span
-                    key={a.id}
-                    className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700"
-                  >
-                    {a.name}
-                  </span>
-                ))}
+                {profile.allergens.map((a) => {
+                  const visual = allergenVisual(a.name);
+                  return (
+                    <span
+                      key={a.id}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700"
+                    >
+                      <span>{visual.icon}</span>
+                      {a.name}
+                    </span>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -247,7 +252,7 @@ export default function ChildProfileScreen({ studentId, studentName, onBack }: P
                   >
                     <span
                       className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                        isRefund ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-500"
+                        isRefund ? "bg-#c6efe7 text-#1C9690" : "bg-slate-100 text-slate-500"
                       }`}
                     >
                       <Icon className="h-4 w-4" />
@@ -259,7 +264,7 @@ export default function ChildProfileScreen({ studentId, studentName, onBack }: P
                     <div className="flex flex-col items-end gap-1">
                       <span
                         className={`text-sm font-bold tabular-nums ${
-                          isRefund ? "text-emerald-600" : "text-red-500"
+                          isRefund ? "text-#1C9690" : "text-red-500"
                         }`}
                       >
                         {isRefund ? "+" : "-"}{money(order.total)}

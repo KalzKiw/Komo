@@ -1,6 +1,6 @@
 {
-  "short_name": "CafeteriaSolo",
-  "name": "CafeteriaSolo App",
+  "short_name": "KOMO",
+  "name": "KOMO App",
   "icons": [
     {
       "src": "icon-192.png",
@@ -15,6 +15,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff"
+  "theme_color": "#1C9690",
+  "background_color": "#2D3748"
 }

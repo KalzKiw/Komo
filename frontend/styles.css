@@ -1,9 +1,10 @@
 :root {
-  --bg: #efeee8;
-  --ink: #17212a;
-  --muted: #61707e;
-  --brand: #0f996f;
-  --brand-soft: #0f7f61;
+  --bg: #eff4f3;
+  --ink: #2D3748;
+  --muted: #5d6b78;
+  --brand: #1C9690;
+  --brand-soft: #d9f4ee;
+  --brand-strong: #155b52;
   --warning-bg: #f6f0de;
   --warning-border: #ebc86e;
   --danger-bg: #f8ecef;

@@ -14,6 +14,11 @@ export type ApiProduct = {
   description: string | null;
   price: number;
   isActive: boolean;
+  allergens?: Array<{
+    id: string;
+    code: string;
+    name: string;
+  }>;
   isOfficialMenu?: boolean;
 };
 
@@ -129,7 +134,7 @@ export default function HomeScreen() {
               onClick={() => setCategory(cat.id)}
               className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
                 category === cat.id
-                  ? "bg-emerald-600 text-white shadow-sm"
+                  ? "bg-#1C9690 text-white shadow-sm"
                   : "bg-slate-100 text-slate-500 hover:bg-slate-200"
               }`}
             >
@@ -169,7 +174,7 @@ export default function HomeScreen() {
                 onClick={() => setDetailProduct(product)}
                 className="overflow-hidden rounded-2xl bg-white border border-slate-100 shadow-sm text-left transition-transform active:scale-[0.97]"
               >
-                <div className="relative h-28 overflow-hidden bg-gradient-to-br from-emerald-50 to-emerald-100">
+                <div className="relative h-28 overflow-hidden bg-gradient-to-br from-#d9f4ee to-#c6efe7">
                   <img
                     src={productImageUrl(product.id)}
                     alt={product.name}
@@ -187,7 +192,7 @@ export default function HomeScreen() {
                   {product.description && (
                     <p className="mt-0.5 text-xs text-slate-400 line-clamp-1">{product.description}</p>
                   )}
-                  <p className="mt-2 text-base font-bold tabular-nums text-emerald-600">
+                  <p className="mt-2 text-base font-bold tabular-nums text-#1C9690">
                     {money(product.price)}
                   </p>
                 </div>

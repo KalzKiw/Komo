@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { ArrowDownCircle, RefreshCw, Eye, ShoppingBag, Coffee, UtensilsCrossed, ArrowLeft, ChevronRight } from "lucide-react";
+import { ArrowDownCircle, RefreshCw, Eye, ShoppingBag, Coffee, UtensilsCrossed, ArrowLeft, ChevronRight, CreditCard } from "lucide-react";
 import type { UserRole } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
 import { money } from "../lib/utils";
+import BankCardModal from "../components/BankCardModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,7 +45,7 @@ function orderToMovement(order: OrderRow) {
 }
 
 function amountColor(amount: number) {
-  return amount >= 0 ? "text-emerald-600" : "text-red-500";
+  return amount >= 0 ? "text-#1C9690" : "text-red-500";
 }
 
 function amountLabel(amount: number) {
@@ -66,7 +67,7 @@ function MovementList({ orders, loading }: { orders: OrderRow[]; loading: boolea
   if (loading) {
     return (
       <div className="flex justify-center py-8">
-        <span className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-600" />
+        <span className="h-6 w-6 animate-spin rounded-full border-2 border-#92dbc8 border-t-#1C9690" />
       </div>
     );
   }
@@ -93,7 +94,7 @@ function MovementList({ orders, loading }: { orders: OrderRow[]; loading: boolea
           >
             <span
               className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                isTopup ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-500"
+                isTopup ? "bg-#c6efe7 text-#1C9690" : "bg-slate-100 text-slate-500"
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -120,6 +121,8 @@ function StudentWallet() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loadingBalance, setLoadingBalance] = useState(true);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [bankCardModalOpen, setBankCardModalOpen] = useState(false);
+  const [savedCard, setSavedCard] = useState<{ lastFourDigits: string } | null>(null);
 
   useEffect(() => {
     apiFetch<{ walletBalance: number }>("/api/me")
@@ -134,14 +137,31 @@ function StudentWallet() {
 
   const bal = balance ?? 0;
 
+  async function handleSaveCard(cardData: {
+    cardNumber: string;
+    cardholderName: string;
+    expiryMonth: string;
+    expiryYear: string;
+    cvv: string;
+  }) {
+    try {
+      // In a real app, you would send this to a secure backend endpoint
+      // For now, we'll just save the last 4 digits for display
+      const lastFour = cardData.cardNumber.slice(-4);
+      setSavedCard({ lastFourDigits: lastFour });
+    } catch (error) {
+      throw new Error("Error al guardar la tarjeta");
+    }
+  }
+
   return (
     <div
       className="h-full overflow-y-auto bg-gray-50 [&::-webkit-scrollbar]:hidden"
       style={{ scrollbarWidth: "none" }}
     >
-      <div className="relative w-full bg-emerald-600 px-4 pb-20 pt-10">
+      <div className="relative w-full bg-#1C9690 px-4 pb-20 pt-10">
         <h1 className="text-center text-lg font-bold text-white">Mi Monedero</h1>
-        <p className="mt-0.5 text-center text-xs font-medium text-emerald-200">Curso 2025-2026</p>
+        <p className="mt-0.5 text-center text-xs font-medium text-#92dbc8">Curso 2025-2026</p>
       </div>
 
       <div className="relative z-10 -mt-12 mx-4 rounded-3xl bg-white p-6 shadow-md">
@@ -157,7 +177,7 @@ function StudentWallet() {
         )}
         <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-gray-100">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 transition-all"
+            className="h-full rounded-full bg-gradient-to-r from-#44b6a1 to-#1C9690 transition-all"
             style={{ width: `${Math.min(100, (bal / 20) * 100)}%` }}
           />
         </div>
@@ -168,6 +188,34 @@ function StudentWallet() {
         <h2 className="mb-3 text-sm font-bold text-slate-700">Últimos movimientos</h2>
         <MovementList orders={orders} loading={loadingOrders} />
       </div>
+
+      <div className="px-4 pb-6">
+        <h2 className="mb-3 text-sm font-bold text-slate-700">Métodos de pago</h2>
+        <button
+          type="button"
+          onClick={() => setBankCardModalOpen(true)}
+          className="w-full flex items-center gap-3 rounded-2xl bg-white shadow-sm px-4 py-4 text-left transition hover:bg-slate-50"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+            <CreditCard className="h-5 w-5 text-blue-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-slate-900">Tarjeta de banco</p>
+            <p className="text-xs text-slate-500">
+              {savedCard ? `Tarjeta ****${savedCard.lastFourDigits}` : "Agregar tarjeta"}
+            </p>
+          </div>
+          <span className="text-slate-400 text-sm">
+            {savedCard ? "Cambiar" : "Agregar"}
+          </span>
+        </button>
+      </div>
+
+      <BankCardModal
+        open={bankCardModalOpen}
+        onClose={() => setBankCardModalOpen(false)}
+        onSave={handleSaveCard}
+      />
     </div>
   );
 }
@@ -336,7 +384,7 @@ function ParentWallet() {
                   type="button"
                   disabled={recharging === child.studentId}
                   onClick={() => handleRecharge(child)}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white transition-all hover:bg-emerald-700 active:scale-[0.97] disabled:opacity-60"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-#1C9690 py-2.5 text-xs font-bold text-white transition-all hover:bg-#169486 active:scale-[0.97] disabled:opacity-60"
                 >
                   {recharging === child.studentId ? (
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />

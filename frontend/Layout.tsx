@@ -79,7 +79,7 @@ export default function Layout({
       <header className="z-50 h-16 shrink-0 bg-white/90 backdrop-blur-md shadow-sm">
         <div className="mx-auto flex h-full w-full max-w-md items-center justify-between px-4">
           <div className="flex min-w-0 items-center gap-2">
-            <div className="h-8 w-8 shrink-0 rounded-xl bg-emerald-600/10 text-emerald-600 grid place-items-center font-bold">
+            <div className="h-8 w-8 shrink-0 rounded-xl bg-#1C9690/10 text-#1C9690 grid place-items-center font-bold">
               C
             </div>
             <p className="truncate text-[15px] font-semibold tracking-tight">{headerTitle}</p>
@@ -100,7 +100,7 @@ export default function Layout({
               onClick={() => setIsProfileOpen((open) => !open)}
               className="inline-flex h-10 items-center gap-1 rounded-full bg-slate-100 px-2 text-slate-700 transition-all hover:bg-slate-200 active:scale-95"
             >
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-semibold text-white">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-#1C9690 text-xs font-semibold text-white">
                 {userInitials}
               </span>
               <ChevronDown className="h-4 w-4 text-slate-500" />

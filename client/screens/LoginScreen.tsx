@@ -21,15 +21,15 @@ export default function LoginScreen() {
   }
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center bg-gradient-to-b from-emerald-700 to-emerald-900 px-5">
+    <div className="flex min-h-svh flex-col items-center justify-center bg-gradient-to-b from-[#1C9690] to-[#2D3748] px-5">
       {/* Logo */}
       <div className="mb-8 flex flex-col items-center gap-3">
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 shadow-lg backdrop-blur-sm">
-          <span className="text-3xl font-black text-white">C</span>
+          <span className="text-3xl font-black text-white">K</span>
         </div>
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-white">CafES</h1>
-          <p className="text-sm text-emerald-200/80">Cafetería Escolar Digital</p>
+          <h1 className="text-2xl font-bold text-white">KOMO</h1>
+          <p className="text-sm text-[#d9f4ee]">Cafetería Escolar Digital</p>
         </div>
       </div>
 
@@ -49,7 +49,7 @@ export default function LoginScreen() {
               placeholder="student1@cafes.app"
               required
               autoComplete="email"
-              className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+              className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-#2da38f focus:ring-2 focus:ring-#2da38f/20"
             />
           </label>
 
@@ -64,7 +64,7 @@ export default function LoginScreen() {
               placeholder="••••••••"
               required
               autoComplete="current-password"
-              className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+              className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-#2da38f focus:ring-2 focus:ring-#2da38f/20"
             />
           </label>
 
@@ -77,7 +77,7 @@ export default function LoginScreen() {
           <button
             type="submit"
             disabled={isLoading}
-            className="mt-1 rounded-xl bg-emerald-600 py-3.5 text-sm font-bold text-white shadow-[0_6px_16px_rgba(5,150,105,0.35)] transition-colors active:bg-emerald-700 disabled:opacity-60"
+            className="mt-1 rounded-xl bg-#1C9690 py-3.5 text-sm font-bold text-white shadow-[0_6px_16px_rgba(5,150,105,0.35)] transition-colors active:bg-#169486 disabled:opacity-60"
           >
             {isLoading ? "Entrando…" : "Entrar"}
           </button>
@@ -107,7 +107,7 @@ export default function LoginScreen() {
           <button
             type="button"
             onClick={() => window.dispatchEvent(new CustomEvent("switchToRegister"))}
-            className="mt-2 font-semibold text-emerald-600 hover:text-emerald-700 text-sm"
+            className="mt-2 font-semibold text-#1C9690 hover:text-#169486 text-sm"
           >
             Crear cuenta
           </button>

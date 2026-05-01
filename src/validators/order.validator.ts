@@ -12,7 +12,8 @@ export const createOrderSchema = z.object({
         kitchenNote: z.string().trim().max(280).optional()
       })
     )
-    .min(1)
+    .min(1),
+  acknowledgedAllergenWarning: z.boolean().optional().default(false)
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;

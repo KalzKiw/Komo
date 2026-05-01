@@ -1,6 +1,26 @@
 @import "tailwindcss";
 
+:root {
+  --komo-mint: #1C9690;
+  --komo-carbon: #2D3748;
+  --komo-mint-soft: #d9f4ee;
+  --komo-carbon-soft: #4b5563;
+}
+
 html, body, #root {
   overflow-x: hidden;
   max-width: 100vw;
+}
+
+.bg-komo {
+  background-color: var(--komo-mint);
+}
+.text-komo {
+  color: var(--komo-carbon);
+}
+.text-komo-light {
+  color: #ffffff;
+}
+.border-komo {
+  border-color: var(--komo-mint);
 }

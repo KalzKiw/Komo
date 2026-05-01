@@ -63,7 +63,6 @@ export async function listMyAllergiesController(req: Request, res: Response, nex
 }
 
 export async function listAllAllergensController(req: Request, res: Response, next: NextFunction): Promise<void> {
-  if (!req.user) { res.status(401).json({ message: "Unauthorized" }); return; }
   try {
     const result = await listAllAllergens();
     res.status(200).json(result);

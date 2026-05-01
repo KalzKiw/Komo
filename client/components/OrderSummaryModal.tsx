@@ -30,7 +30,7 @@ const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl p-7 flex flex-col">
-        <h2 className="font-extrabold text-2xl mb-2 text-emerald-700 text-center">
+        <h2 className="font-extrabold text-2xl mb-2 text-#169486 text-center">
           {feedback && feedback.includes("añadido al carrito") ? "Repetir pedido" : "¡Pedido realizado!"}
         </h2>
         {/* Feedback solo si es error, no si es éxito */}
@@ -70,7 +70,7 @@ const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({
           )}
           <div className="flex justify-between mt-6 items-center">
             <span className="text-lg font-bold text-slate-700">Total</span>
-            <span className="text-2xl font-extrabold text-emerald-700">{total.toFixed(2)}€</span>
+            <span className="text-2xl font-extrabold text-#169486">{total.toFixed(2)}€</span>
           </div>
         </div>
         <div className="flex gap-2 mt-2">
@@ -81,7 +81,7 @@ const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({
             Cerrar
           </button>
           <button
-            className="flex-1 rounded-xl bg-emerald-600 py-2 font-semibold text-white hover:bg-emerald-700 transition"
+            className="flex-1 rounded-xl bg-#1C9690 py-2 font-semibold text-white hover:bg-#169486 transition"
             onClick={onGoToOrders}
           >
             Ir a pedidos

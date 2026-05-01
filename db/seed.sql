@@ -20,11 +20,24 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO allergens (id, code, name)
 VALUES
   ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'GLUTEN', 'Gluten'),
-  ('ffffffff-ffff-ffff-ffff-ffffffffffff', 'LACTOSE', 'Lactosa')
+  ('ffffffff-ffff-ffff-ffff-ffffffffffff', 'MILK', 'Leche'),
+  ('11111111-1111-1111-1111-111111111111', 'EGGS', 'Huevos'),
+  ('22222222-2222-2222-2222-222222222222', 'FISH', 'Pescado'),
+  ('33333333-3333-3333-3333-333333333333', 'PEANUTS', 'Cacahuetes'),
+  ('44444444-4444-4444-4444-444444444444', 'SOYBEANS', 'Soja'),
+  ('55555555-5555-5555-5555-555555555555', 'TREE_NUTS', 'Frutos secos'),
+  ('66666666-6666-6666-6666-666666666666', 'CELERY', 'Apio'),
+  ('77777777-7777-7777-7777-777777777777', 'MUSTARD', 'Mostaza'),
+  ('88888888-8888-8888-8888-888888888888', 'SESAME', 'Sésamo'),
+  ('99999999-9999-9999-9999-999999999999', 'SULPHITES', 'Sulfitos'),
+  ('aaaaaaaa-0000-0000-0000-000000000000', 'LUPINS', 'Altramuces'),
+  ('bbbbbbbb-0000-0000-0000-000000000000', 'MOLLUSCS', 'Moluscos'),
+  ('cccccccc-0000-0000-0000-000000000000', 'CRUSTACEANS', 'Crustáceos')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO user_allergies (user_id, allergen_id)
 VALUES
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'),
   ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee')
 ON CONFLICT (user_id, allergen_id) DO NOTHING;
 
@@ -32,13 +45,17 @@ INSERT INTO products (id, name, description, price, is_official_menu, is_active)
 VALUES
   ('12121212-1212-1212-1212-121212121212', 'Bocadillo Oficial', 'Menu oficial escolar', 2.50, true, true),
   ('13131313-1313-1313-1313-131313131313', 'Zumo Naranja', 'Zumo natural 250ml', 1.20, false, true),
-  ('14141414-1414-1414-1414-141414141414', 'Croissant', 'Croissant artesanal', 1.00, false, true)
+  ('14141414-1414-1414-1414-141414141414', 'Croissant', 'Croissant artesanal', 1.00, false, true),
+  ('15151515-0000-0000-0000-000000000001', 'Sándwich de Jamón', 'Pan con jamón y queso', 2.00, false, true),
+  ('15151515-0000-0000-0000-000000000002', 'Pasta con Cacahuete', 'Pasta con salsa de cacahuete', 3.50, false, true)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO product_allergens (product_id, allergen_id)
 VALUES
   ('12121212-1212-1212-1212-121212121212', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'),
-  ('14141414-1414-1414-1414-141414141414', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee')
+  ('14141414-1414-1414-1414-141414141414', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'),
+  ('15151515-0000-0000-0000-000000000001', 'ffffffff-ffff-ffff-ffff-ffffffffffff'),
+  ('15151515-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333')
 ON CONFLICT (product_id, allergen_id) DO NOTHING;
 
 INSERT INTO orders (

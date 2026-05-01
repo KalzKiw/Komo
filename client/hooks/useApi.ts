@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
+import { apiUrl } from "../lib/api";
 
 /**
  * Returns a `apiFetch` wrapper that automatically injects auth headers
@@ -10,7 +11,7 @@ export function useApi() {
 
   const apiFetch = useCallback(
     async <T>(input: string, init: RequestInit = {}): Promise<T> => {
-      const res = await fetch(input, {
+      const res = await fetch(apiUrl(input), {
         ...init,
         headers: {
           "Content-Type": "application/json",

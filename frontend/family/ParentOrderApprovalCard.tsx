@@ -14,7 +14,7 @@ function centsToEur(value: number): string {
 
 function renderAllergens(allergens: string[]): ReactElement {
   if (allergens.length === 0) {
-    return <span className="text-xs text-emerald-700">Sin alergenos declarados</span>;
+    return <span className="text-xs text-#169486">Sin alergenos declarados</span>;
   }
 
   return (
@@ -67,7 +67,7 @@ export default function ParentOrderApprovalCard({
         <button
           type="button"
           onClick={() => onApprove(order.id)}
-          className="col-span-7 rounded-lg bg-emerald-600 px-3 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 active:scale-[0.99]"
+          className="col-span-7 rounded-lg bg-#1C9690 px-3 py-3 text-sm font-semibold text-white transition hover:bg-#169486 active:scale-[0.99]"
         >
           Aprobar y pagar ({centsToEur(order.totalCents)})
         </button>
