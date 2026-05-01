@@ -1,72 +1,92 @@
-# 📝 Manual de Usuario
+# Manual de Usuario
 
-## Instalación y Despliegue
+## Acceso a la Aplicación
 
-### Instalación en PC
-1. Descarga el repositorio desde GitHub o recibe el instalador.
-2. Instala Node.js y npm si no los tienes.
-3. Ejecuta en terminal:
-	```bash
-	npm install
-	npm run dev
-	```
-4. Abre el navegador en `http://localhost:5173`.
+La aplicación se usa desde un navegador web. En desarrollo se puede abrir desde `http://localhost:5173` al levantar el frontend con Vite. En producción se accede desde la URL publicada en Vercel.
 
-### Instalación como PWA (Progresive Web App)
-1. Accede a la app desde tu navegador (Chrome, Edge, Firefox).
-2. Haz clic en el icono de instalación (en la barra de direcciones o menú del navegador).
-3. Sigue las instrucciones para añadir la app a tu escritorio o pantalla de inicio.
+En la pantalla inicial existen accesos rápidos de demostración para:
 
-### Despliegue en Producción
-1. Ejecuta `npm run build` para generar los archivos optimizados.
-2. Sube el contenido de la carpeta `dist` a tu servidor o servicio de hosting.
-3. Configura HTTPS para habilitar funcionalidades PWA.
+- Alumno: `student1@cafes.app`
+- Padre/madre: `parent1@cafes.app`
+- Administrador: `admin1@cafes.app`
 
----
+## Registro e Inicio de Sesión
 
-## Uso de la App
+1. Entrar en la pantalla de login.
+2. Introducir correo y contraseña.
+3. Pulsar **Entrar**.
+4. Si se desea una cuenta nueva, usar la pestaña **Registro**.
+5. En el registro se puede seleccionar rol de alumno o familiar y declarar alérgenos.
 
-### Registro y Login
-1. Haz clic en "Registrarse" para crear una cuenta nueva.
-2. Ingresa tus datos y confirma el registro.
-3. Accede con tu usuario y contraseña.
+## Uso como Alumno
 
-### Navegación Principal
-- **Inicio:** Visualiza productos y novedades.
-- **Perfil:** Consulta y edita tus datos personales.
-- **Carrito:** Añade productos y realiza pedidos.
-- **Órdenes:** Consulta el historial de pedidos.
+### Catálogo
 
-### Realizar un Pedido
-1. Navega por el catálogo de productos.
-2. Haz clic en un producto para ver detalles.
-3. Selecciona cantidad y opciones (alérgenos, personalizaciones).
-4. Añade al carrito.
-5. Accede al carrito y confirma tu pedido.
-6. Recibirás una notificación cuando esté listo.
+1. Acceder a **Inicio**.
+2. Filtrar productos por categoría.
+3. Abrir un producto para ver detalle, alérgenos, información sanitaria y opciones.
+4. Elegir cantidad y personalizaciones.
+5. Añadir al carrito.
 
-### Gestión de Perfil y Familia
-- Puedes añadir perfiles de hijos o familiares.
-- Configura restricciones alimentarias y saldo de monedero.
+### Carrito y Pedido
 
-### Notificaciones
-La app puede enviar notificaciones sobre el estado de tus pedidos si la instalas como PWA y das permisos.
+1. Abrir el carrito desde el botón central inferior.
+2. Revisar productos, cantidades y total.
+3. Confirmar el pedido.
+4. Si hay conflicto con alérgenos declarados, la app muestra un aviso antes de continuar.
 
----
+### Pedidos
 
-## Preguntas Frecuentes (FAQ)
+En **Pedidos** se pueden consultar:
 
-**¿Cómo recupero mi contraseña?**
-En la pantalla de login, haz clic en "¿Olvidaste tu contraseña?" y sigue las instrucciones para restablecerla.
+- Pedidos pendientes.
+- Pedidos completados.
+- Detalle de productos.
+- Número de recogida.
+- Estado del pedido.
 
-**¿Cómo hago un pedido?**
-Selecciona productos, añádelos al carrito y confirma tu compra desde el carrito.
+### Monedero
 
-**¿Puedo usar la app sin conexión?**
-Sí, si la instalas como PWA, algunas funciones estarán disponibles offline.
+En **Monedero** se muestra:
 
-**¿Cómo añado saldo al monedero?**
-Desde tu perfil, accede a la sección de monedero y sigue las instrucciones para recargar.
+- Saldo disponible.
+- Últimos movimientos.
+- Pedidos como cargos o devoluciones.
+- Gestión visual de método de pago demo.
 
-**¿Cómo contacto con soporte?**
-En el menú principal, busca la opción "Soporte" o escribe a soporte@cafeteriasolo.com.
+### Perfil
+
+En **Perfil** se consultan datos del usuario, saldo, pedidos, alérgenos y opciones de cuenta.
+
+## Uso como Familiar
+
+La cuenta familiar permite:
+
+- Generar códigos de vinculación.
+- Vincularse con alumnos.
+- Consultar hijos vinculados.
+- Recargar saldo del monedero del alumno.
+- Revisar movimientos y pedidos recientes.
+
+## Uso como Administrador
+
+El panel de administración permite:
+
+- Consultar previsión de producción.
+- Ver cola KDS.
+- Gestionar productos.
+- Consultar y actualizar pedidos.
+- Activar o revocar rol de delegado.
+- Consultar vínculos familiares.
+- Configurar horarios de corte.
+
+## Preguntas Frecuentes
+
+**¿La app funciona sin backend?**  
+No. El frontend necesita la API para login, productos, pedidos y perfil.
+
+**¿Puedo crear pedidos con alérgenos?**  
+Sí, pero la aplicación muestra una advertencia si detecta un alérgeno declarado por el usuario.
+
+**¿Puedo usarla como PWA offline?**  
+Actualmente se prioriza el uso online. El service worker se ha desactivado para evitar cachés obsoletas durante el despliegue.

@@ -1,64 +1,95 @@
-# 🛠️ Manual de Desarrollador
+# Manual de Desarrollador
 
-## Funcionalidades
+## Requisitos
 
-- **Autenticación de usuarios:** Registro, login, recuperación de contraseña y gestión de sesiones.
-- **Gestión de perfiles familiares:** Permite añadir hijos o familiares, configurar restricciones alimentarias y gestionar el saldo del monedero.
-- **Catálogo de productos:** Visualización de productos, detalles, alérgenos y personalizaciones.
-- **Carrito y pedidos:** Añadir productos al carrito, confirmar pedidos, historial y notificaciones de estado.
-- **Panel de administración:** Gestión de productos, usuarios y configuración general (si aplica).
-- **PWA:** Instalación en dispositivos, funcionamiento offline y notificaciones push.
+- Node.js 22 o compatible.
+- npm.
+- Proyecto Supabase con las tablas del esquema.
+- Variables de entorno configuradas.
 
----
+## Instalación Local
 
-## Levantar entorno local
-1. Clona el repositorio:
-	```bash
-	git clone <url-repositorio>
-	```
-2. Instala dependencias:
-	```bash
-	npm install
-	```
-3. Configura las variables de entorno:
-	- Crea un archivo `.env` en la raíz con las variables necesarias (ver documentación técnica).
-4. Ejecuta la app en modo desarrollo:
-	```bash
-	npm run dev
-	```
-5. Accede a `http://localhost:5173` en tu navegador.
+```bash
+git clone <url-repositorio>
+cd CafeteriaSolo
+npm install
+cp .env.example .env
+```
 
----
+Variables principales:
 
-## Scripts útiles
-- `npm run dev` — Levanta el entorno de desarrollo.
-- `npm run test` — Ejecuta los tests.
-- `npm run build` — Genera la build de producción.
-- `npm run lint` — Linter para mantener el código limpio.
+- `PORT`: puerto del backend. Por defecto `3001`.
+- `NODE_ENV`: `development`, `test` o `production`.
+- `SUPABASE_URL`: URL del proyecto Supabase.
+- `SUPABASE_SERVICE_ROLE_KEY`: clave de servicio.
+- `BYPASS_ORDER_CUTOFF`: permite omitir el cierre horario durante pruebas.
+- `VITE_API_BASE_URL`: vacío si frontend y backend comparten dominio; URL absoluta si se separan.
 
----
+## Ejecución en Desarrollo
 
-## Buenas prácticas
-- Realiza commits claros y descriptivos.
-- Usa ramas para nuevas funcionalidades o correcciones.
-- Haz pull requests y solicita revisión antes de fusionar.
-- Mantén la documentación actualizada.
-- Escribe tests para nuevas funcionalidades.
+Backend:
 
----
+```bash
+npm run dev
+```
 
-## Estructura de carpetas relevante
-- `/client`: Frontend principal (React)
-- `/src`: Backend (Node.js/Express)
-- `/db`: Migraciones y seeds
-- `/frontend`: Versión legacy o experimental
+Frontend:
 
----
+```bash
+npm run dev:client
+```
 
-## Variables de entorno
-Consulta el archivo `.env.example` o la documentación técnica para conocer y configurar las variables necesarias (API keys, URL de la base de datos, etc).
+El frontend se abre en `http://localhost:5173` y usa proxy hacia `http://localhost:3001`.
 
----
+## Scripts Útiles
 
-## Contacto y soporte
-Para dudas técnicas, contacta con el responsable del proyecto o abre un issue en el repositorio.
+- `npm run dev`: backend en modo desarrollo.
+- `npm run dev:client`: frontend Vite.
+- `npm run build`: compila backend y frontend.
+- `npm run build:client`: compila solo frontend.
+- `npm start`: arranca `dist/server.js`.
+- `npm test`: ejecuta tests Vitest.
+
+## Flujo Backend
+
+La API sigue una estructura por capas:
+
+1. Rutas en `src/routes`.
+2. Controladores en `src/controllers`.
+3. Validación con Zod en `src/validators`.
+4. Lógica de negocio en `src/services`.
+5. Acceso a Supabase desde `src/config/supabase.ts`.
+
+## Despliegue
+
+### Vercel
+
+El frontend se genera en `client-dist`. La configuración está en `vercel.json`.
+
+- Build command: `npm run build:client`.
+- Output directory: `client-dist`.
+- `/api/*` se reescribe hacia una única función `api/index.ts`, que delega en Express.
+
+### Node
+
+Para despliegue como servicio Node:
+
+```bash
+npm run build
+npm start
+```
+
+El backend servirá la build React desde `client-dist`.
+
+## Base de Datos
+
+1. Ejecutar `db/schema.sql`.
+2. Aplicar migraciones de `db/migrations`.
+3. Cargar datos demo con `db/seed.sql` si se necesita entorno de pruebas.
+
+## Buenas Prácticas
+
+- Mantener `.env` fuera de Git.
+- Validar cambios con `npm run build` y `npm test`.
+- Documentar endpoints y reglas de negocio.
+- Evitar duplicar lógica entre frontend y backend.
