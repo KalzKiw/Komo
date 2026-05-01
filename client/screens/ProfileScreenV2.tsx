@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
 import AllergenPickerScreen from "./AllergenPickerScreen";
 import BankCardModal from "../components/BankCardModal";
 import StudentFamilyLink from "../components/family/StudentFamilyLink";
 import { allergenVisual } from "../lib/allergens";
-
-const currency = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" });
 
 export default function ProfileScreenV2() {
   const { logout } = useAuth();
@@ -21,7 +19,6 @@ export default function ProfileScreenV2() {
     walletBalance: number;
     courseName: string | null;
   }>(null);
-  const [orders, setOrders] = useState<Array<{ status: string; total: number }>>([]);
   const [allergies, setAllergies] = useState<Array<{ code: string; name: string }>>([]);
   const [allergyLabel, setAllergyLabel] = useState("Sin configurar");
   const [phone, setPhone] = useState<string | null>(null);
@@ -42,12 +39,10 @@ export default function ProfileScreenV2() {
       apiFetch<{ id: string; email: string; fullName: string; role: string; isBeneficiary: boolean; walletBalance: number; courseName: string | null }>(
         "/api/me"
       ),
-      apiFetch<{ data: Array<{ status: string; total: number }> }>("/api/me/orders?limit=100"),
       apiFetch<{ data: Array<{ code: string; name: string }> }>("/api/me/allergies"),
     ])
-      .then(([me, ordersRes, allergiesRes]) => {
+      .then(([me, allergiesRes]) => {
         setProfile(me);
-        setOrders(ordersRes.data ?? []);
         const items = allergiesRes.data ?? [];
         setAllergies(items);
         setAllergyLabel(items.length === 0 ? "Sin configurar" : items.map((a) => a.name).join(", "));
@@ -55,16 +50,6 @@ export default function ProfileScreenV2() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [apiFetch]);
-
-  const activeOrders = useMemo(
-    () => orders.filter((o) => ["PENDING", "IN_PREPARATION", "READY"].includes(o.status)).length,
-    [orders]
-  );
-
-  const totalSpent = useMemo(
-    () => orders.filter((o) => o.status === "DELIVERED").reduce((sum, o) => sum + (o.total ?? 0), 0),
-    [orders]
-  );
 
   async function handleSaveCard(cardData: {
     cardNumber: string;
@@ -114,7 +99,7 @@ export default function ProfileScreenV2() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center pb-20">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#92dbc8] border-t-#1C9690" />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#92dbc8] border-t-[#1C9690]" />
       </div>
     );
   }
@@ -137,28 +122,6 @@ export default function ProfileScreenV2() {
             </div>
             <h1 className="text-xl font-bold text-slate-900">{profile?.fullName ?? "Usuario"}</h1>
             <p className="mt-2 text-sm text-slate-500">{profile?.courseName ?? "Curso no asignado"}</p>
-          </div>
-        </section>
-
-        <section className="flex justify-center mb-6">
-          <div className="flex items-center gap-3 rounded-full bg-[#1C9690] px-6 py-3 text-white shadow-md">
-            <span className="text-sm font-semibold">Saldo</span>
-            <span className="text-lg font-bold">{currency.format(profile?.walletBalance ?? 0)}</span>
-          </div>
-        </section>
-
-        <section className="grid grid-cols-3 gap-3 mb-6">
-          <div className="rounded-3xl bg-white p-4 text-center shadow-sm border border-slate-100">
-            <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">Pedidos</p>
-            <p className="mt-2 text-xl font-bold text-slate-900">{orders.length}</p>
-          </div>
-          <div className="rounded-3xl bg-white p-4 text-center shadow-sm border border-slate-100">
-            <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">En curso</p>
-            <p className="mt-2 text-xl font-bold text-slate-900">{activeOrders}</p>
-          </div>
-          <div className="rounded-3xl bg-white p-4 text-center shadow-sm border border-slate-100">
-            <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">Gastado</p>
-            <p className="mt-2 text-xl font-bold text-slate-900">{currency.format(totalSpent)}</p>
           </div>
         </section>
 
