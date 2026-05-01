@@ -118,10 +118,27 @@ export default function HomeScreen() {
   return (
     <div className="flex h-full flex-col overflow-hidden bg-gray-50">
       {/* Header */}
-      <div className="shrink-0 bg-white px-4 pt-5 pb-3 shadow-sm">
-        <div className="mb-3">
-          <h1 className="text-xl font-bold text-slate-900">Productos</h1>
-          <p className="text-xs text-slate-400">Cierre a las 09:05</p>
+      <div className="shrink-0 bg-white px-4 pt-4 pb-3 shadow-sm">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <img
+              src="/logotipo-transparente.png"
+              alt="KOMO"
+              className="h-11 w-auto object-contain"
+            />
+            <p className="mt-1 text-xs font-medium text-slate-400">Cafetería Escolar Digital</p>
+          </div>
+          <div className="shrink-0 rounded-2xl bg-[#d9f4ee] px-3 py-2 text-right">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-[#1C9690]">Cierre</p>
+            <p className="text-sm font-bold tabular-nums text-slate-800">09:05</p>
+          </div>
+        </div>
+
+        <div className="mb-3 flex items-end justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-slate-900">Productos</h1>
+            <p className="text-xs text-slate-400">{filtered.length} disponibles</p>
+          </div>
         </div>
 
         {/* Category pills */}

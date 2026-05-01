@@ -138,8 +138,12 @@ const LoginModern: React.FC = () => {
 
       <main className="w-full max-w-md mt-2">
         <header className="mb-10 text-center">
-          <div className="inline-flex items-center justify-center mb-6">
-            <h1 className="text-[#1C9690] font-bold italic text-3xl tracking-tight">KOMO</h1>
+          <div className="mb-5 flex justify-center">
+            <img
+              src="/logotipo-transparente.png"
+              alt="KOMO"
+              className="h-20 w-auto object-contain"
+            />
           </div>
           <p className="text-[#2D3748] font-body text-lg leading-relaxed">
             Cafetería Escolar Digital
