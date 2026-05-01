@@ -14,36 +14,83 @@ const ACCOUNT_ROLES = [
   { value: "PARENT", label: "Padre" },
 ] as const;
 
+type RegisterStep = 1 | 2 | 3;
+
 const LoginModern: React.FC = () => {
   const { login, register, state } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
+  const [registerStep, setRegisterStep] = useState<RegisterStep>(1);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<(typeof ACCOUNT_ROLES)[number]["value"]>("STUDENT");
   const [allAllergens, setAllAllergens] = useState<Array<{ id: string; code: string; name: string }>>([]);
   const [selectedAllergens, setSelectedAllergens] = useState<Set<string>>(new Set());
   const [loadingAllergens, setLoadingAllergens] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
   const isLoading = state.status === "loading";
-  const errorMsg = state.status === "unauthenticated" ? state.error : undefined;
+  const errorMsg = localError ?? (state.status === "unauthenticated" ? state.error : undefined);
 
   useEffect(() => {
-    if (mode !== "register") return;
+    if (mode !== "register" || registerStep !== 3 || allAllergens.length > 0) return;
     setLoadingAllergens(true);
     fetch(apiUrl("/api/allergens"))
       .then((res) => res.json())
       .then((data) => setAllAllergens(data.data ?? []))
       .catch(() => setAllAllergens([]))
       .finally(() => setLoadingAllergens(false));
-  }, [mode]);
+  }, [allAllergens.length, mode, registerStep]);
 
   const selectedCount = selectedAllergens.size;
   const buttonLabel = mode === "login" ? "Entrar" : "Crear cuenta";
+
+  function switchMode(nextMode: "login" | "register") {
+    setMode(nextMode);
+    setRegisterStep(1);
+    setLocalError(null);
+  }
+
+  function validateCredentialsStep() {
+    if (!email.trim()) {
+      setLocalError("Introduce un correo válido.");
+      return false;
+    }
+    if (password.length < 6) {
+      setLocalError("La contraseña debe tener al menos 6 caracteres.");
+      return false;
+    }
+    if (password !== confirmPassword) {
+      setLocalError("Las contraseñas no coinciden.");
+      return false;
+    }
+    setLocalError(null);
+    return true;
+  }
+
+  function validateProfileStep() {
+    if (fullName.trim().length < 3) {
+      setLocalError("Introduce tu nombre completo.");
+      return false;
+    }
+    setLocalError(null);
+    return true;
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (mode === "register") {
+      if (registerStep === 1) {
+        if (validateCredentialsStep()) setRegisterStep(2);
+        return;
+      }
+
+      if (registerStep === 2) {
+        if (validateProfileStep()) setRegisterStep(3);
+        return;
+      }
+
       await register({
         email,
         password,
@@ -105,7 +152,7 @@ const LoginModern: React.FC = () => {
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setMode(tab.id as "login" | "register")}
+                onClick={() => switchMode(tab.id as "login" | "register")}
                 className={`rounded-3xl py-3 text-sm font-semibold transition ${
                   mode === tab.id
                     ? "bg-[#1C9690] text-white"
@@ -121,46 +168,73 @@ const LoginModern: React.FC = () => {
             <h2 className="text-primary font-headline text-3xl font-bold mb-6 text-center tracking-tight">
               {mode === "login" ? "Iniciar Sesión" : "Crear Cuenta"}
             </h2>
-            <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
-              {mode === "register" && (
-                <label className="flex flex-col gap-2 text-sm text-slate-700">
-                  Nombre completo
-                  <input
-                    value={fullName}
-                    onChange={(event) => setFullName(event.target.value)}
-                    placeholder="Ej. Ana Pérez"
-                    className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-[#1C9690] focus:ring-2 focus:ring-[#1C9690]/20"
-                    required
+            {mode === "register" && (
+              <div className="mb-6 flex items-center justify-center gap-2">
+                {[1, 2, 3].map((step) => (
+                  <span
+                    key={step}
+                    className={`h-2 rounded-full transition-all ${
+                      registerStep === step ? "w-8 bg-[#1C9690]" : "w-2 bg-slate-200"
+                    }`}
                   />
-                </label>
+                ))}
+              </div>
+            )}
+            <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
+              {(mode === "login" || registerStep === 1) && (
+                <>
+                  <label className="flex flex-col gap-2 text-sm text-slate-700">
+                    Correo
+                    <input
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      type="email"
+                      placeholder="usuario@colegio.edu"
+                      className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-[#2da38f] focus:ring-2 focus:ring-[#2da38f]/20"
+                      required
+                    />
+                  </label>
+
+                  <label className="flex flex-col gap-2 text-sm text-slate-700">
+                    Contraseña
+                    <input
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      type="password"
+                      placeholder="••••••••"
+                      className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-[#2da38f] focus:ring-2 focus:ring-[#2da38f]/20"
+                      required
+                    />
+                  </label>
+
+                  {mode === "register" && (
+                    <label className="flex flex-col gap-2 text-sm text-slate-700">
+                      Repite la contraseña
+                      <input
+                        value={confirmPassword}
+                        onChange={(event) => setConfirmPassword(event.target.value)}
+                        type="password"
+                        placeholder="••••••••"
+                        className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-[#2da38f] focus:ring-2 focus:ring-[#2da38f]/20"
+                        required
+                      />
+                    </label>
+                  )}
+                </>
               )}
 
-              <label className="flex flex-col gap-2 text-sm text-slate-700">
-                Correo
-                <input
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  type="email"
-                  placeholder="usuario@colegio.edu"
-                  className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-[#2da38f] focus:ring-2 focus:ring-[#2da38f]/20"
-                  required
-                />
-              </label>
-
-              <label className="flex flex-col gap-2 text-sm text-slate-700">
-                Contraseña
-                <input
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  type="password"
-                  placeholder={mode === "login" ? "••••••••" : "Opcional para registro"}
-                  className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-[#2da38f] focus:ring-2 focus:ring-[#2da38f]/20"
-                  required={mode === "login"}
-                />
-              </label>
-
-              {mode === "register" && (
+              {mode === "register" && registerStep === 2 && (
                 <div className="rounded-2xl border border-gray-200 bg-slate-50 p-4">
+                  <label className="mb-4 flex flex-col gap-2 text-sm text-slate-700">
+                    Nombre completo
+                    <input
+                      value={fullName}
+                      onChange={(event) => setFullName(event.target.value)}
+                      placeholder="Ej. Ana Pérez"
+                      className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#1C9690] focus:ring-2 focus:ring-[#1C9690]/20"
+                      required
+                    />
+                  </label>
                   <p className="mb-3 text-xs uppercase tracking-[0.2em] text-slate-500">Tipo de cuenta</p>
                   <div className="grid grid-cols-2 gap-2">
                     {ACCOUNT_ROLES.map((item) => (
@@ -178,37 +252,44 @@ const LoginModern: React.FC = () => {
                       </button>
                     ))}
                   </div>
+                </div>
+              )}
 
-                  <div className="mt-4">
-                    <p className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-500">Alérgenos</p>
-                    <div className="grid gap-2">
-                      {loadingAllergens ? (
-                        <div className="rounded-2xl bg-white p-4 text-sm text-slate-500">Cargando alérgenos…</div>
-                      ) : (
-                        allAllergens.map((allergen) => {
-                          const active = selectedAllergens.has(allergen.id);
-                          const visual = allergenVisual(allergen.name);
-                          return (
-                            <button
-                              key={allergen.id}
-                              type="button"
-                              onClick={() => toggleAllergen(allergen.id)}
-                              className={`flex items-center justify-between gap-2 rounded-2xl border px-4 py-3 text-left text-sm transition ${
-                                active ? "border-[#2da38f] bg-[#d9f4ee]" : "border-gray-200 bg-white hover:bg-slate-50"
-                              }`}
-                            >
-                              <span className="flex items-center gap-2 flex-1 min-w-0">
-                                <span className="text-lg shrink-0">{visual.icon}</span>
-                                <span className="truncate">{allergen.name}</span>
-                              </span>
-                              <span className={`h-5 w-5 rounded-full border-2 shrink-0 ${active ? "border-[#1C9690] bg-[#1C9690]" : "border-gray-300"}`} />
-                            </button>
-                          );
-                        })
-                      )}
-                    </div>
-                    <p className="mt-2 text-xs text-slate-400">Selecciona los alérgenos que se apliquen a ti.</p>
+              {mode === "register" && registerStep === 3 && (
+                <div className="rounded-2xl border border-gray-200 bg-slate-50 p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Alérgenos</p>
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-500">
+                      {selectedCount} seleccionados
+                    </span>
                   </div>
+                  <div className="grid max-h-72 gap-2 overflow-y-auto pr-1">
+                    {loadingAllergens ? (
+                      <div className="rounded-2xl bg-white p-4 text-sm text-slate-500">Cargando alérgenos…</div>
+                    ) : (
+                      allAllergens.map((allergen) => {
+                        const active = selectedAllergens.has(allergen.id);
+                        const visual = allergenVisual(allergen.name);
+                        return (
+                          <button
+                            key={allergen.id}
+                            type="button"
+                            onClick={() => toggleAllergen(allergen.id)}
+                            className={`flex items-center justify-between gap-2 rounded-2xl border px-4 py-3 text-left text-sm transition ${
+                              active ? "border-[#2da38f] bg-[#d9f4ee]" : "border-gray-200 bg-white hover:bg-slate-50"
+                            }`}
+                          >
+                            <span className="flex min-w-0 flex-1 items-center gap-2">
+                              <span className="shrink-0 text-lg">{visual.icon}</span>
+                              <span className="truncate">{allergen.name}</span>
+                            </span>
+                            <span className={`h-5 w-5 shrink-0 rounded-full border-2 ${active ? "border-[#1C9690] bg-[#1C9690]" : "border-gray-300"}`} />
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                  <p className="mt-2 text-xs text-slate-400">Puedes continuar sin seleccionar ninguno.</p>
                 </div>
               )}
 
@@ -216,13 +297,31 @@ const LoginModern: React.FC = () => {
                 <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">{errorMsg}</div>
               )}
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full rounded-[1.5rem] bg-[#1C9690] py-4 text-lg font-bold text-white transition hover:bg-[#169486] disabled:opacity-60"
-              >
-                {isLoading ? "Procesando…" : buttonLabel}
-              </button>
+              <div className="flex gap-3">
+                {mode === "register" && registerStep > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLocalError(null);
+                      setRegisterStep((prev) => (prev === 3 ? 2 : 1));
+                    }}
+                    className="flex-1 rounded-[1.5rem] border border-slate-200 bg-white py-4 text-lg font-bold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Atrás
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex-1 rounded-[1.5rem] bg-[#1C9690] py-4 text-lg font-bold text-white transition hover:bg-[#169486] disabled:opacity-60"
+                >
+                  {isLoading
+                    ? "Procesando…"
+                    : mode === "register" && registerStep < 3
+                      ? "Siguiente"
+                      : buttonLabel}
+                </button>
+              </div>
             </form>
           </div>
         </section>
