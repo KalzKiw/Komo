@@ -22,6 +22,7 @@ Variables principales:
 - `NODE_ENV`: `development`, `test` o `production`.
 - `SUPABASE_URL`: URL del proyecto Supabase.
 - `SUPABASE_SERVICE_ROLE_KEY`: clave de servicio.
+- `SUPABASE_ANON_KEY`: clave pública anon para login con Supabase Auth.
 - `BYPASS_ORDER_CUTOFF`: permite omitir el cierre horario durante pruebas.
 - `VITE_API_BASE_URL`: vacío si frontend y backend comparten dominio; URL absoluta si se separan.
 
@@ -86,6 +87,8 @@ El backend servirá la build React desde `client-dist`.
 1. Ejecutar `db/schema.sql`.
 2. Aplicar migraciones de `db/migrations`.
 3. Cargar datos demo con `db/seed.sql` si se necesita entorno de pruebas.
+
+La migración `20260501_family_links_active_unique.sql` permite revocar y volver a crear vínculos familiares sin duplicar relaciones activas.
 
 ## Buenas Prácticas
 

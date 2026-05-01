@@ -9,7 +9,7 @@ export const registerSchema = z.object({
   email: z.string().email(),
   fullName: z.string().min(3),
   role: z.enum(["STUDENT", "PARENT"]),
-  password: z.string().optional(),
+  password: z.string().min(6),
   allergenIds: z.array(z.string()).optional()
 });
 

@@ -14,6 +14,10 @@ interface ProductRow {
   price: number;
 }
 
+interface WalletRow {
+  wallet_balance: number;
+}
+
 interface OrderRow {
   id: string;
   user_id: string;
@@ -154,6 +158,45 @@ export async function createOrder(user: AuthUser, payload: unknown): Promise<Rec
   const subtotal = roundMoney(orderItems.reduce((sum, item) => sum + item.lineTotal, 0));
   const total = subtotal;
 
+  let debitedWallet = false;
+
+  if (total > 0) {
+    const { data: wallet, error: walletError } = await supabase
+      .from("users")
+      .select("wallet_balance")
+      .eq("id", user.id)
+      .single();
+
+    if (walletError || !wallet) {
+      throw new AppError("Unable to load wallet balance", 500);
+    }
+
+    const currentBalance = roundMoney(Number((wallet as WalletRow).wallet_balance ?? 0));
+
+    if (currentBalance < total) {
+      throw new AppError("Saldo insuficiente en el monedero", 409);
+    }
+
+    const nextBalance = roundMoney(currentBalance - total);
+    const { data: updatedWallet, error: debitError } = await supabase
+      .from("users")
+      .update({ wallet_balance: nextBalance })
+      .eq("id", user.id)
+      .eq("wallet_balance", currentBalance)
+      .select("id")
+      .maybeSingle();
+
+    if (debitError) {
+      throw new AppError("Unable to debit wallet", 500);
+    }
+
+    if (!updatedWallet) {
+      throw new AppError("El saldo ha cambiado. Revisa el monedero e inténtalo de nuevo.", 409);
+    }
+
+    debitedWallet = true;
+  }
+
   const schedule = await getOrderSchedule();
   const shiftScheduleMap: Record<OrderShift, { hour: number; minute: number }> = {
     MORNING: schedule.morning,
@@ -185,6 +228,9 @@ export async function createOrder(user: AuthUser, payload: unknown): Promise<Rec
     .single();
 
   if (orderInsertError || !insertedOrder) {
+    if (debitedWallet) {
+      await refundWallet(user.id, total);
+    }
     throw new AppError("Unable to persist order", 500);
   }
 
@@ -210,6 +256,9 @@ export async function createOrder(user: AuthUser, payload: unknown): Promise<Rec
       code: itemsInsertError?.code
     });
     await supabase.from("orders").delete().eq("id", insertedOrder.id);
+    if (debitedWallet) {
+      await refundWallet(user.id, total);
+    }
     throw new AppError(
       `Unable to persist order items: ${itemsInsertError?.message || "Unknown error"}`,
       500
@@ -227,6 +276,24 @@ export async function createOrder(user: AuthUser, payload: unknown): Promise<Rec
     total,
     items: orderItems
   };
+}
+
+async function refundWallet(userId: string, amount: number): Promise<void> {
+  if (amount <= 0) return;
+
+  const { data: wallet } = await supabase
+    .from("users")
+    .select("wallet_balance")
+    .eq("id", userId)
+    .single();
+
+  if (!wallet) return;
+
+  const currentBalance = roundMoney(Number((wallet as WalletRow).wallet_balance ?? 0));
+  await supabase
+    .from("users")
+    .update({ wallet_balance: roundMoney(currentBalance + amount) })
+    .eq("id", userId);
 }
 
 export async function cancelOrder(user: AuthUser, orderId: string): Promise<Record<string, unknown>> {

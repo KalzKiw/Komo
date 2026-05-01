@@ -38,6 +38,7 @@ La solución propuesta digitaliza ese proceso. El alumno puede pedir con antelac
 - **Backend**: Node.js, Express, TypeScript.
 - **Validación**: Zod.
 - **Base de datos**: Supabase/PostgreSQL.
+- **Autenticación**: Supabase Auth con compatibilidad temporal para usuarios demo.
 - **Documentación API**: Swagger UI y swagger-jsdoc.
 - **Pruebas**: Vitest.
 - **Despliegue**: Vercel y alternativa Node.
@@ -395,7 +396,7 @@ El resultado es una aplicación funcional que cubre el flujo principal de cafete
 
 ### 9.2 Limitaciones detectadas
 
-- La autenticación es demo y se basa en cabeceras mock, no en JWT o sesiones reales.
+- La autenticación ya acepta tokens de Supabase Auth, aunque se conserva compatibilidad temporal con usuarios demo por cabeceras.
 - No existe todavía integración de pago real.
 - La PWA/offline se ha desactivado temporalmente para evitar problemas de caché.
 - No hay suite E2E completa.

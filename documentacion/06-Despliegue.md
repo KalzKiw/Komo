@@ -16,6 +16,7 @@ Variables necesarias:
 
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_ANON_KEY`
 - `NODE_ENV=production`
 - `BYPASS_ORDER_CUTOFF=true` si se desea evitar cierre horario durante demo.
 - `VITE_API_BASE_URL` vacío si API y frontend comparten dominio.

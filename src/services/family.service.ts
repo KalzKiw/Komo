@@ -1,6 +1,7 @@
 import { supabase } from "../config";
 import { AppError } from "../errors/app-error";
 import { AuthUser } from "../types/domain";
+import { roundMoney } from "../utils/money";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -91,13 +92,16 @@ export async function redeemLinkingToken(student: AuthUser, tokenCode: string): 
     throw new AppError("Ya estás vinculado con este familiar", 409);
   }
 
-  // Mark token as used and create link atomically via two writes
-  const { error: markUsedError } = await supabase
+  const { data: usedToken, error: markUsedError } = await supabase
     .from("linking_tokens")
     .update({ used: true })
-    .eq("id", token.id);
+    .eq("id", token.id)
+    .eq("used", false)
+    .gt("expires_at", new Date().toISOString())
+    .select("id")
+    .maybeSingle();
 
-  if (markUsedError) {
+  if (markUsedError || !usedToken) {
     throw new AppError("Error al validar el código", 500);
   }
 
@@ -111,6 +115,10 @@ export async function redeemLinkingToken(student: AuthUser, tokenCode: string): 
     });
 
   if (linkError) {
+    await supabase
+      .from("linking_tokens")
+      .update({ used: false })
+      .eq("id", token.id);
     throw new AppError("Error al crear el vínculo familiar", 500);
   }
 
@@ -269,10 +277,15 @@ export async function topUpChildWallet(
     throw new AppError("No tienes un hijo vinculado con ese ID", 403);
   }
 
-  // Increment wallet_balance atomically with RPC or read-modify-write
+  const topUpAmount = roundMoney(amount);
+
+  if (topUpAmount <= 0 || topUpAmount > 200) {
+    throw new AppError("El importe debe estar entre 0.01€ y 200€", 400);
+  }
+
   const { data: student, error: fetchError } = await supabase
     .from("users")
-    .select("wallet_balance")
+    .select("wallet_balance, role")
     .eq("id", studentId)
     .single();
 
@@ -280,16 +293,27 @@ export async function topUpChildWallet(
     throw new AppError("Alumno no encontrado", 404);
   }
 
-  const currentBalance = Number((student as { wallet_balance: number }).wallet_balance);
-  const newBalance = Math.round((currentBalance + amount) * 100) / 100;
+  if (!["STUDENT", "DELEGATE"].includes((student as { role: string }).role)) {
+    throw new AppError("Solo se puede recargar el monedero de alumnos", 409);
+  }
 
-  const { error: updateError } = await supabase
+  const currentBalance = roundMoney(Number((student as { wallet_balance: number }).wallet_balance));
+  const newBalance = roundMoney(currentBalance + topUpAmount);
+
+  const { data: updated, error: updateError } = await supabase
     .from("users")
     .update({ wallet_balance: newBalance })
-    .eq("id", studentId);
+    .eq("id", studentId)
+    .eq("wallet_balance", currentBalance)
+    .select("wallet_balance")
+    .maybeSingle();
 
   if (updateError) {
     throw new AppError("Error al actualizar el saldo", 500);
+  }
+
+  if (!updated) {
+    throw new AppError("El saldo ha cambiado. Vuelve a intentarlo.", 409);
   }
 
   return { newBalance };

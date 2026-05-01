@@ -20,7 +20,7 @@ const redeemSchema = z.object({
 
 const topUpSchema = z.object({
   studentId: z.string().uuid(),
-  amount: z.number().positive().max(200),
+  amount: z.coerce.number().positive().max(200),
 });
 
 const revokeLinkParamsSchema = z.object({

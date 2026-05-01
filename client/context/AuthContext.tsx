@@ -13,6 +13,11 @@ export type AuthUser = {
   isBeneficiary: boolean;
 };
 
+type StoredAuth = {
+  user: AuthUser;
+  accessToken: string | null;
+};
+
 type AuthState =
   | { status: "idle" }
   | { status: "loading" }
@@ -38,14 +43,17 @@ type AuthContextValue = {
 
 const STORAGE_KEY = "cafes_auth";
 
-function persist(user: AuthUser) {
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+function persist(auth: StoredAuth) {
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(auth));
 }
 
-function hydrate(): AuthUser | null {
+function hydrate(): StoredAuth | null {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as AuthUser) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as AuthUser | StoredAuth;
+    if ("user" in parsed) return parsed;
+    return { user: parsed, accessToken: null };
   } catch {
     return null;
   }
@@ -56,15 +64,17 @@ function hydrate(): AuthUser | null {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [accessToken, setAccessToken] = useState<string | null>(() => hydrate()?.accessToken ?? null);
   const [state, setState] = useState<AuthState>(() => {
     const saved = hydrate();
-    return saved ? { status: "authenticated", user: saved } : { status: "unauthenticated" };
+    return saved ? { status: "authenticated", user: saved.user } : { status: "unauthenticated" };
   });
 
   // Derive auth headers from current user
   const authHeaders: Record<string, string> =
     state.status === "authenticated"
       ? {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           "x-user-id": state.user.id,
           "x-user-role": state.user.role,
           "x-user-beneficiary": state.user.isBeneficiary ? "true" : "false",
@@ -93,8 +103,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const data = (await res.json()) as { user: AuthUser };
-      persist(data.user);
+      const data = (await res.json()) as { user: AuthUser; accessToken?: string | null };
+      const nextToken = data.accessToken ?? null;
+      setAccessToken(nextToken);
+      persist({ user: data.user, accessToken: nextToken });
       setState({ status: "authenticated", user: data.user });
     } catch {
       setState({ status: "unauthenticated", error: "Error de red. Inténtalo de nuevo." });
@@ -126,8 +138,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        const data = (await res.json()) as { user: AuthUser };
-        persist(data.user);
+        const data = (await res.json()) as { user: AuthUser; accessToken?: string | null };
+        const nextToken = data.accessToken ?? null;
+        setAccessToken(nextToken);
+        persist({ user: data.user, accessToken: nextToken });
         setState({ status: "authenticated", user: data.user });
       } catch {
         setState({ status: "unauthenticated", error: "Error de red. Inténtalo de nuevo." });
@@ -138,6 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(() => {
     sessionStorage.removeItem(STORAGE_KEY);
+    setAccessToken(null);
     setState({ status: "unauthenticated" });
   }, []);
 
