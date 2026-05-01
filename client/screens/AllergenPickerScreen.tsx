@@ -106,7 +106,7 @@ export default function AllergenPickerScreen({ open, onClose, onSaved }: Props) 
             type="button"
             disabled={saving || loading}
             onClick={handleSave}
-            className="inline-flex items-center gap-2 rounded-2xl bg-#1C9690 px-4 py-2 text-sm font-bold text-white transition hover:bg-#169486 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-2xl bg-[#1C9690] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#169486] disabled:opacity-60"
           >
             {saving ? (
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
@@ -124,7 +124,7 @@ export default function AllergenPickerScreen({ open, onClose, onSaved }: Props) 
 
           {loading ? (
             <div className="flex justify-center py-12">
-              <span className="h-8 w-8 animate-spin rounded-full border-4 border-#92dbc8 border-t-#1C9690" />
+              <span className="h-8 w-8 animate-spin rounded-full border-4 border-[#92dbc8] border-t-#1C9690" />
             </div>
           ) : (
             <>
@@ -151,16 +151,16 @@ export default function AllergenPickerScreen({ open, onClose, onSaved }: Props) 
                       type="button"
                       onClick={() => toggle(allergen.id)}
                       className={`flex w-full items-center gap-3 rounded-3xl px-4 py-4 text-left transition ${
-                        isActive ? "bg-#d9f4ee" : "hover:bg-slate-100"
+                        isActive ? "bg-[#d9f4ee]" : "hover:bg-slate-100"
                       } ${i < allAllergens.length - 1 ? "mb-1" : ""}`}
                     >
                       <span className="text-xl">
                         {visual.icon}
                       </span>
-                      <span className={`flex-1 text-sm font-medium ${isActive ? "text-#169486" : "text-slate-700"}`}>
+                      <span className={`flex-1 text-sm font-medium ${isActive ? "text-[#169486]" : "text-slate-700"}`}>
                         {allergen.name}
                       </span>
-                      <span className={`h-5 w-5 rounded-full border-2 ${isActive ? "border-#2da38f bg-#2da38f" : "border-slate-300 bg-white"}`} />
+                      <span className={`h-5 w-5 rounded-full border-2 ${isActive ? "border-[#2da38f] bg-[#2da38f]" : "border-slate-300 bg-white"}`} />
                     </button>
                   );
                 })}

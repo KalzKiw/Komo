@@ -108,8 +108,8 @@ function ConsumerApp({ role }: { role: UserRole }) {
               onClick={() => setTab(id)}
               className="flex flex-1 flex-col items-center gap-0.5 pb-2 pt-2 transition-all active:scale-90"
             >
-              <Icon className={`h-5 w-5 transition-colors ${active ? "text-#1C9690" : "text-slate-400"}`} />
-              <span className={`text-[10px] font-semibold transition-colors ${active ? "text-#1C9690" : "text-slate-400"}`}>
+              <Icon className={`h-5 w-5 transition-colors ${active ? "text-[#1C9690]" : "text-slate-400"}`} />
+              <span className={`text-[10px] font-semibold transition-colors ${active ? "text-[#1C9690]" : "text-slate-400"}`}>
                 {label}
               </span>
             </button>
@@ -142,8 +142,8 @@ function ConsumerApp({ role }: { role: UserRole }) {
               onClick={() => setTab(id)}
               className="flex flex-1 flex-col items-center gap-0.5 pb-2 pt-2 transition-all active:scale-90"
             >
-              <Icon className={`h-5 w-5 transition-colors ${active ? "text-#1C9690" : "text-slate-400"}`} />
-              <span className={`text-[10px] font-semibold transition-colors ${active ? "text-#1C9690" : "text-slate-400"}`}>
+              <Icon className={`h-5 w-5 transition-colors ${active ? "text-[#1C9690]" : "text-slate-400"}`} />
+              <span className={`text-[10px] font-semibold transition-colors ${active ? "text-[#1C9690]" : "text-slate-400"}`}>
                 {label}
               </span>
             </button>
@@ -192,7 +192,7 @@ export default function App() {
 
   if (state.status === "loading") {
     return (
-      <div className="flex h-svh items-center justify-center bg-gradient-to-b from-#169486 to-#0f4b47">
+      <div className="flex h-svh items-center justify-center bg-gradient-to-b from-[#169486] to-[#0f4b47]">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-white/30 border-t-white" />
       </div>
     );

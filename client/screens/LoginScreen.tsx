@@ -49,7 +49,7 @@ export default function LoginScreen() {
               placeholder="student1@cafes.app"
               required
               autoComplete="email"
-              className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-#2da38f focus:ring-2 focus:ring-#2da38f/20"
+              className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#2da38f] focus:ring-2 focus:ring-[#2da38f]/20"
             />
           </label>
 
@@ -64,7 +64,7 @@ export default function LoginScreen() {
               placeholder="••••••••"
               required
               autoComplete="current-password"
-              className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-#2da38f focus:ring-2 focus:ring-#2da38f/20"
+              className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#2da38f] focus:ring-2 focus:ring-[#2da38f]/20"
             />
           </label>
 
@@ -77,7 +77,7 @@ export default function LoginScreen() {
           <button
             type="submit"
             disabled={isLoading}
-            className="mt-1 rounded-xl bg-#1C9690 py-3.5 text-sm font-bold text-white shadow-[0_6px_16px_rgba(5,150,105,0.35)] transition-colors active:bg-#169486 disabled:opacity-60"
+            className="mt-1 rounded-xl bg-[#1C9690] py-3.5 text-sm font-bold text-white shadow-[0_6px_16px_rgba(5,150,105,0.35)] transition-colors active:bg-[#169486] disabled:opacity-60"
           >
             {isLoading ? "Entrando…" : "Entrar"}
           </button>
@@ -107,7 +107,7 @@ export default function LoginScreen() {
           <button
             type="button"
             onClick={() => window.dispatchEvent(new CustomEvent("switchToRegister"))}
-            className="mt-2 font-semibold text-#1C9690 hover:text-#169486 text-sm"
+            className="mt-2 font-semibold text-[#1C9690] hover:text-[#169486] text-sm"
           >
             Crear cuenta
           </button>

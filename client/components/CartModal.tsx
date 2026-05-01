@@ -200,7 +200,7 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
           {/* Header */}
           <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
             <div className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5 text-#1C9690" />
+              <ShoppingCart className="h-5 w-5 text-[#1C9690]" />
               <h2 className="font-bold text-lg text-slate-900">Tu carrito</h2>
             </div>
             <button
@@ -245,9 +245,9 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
                     <button
                       type="button"
                       onClick={() => updateQty(line.signature, 1)}
-                      className="h-7 w-7 rounded-full bg-#c6efe7 flex items-center justify-center hover:bg-#92dbc8 transition-colors"
+                      className="h-7 w-7 rounded-full bg-[#c6efe7] flex items-center justify-center hover:bg-[#92dbc8] transition-colors"
                     >
-                      <Plus className="h-3.5 w-3.5 text-#169486" />
+                      <Plus className="h-3.5 w-3.5 text-[#169486]" />
                     </button>
                   </div>
                   <span className="text-sm font-bold text-slate-900 w-14 text-right shrink-0">
@@ -266,7 +266,7 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
                 <span className="text-xl font-bold text-slate-900">{money(total)}</span>
               </div>
               {feedback && !showSummary && (
-                <p className={`text-sm text-center ${feedback.startsWith("✓") ? "text-#1C9690" : "text-red-500"}`}>
+                <p className={`text-sm text-center ${feedback.startsWith("✓") ? "text-[#1C9690]" : "text-red-500"}`}>
                   {feedback}
                 </p>
               )}
@@ -275,7 +275,7 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
                   type="button"
                   disabled={loading}
                   onClick={handleCheckoutClick}
-                  className="w-full rounded-2xl bg-#1C9690 py-3.5 text-center font-bold text-white shadow-lg shadow-#92dbc8 hover:bg-#169486 active:scale-95 transition-all disabled:opacity-60"
+                  className="w-full rounded-2xl bg-[#1C9690] py-3.5 text-center font-bold text-white shadow-lg shadow-[#92dbc8] hover:bg-[#169486] active:scale-95 transition-all disabled:opacity-60"
                 >
                   {loading ? "Procesando..." : `Confirmar pedido · ${money(total)}`}
                 </button>

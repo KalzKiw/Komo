@@ -113,7 +113,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
             onChange={(e) => setEmail(e.target.value)}
             placeholder="tu@email.com"
             required
-            className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-#44b6a1 focus:ring-2 focus:ring-#c6efe7"
+            className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#44b6a1] focus:ring-2 focus:ring-[#c6efe7]"
           />
         </label>
 
@@ -126,7 +126,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Mínimo 6 caracteres"
               required
-              className="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-#44b6a1 focus:ring-2 focus:ring-#c6efe7"
+              className="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#44b6a1] focus:ring-2 focus:ring-[#c6efe7]"
             />
             <button
               type="button"
@@ -147,7 +147,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Repite la contraseña"
               required
-              className="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-#44b6a1 focus:ring-2 focus:ring-#c6efe7"
+              className="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#44b6a1] focus:ring-2 focus:ring-[#c6efe7]"
             />
             <button
               type="button"
@@ -165,7 +165,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
           type="button"
           onClick={handleNextStep1}
           disabled={isLoading}
-          className="w-full rounded-2xl bg-#1C9690 py-3 font-bold text-white disabled:opacity-60 active:scale-[0.97] transition"
+          className="w-full rounded-2xl bg-[#1C9690] py-3 font-bold text-white disabled:opacity-60 active:scale-[0.97] transition"
         >
           Siguiente
         </button>
@@ -186,7 +186,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
             onChange={(e) => setFullName(e.target.value)}
             placeholder="Nombre completo"
             required
-            className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-#44b6a1 focus:ring-2 focus:ring-#c6efe7"
+            className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#44b6a1] focus:ring-2 focus:ring-[#c6efe7]"
           />
         </label>
 
@@ -198,7 +198,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
               onClick={() => setRole("STUDENT")}
               className={`flex-1 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
                 role === "STUDENT"
-                  ? "bg-#1C9690 text-white"
+                  ? "bg-[#1C9690] text-white"
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
             >
@@ -209,7 +209,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
               onClick={() => setRole("PARENT")}
               className={`flex-1 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
                 role === "PARENT"
-                  ? "bg-#1C9690 text-white"
+                  ? "bg-[#1C9690] text-white"
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
             >
@@ -232,7 +232,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
             type="button"
             onClick={handleNextStep2}
             disabled={isLoading}
-            className="flex-1 rounded-2xl bg-#1C9690 py-3 font-bold text-white disabled:opacity-60 active:scale-[0.97] transition"
+            className="flex-1 rounded-2xl bg-[#1C9690] py-3 font-bold text-white disabled:opacity-60 active:scale-[0.97] transition"
           >
             Siguiente
           </button>
@@ -249,7 +249,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
 
         {loadingAllergens ? (
           <div className="flex justify-center py-8">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-#92dbc8 border-t-#1C9690" />
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#92dbc8] border-t-#1C9690" />
           </div>
         ) : (
           <div className="rounded-3xl bg-slate-50 p-1 space-y-1">
@@ -265,14 +265,14 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
                     type="button"
                     onClick={() => toggleAllergen(allergen.id)}
                     className={`flex w-full items-center gap-3 rounded-3xl px-4 py-3 text-left transition ${
-                      isSelected ? "bg-#d9f4ee" : "hover:bg-slate-100"
+                      isSelected ? "bg-[#d9f4ee]" : "hover:bg-slate-100"
                     }`}
                   >
                     <span className="text-xl">{visual.icon}</span>
-                    <span className={`flex-1 text-sm font-medium ${isSelected ? "text-#169486" : "text-slate-700"}`}>
+                    <span className={`flex-1 text-sm font-medium ${isSelected ? "text-[#169486]" : "text-slate-700"}`}>
                       {allergen.name}
                     </span>
-                    <span className={`h-5 w-5 rounded-full border-2 ${isSelected ? "border-#2da38f bg-#2da38f" : "border-slate-300 bg-white"}`} />
+                    <span className={`h-5 w-5 rounded-full border-2 ${isSelected ? "border-[#2da38f] bg-[#2da38f]" : "border-slate-300 bg-white"}`} />
                   </button>
                 );
               })
@@ -295,7 +295,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
             type="button"
             onClick={handleSubmit}
             disabled={isLoading}
-            className="flex-1 rounded-2xl bg-#1C9690 py-3 font-bold text-white disabled:opacity-60 active:scale-[0.97] transition"
+            className="flex-1 rounded-2xl bg-[#1C9690] py-3 font-bold text-white disabled:opacity-60 active:scale-[0.97] transition"
           >
             {isLoading ? "Creando..." : "Crear cuenta"}
           </button>
@@ -353,7 +353,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
                   placeholder="tu@correo.com"
                   required
                   autoComplete="email"
-                  className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-#2da38f focus:ring-2 focus:ring-#2da38f/20"
+                  className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#2da38f] focus:ring-2 focus:ring-[#2da38f]/20"
                 />
               </label>
 
@@ -372,7 +372,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
                     placeholder="••••••••"
                     required
                     autoComplete="new-password"
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-10 text-sm text-slate-800 outline-none transition focus:border-#2da38f focus:ring-2 focus:ring-#2da38f/20"
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-10 text-sm text-slate-800 outline-none transition focus:border-[#2da38f] focus:ring-2 focus:ring-[#2da38f]/20"
                   />
                   <button
                     type="button"
@@ -403,7 +403,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
                     placeholder="••••••••"
                     required
                     autoComplete="new-password"
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-10 text-sm text-slate-800 outline-none transition focus:border-#2da38f focus:ring-2 focus:ring-#2da38f/20"
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-10 text-sm text-slate-800 outline-none transition focus:border-[#2da38f] focus:ring-2 focus:ring-[#2da38f]/20"
                   />
                   <button
                     type="button"
@@ -423,7 +423,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
             <button
               type="button"
               onClick={handleNextStep1}
-              className="mt-6 w-full rounded-xl bg-#1C9690 py-3.5 text-sm font-bold text-white shadow-[0_6px_16px_rgba(5,150,105,0.35)] transition-colors active:bg-#169486 disabled:opacity-60"
+              className="mt-6 w-full rounded-xl bg-[#1C9690] py-3.5 text-sm font-bold text-white shadow-[0_6px_16px_rgba(5,150,105,0.35)] transition-colors active:bg-[#169486] disabled:opacity-60"
             >
               Siguiente
             </button>
@@ -454,7 +454,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
                   setError(null);
                 }}
                 placeholder="Tu nombre completo"
-                className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-#2da38f focus:ring-2 focus:ring-#2da38f/20"
+                className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#2da38f] focus:ring-2 focus:ring-[#2da38f]/20"
               />
             </label>
 
@@ -505,7 +505,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
               <button
                 type="button"
                 onClick={handleNextStep2}
-                className="flex-1 rounded-xl bg-#1C9690 py-3.5 text-sm font-bold text-white shadow-[0_6px_16px_rgba(5,150,105,0.35)] transition-colors active:bg-#169486"
+                className="flex-1 rounded-xl bg-[#1C9690] py-3.5 text-sm font-bold text-white shadow-[0_6px_16px_rgba(5,150,105,0.35)] transition-colors active:bg-[#169486]"
               >
                 Siguiente
               </button>
@@ -530,7 +530,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
             <div className="mb-4 max-h-64 overflow-y-auto rounded-2xl bg-slate-50 p-1">
               {loadingAllergens ? (
                 <div className="flex justify-center py-8">
-                  <span className="h-6 w-6 animate-spin rounded-full border-4 border-#92dbc8 border-t-#1C9690" />
+                  <span className="h-6 w-6 animate-spin rounded-full border-4 border-[#92dbc8] border-t-#1C9690" />
                 </div>
               ) : allAllergens.length === 0 ? (
                 <p className="py-4 text-center text-xs text-slate-500">
@@ -547,7 +547,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
                         type="button"
                         onClick={() => toggleAllergen(allergen.id)}
                         className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition ${
-                          isActive ? "bg-#d9f4ee" : "hover:bg-slate-100"
+                          isActive ? "bg-[#d9f4ee]" : "hover:bg-slate-100"
                         } ${i < allAllergens.length - 1 ? "mb-1" : ""}`}
                       >
                         <span className="text-lg">
@@ -555,7 +555,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
                         </span>
                         <span
                           className={`flex-1 text-sm font-medium ${
-                            isActive ? "text-#169486" : "text-slate-700"
+                            isActive ? "text-[#169486]" : "text-slate-700"
                           }`}
                         >
                           {allergen.name}
@@ -563,7 +563,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
                         <div
                           className={`h-5 w-5 rounded-full border-2 transition ${
                             isActive
-                              ? "border-#2da38f bg-#2da38f"
+                              ? "border-[#2da38f] bg-[#2da38f]"
                               : "border-slate-300 bg-white"
                           }`}
                         />
@@ -599,7 +599,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
                 type="button"
                 onClick={handleSubmit}
                 disabled={isLoading}
-                className="flex-1 rounded-xl bg-#1C9690 py-3.5 text-sm font-bold text-white shadow-[0_6px_16px_rgba(5,150,105,0.35)] transition-colors active:bg-#169486 disabled:opacity-60"
+                className="flex-1 rounded-xl bg-[#1C9690] py-3.5 text-sm font-bold text-white shadow-[0_6px_16px_rgba(5,150,105,0.35)] transition-colors active:bg-[#169486] disabled:opacity-60"
               >
                 {isLoading ? "Creando cuenta…" : "Crear cuenta"}
               </button>
@@ -612,7 +612,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
           <button
             type="button"
             onClick={onBackToLogin}
-            className="flex items-center justify-center gap-1 text-sm font-semibold text-#1C9690 hover:text-#169486"
+            className="flex items-center justify-center gap-1 text-sm font-semibold text-[#1C9690] hover:text-[#169486]"
           >
             <ChevronLeft className="h-4 w-4" />
             Volver a iniciar sesión

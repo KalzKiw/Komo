@@ -142,7 +142,7 @@ const LoginModern: React.FC = () => {
                   onChange={(event) => setEmail(event.target.value)}
                   type="email"
                   placeholder="usuario@colegio.edu"
-                  className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-#2da38f focus:ring-2 focus:ring-#2da38f/20"
+                  className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-[#2da38f] focus:ring-2 focus:ring-[#2da38f]/20"
                   required
                 />
               </label>
@@ -154,7 +154,7 @@ const LoginModern: React.FC = () => {
                   onChange={(event) => setPassword(event.target.value)}
                   type="password"
                   placeholder={mode === "login" ? "••••••••" : "Opcional para registro"}
-                  className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-#2da38f focus:ring-2 focus:ring-#2da38f/20"
+                  className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-[#2da38f] focus:ring-2 focus:ring-[#2da38f]/20"
                   required={mode === "login"}
                 />
               </label>
@@ -194,7 +194,7 @@ const LoginModern: React.FC = () => {
                               type="button"
                               onClick={() => toggleAllergen(allergen.id)}
                               className={`flex items-center justify-between gap-2 rounded-2xl border px-4 py-3 text-left text-sm transition ${
-                                active ? "border-#2da38f bg-#d9f4ee" : "border-gray-200 bg-white hover:bg-slate-50"
+                                active ? "border-[#2da38f] bg-[#d9f4ee]" : "border-gray-200 bg-white hover:bg-slate-50"
                               }`}
                             >
                               <span className="flex items-center gap-2 flex-1 min-w-0">

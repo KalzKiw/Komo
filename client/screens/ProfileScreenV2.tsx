@@ -114,7 +114,7 @@ export default function ProfileScreenV2() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center pb-20">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-#92dbc8 border-t-#1C9690" />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#92dbc8] border-t-#1C9690" />
       </div>
     );
   }
@@ -128,7 +128,7 @@ export default function ProfileScreenV2() {
       <main className="pt-20 pb-24 px-4 max-w-md mx-auto flex-1 overflow-y-auto w-full">
         <section className="mb-6">
           <div className="bg-white rounded-3xl p-6 shadow-sm text-center">
-            <div className="mx-auto mb-4 h-24 w-24 overflow-hidden rounded-full bg-#d9f4ee shadow-inner">
+            <div className="mx-auto mb-4 h-24 w-24 overflow-hidden rounded-full bg-[#d9f4ee] shadow-inner">
               <img
                 src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=240&q=80"
                 alt="Perfil"
@@ -141,7 +141,7 @@ export default function ProfileScreenV2() {
         </section>
 
         <section className="flex justify-center mb-6">
-          <div className="flex items-center gap-3 rounded-full bg-#1C9690 px-6 py-3 text-white shadow-md">
+          <div className="flex items-center gap-3 rounded-full bg-[#1C9690] px-6 py-3 text-white shadow-md">
             <span className="text-sm font-semibold">Saldo</span>
             <span className="text-lg font-bold">{currency.format(profile?.walletBalance ?? 0)}</span>
           </div>
@@ -275,7 +275,7 @@ export default function ProfileScreenV2() {
               value={phoneInput}
               onChange={(event) => setPhoneInput(event.target.value)}
               placeholder="+34 612 345 678"
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-#2da38f"
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-[#2da38f]"
             />
             <div className="mt-5 flex justify-end gap-3">
               <button
@@ -288,7 +288,7 @@ export default function ProfileScreenV2() {
               <button
                 type="button"
                 onClick={handleSavePhone}
-                className="rounded-2xl bg-#1C9690 px-4 py-2 text-sm font-semibold text-white transition hover:bg-#169486"
+                className="rounded-2xl bg-[#1C9690] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#169486]"
               >
                 Guardar
               </button>

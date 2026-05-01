@@ -170,7 +170,7 @@ export default function ProfileScreen({
       )}
 
       {/* ── 2. Hero Header ───────────────────────────────────────────────────── */}
-      <section className="relative bg-gradient-to-b from-#169486 to-#0f4b47 px-4 pb-8 pt-10">
+      <section className="relative bg-gradient-to-b from-[#169486] to-[#0f4b47] px-4 pb-8 pt-10">
         {/* Notifications shortcut */}
         {onNotifications && (
           <button
@@ -191,7 +191,7 @@ export default function ProfileScreen({
         {/* Name + course */}
         <div className="text-center">
           <p className="text-lg font-bold leading-tight text-white">{user.fullName}</p>
-          <p className="mt-0.5 text-sm text-#92dbc8/70">
+          <p className="mt-0.5 text-sm text-[#92dbc8]/70">
             {user.course ?? "Curso sin asignar"}
           </p>
         </div>
@@ -200,7 +200,7 @@ export default function ProfileScreen({
         <p className="mt-4 text-center font-mono text-4xl font-bold tabular-nums text-white">
           {centsToEur(user.walletBalanceCents)}
         </p>
-        <p className="mt-0.5 text-center text-xs font-medium text-#92dbc8/60 uppercase tracking-widest">
+        <p className="mt-0.5 text-center text-xs font-medium text-[#92dbc8]/60 uppercase tracking-widest">
           Saldo disponible
         </p>
 
@@ -235,7 +235,7 @@ export default function ProfileScreen({
             </span>
           </div>
           <div className="flex flex-col items-center py-4">
-            <span className="text-2xl font-bold tabular-nums text-#1C9690">
+            <span className="text-2xl font-bold tabular-nums text-[#1C9690]">
               {centsToEur(user.totalSpentCents)}
             </span>
             <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
@@ -278,7 +278,7 @@ export default function ProfileScreen({
           {family.status === "UNLINKED" && (
             /* CTA Banner — cuenta sin vincular */
             <div className="flex items-center gap-3 px-4 py-4">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-#d9f4ee text-#1C9690">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#d9f4ee] text-[#1C9690]">
                 <Users className="h-5 w-5" />
               </span>
               <div className="flex-1 min-w-0">
@@ -290,7 +290,7 @@ export default function ProfileScreen({
               <button
                 type="button"
                 onClick={onLinkFamily}
-                className="shrink-0 rounded-xl bg-#1C9690 px-3 py-1.5 text-xs font-bold text-white transition-colors active:bg-#169486"
+                className="shrink-0 rounded-xl bg-[#1C9690] px-3 py-1.5 text-xs font-bold text-white transition-colors active:bg-[#169486]"
               >
                 Vincular
               </button>

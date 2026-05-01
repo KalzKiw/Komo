@@ -218,14 +218,14 @@ export default function OrdersScreen({ onShowOrderSummary }: { onShowOrderSummar
               <ArrowLeft className="h-6 w-6" />
             </button>
             <span className="flex-1 text-center text-lg font-bold text-slate-800 tracking-wide">Detalle del Pedido</span>
-            <span className={`rounded-full px-4 py-1 text-base font-semibold ml-auto ${detail.status === "PENDING" ? "bg-amber-100 text-amber-700" : detail.status === "CANCELLED" ? "bg-rose-100 text-rose-500" : "bg-#c6efe7 text-#169486"}`}>{formatOrderStatus(detail.status)}</span>
+            <span className={`rounded-full px-4 py-1 text-base font-semibold ml-auto ${detail.status === "PENDING" ? "bg-amber-100 text-amber-700" : detail.status === "CANCELLED" ? "bg-rose-100 text-rose-500" : "bg-[#c6efe7] text-[#169486]"}`}>{formatOrderStatus(detail.status)}</span>
           </div>
         </div>
         {/* Header tipo tarjeta grande */}
         <div className="px-2 pt-2 pb-4">
           <div className="rounded-3xl bg-white shadow-lg px-6 py-6 flex flex-col items-center relative">
             {/* Número grande */}
-            <span className="text-6xl font-extrabold text-#169486 tracking-widest mt-2 mb-2">{Number((detail as any).pickupNumber) || (100 + (parseInt(detail.id, 36) % 900))}</span>
+            <span className="text-6xl font-extrabold text-[#169486] tracking-widest mt-2 mb-2">{Number((detail as any).pickupNumber) || (100 + (parseInt(detail.id, 36) % 900))}</span>
             {/* Fecha y hora */}
             <span className="text-base text-slate-500 mb-1">{d.toLocaleDateString("es-ES", { day: "numeric", month: "short" })}, {d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}</span>
             {/* Turno debajo de la fecha */}
@@ -233,7 +233,7 @@ export default function OrdersScreen({ onShowOrderSummary }: { onShowOrderSummar
               <svg width="16" height="16" fill="none" stroke="#64748b" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 7v5l3 2" /></svg> {formatShiftLabel(detail.shift)}
             </span>
             {/* Icono central */}
-            <span className="flex items-center justify-center rounded-full bg-#d9f4ee p-3 mb-2">
+            <span className="flex items-center justify-center rounded-full bg-[#d9f4ee] p-3 mb-2">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="4" y="4" width="16" height="16" rx="4" fill="#d1fae5" stroke="#059669" />
                 <path d="M12 8v4l2 2" stroke="#059669" />
@@ -256,11 +256,11 @@ export default function OrdersScreen({ onShowOrderSummary }: { onShowOrderSummar
               )}
               {detail.items.map((item, i) => (
                 <div key={i} className="flex items-start gap-3 py-3">
-                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-#c6efe7 text-xs font-bold text-#169486">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#c6efe7] text-xs font-bold text-[#169486]">
                     {item.quantity}x
                   </span>
                   <div className="min-w-0 flex-1">
-                    <span className="text-base font-bold leading-snug text-#169486">{item.name}</span>
+                    <span className="text-base font-bold leading-snug text-[#169486]">{item.name}</span>
                     {item.description && <p className="text-xs text-slate-500 mt-0.5">{item.description}</p>}
                     {(item.customizations ?? []).length > 0 && (
                       <p className="mt-0.5 text-xs text-slate-400">
@@ -281,14 +281,14 @@ export default function OrdersScreen({ onShowOrderSummary }: { onShowOrderSummar
             <div className="border-t border-dashed border-gray-200 pt-3 mt-2">
               <div className="flex justify-between text-base mb-1">
                 <span className="text-slate-500">Total del Pedido</span>
-                <span className="font-bold text-#169486">{money(detail.total)}</span>
+                <span className="font-bold text-[#169486]">{money(detail.total)}</span>
               </div>
               <span className="text-xs text-slate-400">IVA INCLUIDO</span>
             </div>
           </div>
           {/* Nota de recogida */}
           <div className="text-center text-xs text-slate-400 mt-2 mb-4">
-            Muestra este número (<span className="font-bold text-#169486">{Number((detail as any).pickupNumber) || (100 + (parseInt(detail.id, 36) % 900))}</span>) en el mostrador del comedor durante el turno seleccionado para recoger tu pedido.
+            Muestra este número (<span className="font-bold text-[#169486]">{Number((detail as any).pickupNumber) || (100 + (parseInt(detail.id, 36) % 900))}</span>) en el mostrador del comedor durante el turno seleccionado para recoger tu pedido.
           </div>
         </div>
 
@@ -299,7 +299,7 @@ export default function OrdersScreen({ onShowOrderSummary }: { onShowOrderSummar
             <button
               type="button"
               onClick={() => repeatOrder(detail.id)}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-#1C9690 py-3.5 font-bold text-white transition-all hover:bg-#169486 active:scale-[0.97]"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1C9690] py-3.5 font-bold text-white transition-all hover:bg-[#169486] active:scale-[0.97]"
             >
               <RotateCcw className="h-4 w-4" />
               Repetir pedido
@@ -348,7 +348,7 @@ export default function OrdersScreen({ onShowOrderSummary }: { onShowOrderSummar
               onClick={() => setFilter(f.id)}
               className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
                 filter === f.id
-                  ? "bg-#1C9690 text-white"
+                  ? "bg-[#1C9690] text-white"
                   : "bg-slate-100 text-slate-500 hover:bg-slate-200"
               }`}
             >
@@ -418,7 +418,7 @@ export default function OrdersScreen({ onShowOrderSummary }: { onShowOrderSummar
               statusColorClass = "bg-rose-100 text-rose-500";
             } else {
               statusLabel = formatOrderStatus(order.status);
-              statusColorClass = "bg-#c6efe7 text-#169486";
+              statusColorClass = "bg-[#c6efe7] text-[#169486]";
             }
             return (
               <button
@@ -449,7 +449,7 @@ export default function OrdersScreen({ onShowOrderSummary }: { onShowOrderSummar
                 </div>
                 {/* Precio */}
                 <div className="flex flex-col items-end ml-2">
-                  <span className={`text-lg font-bold ${order.status === "CANCELLED" ? "line-through text-slate-400" : "text-#169486"}`}>{money(order.total)}</span>
+                  <span className={`text-lg font-bold ${order.status === "CANCELLED" ? "line-through text-slate-400" : "text-[#169486]"}`}>{money(order.total)}</span>
                 </div>
               </button>
             );
@@ -457,10 +457,10 @@ export default function OrdersScreen({ onShowOrderSummary }: { onShowOrderSummar
 
         {/* Bloque de upsell fijo abajo */}
         {filter === "IN_PROGRESS" && (
-          <div className="mt-4 mb-2 rounded-2xl bg-#169486 p-5 text-white shadow-lg flex flex-col items-start">
+          <div className="mt-4 mb-2 rounded-2xl bg-[#169486] p-5 text-white shadow-lg flex flex-col items-start">
             <span className="text-xs font-semibold mb-1 opacity-80">¿Olvidaste algo?</span>
             <span className="text-lg font-bold leading-tight mb-3">Pide tu snack ahora<br />y recíbelo en el recreo.</span>
-            <button className="rounded-lg bg-white text-#169486 font-bold px-4 py-2 text-sm shadow hover:bg-#d9f4ee transition">Ver Menú</button>
+            <button className="rounded-lg bg-white text-[#169486] font-bold px-4 py-2 text-sm shadow hover:bg-[#d9f4ee] transition">Ver Menú</button>
           </div>
         )}
       </div>
@@ -476,7 +476,7 @@ function OrderStepper({ status }: { status: string }) {
     <div className="flex items-center justify-center gap-6 py-4">
       <div className="flex flex-col items-center">
         <CheckCircle className="h-7 w-7" color="#22c55e" fill="#22c55e" />
-        <span className="text-xs mt-1 text-#1C9690 font-bold">Recibido</span>
+        <span className="text-xs mt-1 text-[#1C9690] font-bold">Recibido</span>
       </div>
       <div className="h-0.5 w-8 bg-gray-300" />
       <div className="flex flex-col items-center">
@@ -525,12 +525,12 @@ function UpsellExtras({ onQuickAdd, loading, excludeIds }: { onQuickAdd: (id: st
             key={d.id}
             disabled={loading === d.id}
             onClick={() => onQuickAdd(d.id)}
-            className={`flex flex-col items-center min-w-[90px] rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium bg-white shadow-sm hover:bg-#d9f4ee active:scale-95 transition-all ${loading === d.id ? 'opacity-60 pointer-events-none' : ''}`}
+            className={`flex flex-col items-center min-w-[90px] rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium bg-white shadow-sm hover:bg-[#d9f4ee] active:scale-95 transition-all ${loading === d.id ? 'opacity-60 pointer-events-none' : ''}`}
           >
             <span className="text-2xl mb-1">{d.icon}</span>
             <span className="font-semibold text-slate-800 mb-0.5">{d.label}</span>
-            <span className="text-#1C9690 font-bold">{d.price.toFixed(2)}€</span>
-            <span className="mt-1 text-xs text-#169486">Añadir</span>
+            <span className="text-[#1C9690] font-bold">{d.price.toFixed(2)}€</span>
+            <span className="mt-1 text-xs text-[#169486]">Añadir</span>
           </button>
         ))}
       </div>

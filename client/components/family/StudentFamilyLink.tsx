@@ -102,7 +102,7 @@ export default function StudentFamilyLink() {
   if (loadingStatus) {
     return (
       <div className="flex h-full items-center justify-center">
-        <span className="h-8 w-8 animate-spin rounded-full border-4 border-#92dbc8 border-t-#1C9690" />
+        <span className="h-8 w-8 animate-spin rounded-full border-4 border-[#92dbc8] border-t-#1C9690" />
       </div>
     );
   }
@@ -113,12 +113,12 @@ export default function StudentFamilyLink() {
       <div className="flex h-full flex-col items-center justify-center bg-gray-50 px-6 py-8">
         <div className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-sm">
           {/* Green header */}
-          <div className="flex flex-col items-center bg-#1C9690 px-6 pb-8 pt-8">
+          <div className="flex flex-col items-center bg-[#1C9690] px-6 pb-8 pt-8">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20">
               <CheckCircle className="h-8 w-8 text-white" />
             </div>
             <h2 className="mt-3 text-xl font-bold text-white">Cuenta vinculada</h2>
-            <p className="mt-1 text-sm text-#c6efe7">La vinculación familiar está activa</p>
+            <p className="mt-1 text-sm text-[#c6efe7]">La vinculación familiar está activa</p>
           </div>
 
           {/* Details */}
@@ -129,9 +129,9 @@ export default function StudentFamilyLink() {
             </div>
 
             {studentBalance !== null && (
-              <div className="rounded-xl bg-#d9f4ee px-4 py-3">
+              <div className="rounded-xl bg-[#d9f4ee] px-4 py-3">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Saldo disponible</p>
-                <p className="mt-1 text-2xl font-black tabular-nums text-#169486">
+                <p className="mt-1 text-2xl font-black tabular-nums text-[#169486]">
                   {money(studentBalance)}
                 </p>
               </div>
@@ -159,7 +159,7 @@ export default function StudentFamilyLink() {
       <div className="w-full max-w-sm">
         {/* Header */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-#c6efe7">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#c6efe7]">
             <span className="text-3xl">👨‍👧</span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900">Vincula tu cuenta</h1>
@@ -188,7 +188,7 @@ export default function StudentFamilyLink() {
               className={`mt-3 w-full rounded-2xl border-2 bg-gray-50 px-5 py-4 text-center font-mono text-3xl font-black tracking-[0.25em] text-slate-900 outline-none transition-colors placeholder:text-slate-300 focus:bg-white ${
                 error
                   ? "border-red-300 focus:border-red-400"
-                  : "border-transparent focus:border-#44b6a1"
+                  : "border-transparent focus:border-[#44b6a1]"
               }`}
             />
             {error && (
@@ -202,7 +202,7 @@ export default function StudentFamilyLink() {
               type="button"
               onClick={handleSubmit}
               disabled={submitting || rawFromFormatted(input).length < 6}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-#1C9690 py-3.5 font-bold text-white transition-all hover:bg-#169486 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1C9690] py-3.5 font-bold text-white transition-all hover:bg-[#169486] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting ? (
                 <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />

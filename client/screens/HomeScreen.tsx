@@ -4,7 +4,6 @@ import { useCart } from "../context/CartContext";
 import ProductDetail, { type AddToCartPayload, defaultModifierGroups, resolveAllergenChips } from "../components/ProductDetail";
 import { resolveSanitaryInfoReact } from "../lib/sanitary";
 import { productCategory } from "../lib/utils";
-import CartModal from "../components/CartModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -134,7 +133,7 @@ export default function HomeScreen() {
               onClick={() => setCategory(cat.id)}
               className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
                 category === cat.id
-                  ? "bg-#1C9690 text-white shadow-sm"
+                  ? "bg-[#1C9690] text-white shadow-sm"
                   : "bg-slate-100 text-slate-500 hover:bg-slate-200"
               }`}
             >
@@ -166,15 +165,15 @@ export default function HomeScreen() {
         )}
 
         {!loading && !error && filtered.length > 0 && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 items-stretch gap-3">
             {filtered.map((product) => (
               <button
                 key={product.id}
                 type="button"
                 onClick={() => setDetailProduct(product)}
-                className="overflow-hidden rounded-2xl bg-white border border-slate-100 shadow-sm text-left transition-transform active:scale-[0.97]"
+                className="flex h-full min-h-[206px] flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white text-left shadow-sm transition-transform active:scale-[0.97]"
               >
-                <div className="relative h-28 overflow-hidden bg-gradient-to-br from-#d9f4ee to-#c6efe7">
+                <div className="relative h-28 shrink-0 overflow-hidden bg-gradient-to-br from-[#d9f4ee] to-[#c6efe7]">
                   <img
                     src={productImageUrl(product.id)}
                     alt={product.name}
@@ -187,12 +186,14 @@ export default function HomeScreen() {
                     </span>
                   )}
                 </div>
-                <div className="p-3">
-                  <p className="text-sm font-semibold leading-tight text-slate-800">{product.name}</p>
-                  {product.description && (
-                    <p className="mt-0.5 text-xs text-slate-400 line-clamp-1">{product.description}</p>
-                  )}
-                  <p className="mt-2 text-base font-bold tabular-nums text-#1C9690">
+                <div className="flex flex-1 flex-col p-3">
+                  <p className="line-clamp-2 min-h-[2.25rem] text-sm font-semibold leading-tight text-slate-800">
+                    {product.name}
+                  </p>
+                  <p className="mt-1 min-h-[1rem] truncate text-xs text-slate-400">
+                    {product.description ?? "Producto disponible"}
+                  </p>
+                  <p className="mt-auto pt-2 text-base font-bold tabular-nums text-[#1C9690]">
                     {money(product.price)}
                   </p>
                 </div>

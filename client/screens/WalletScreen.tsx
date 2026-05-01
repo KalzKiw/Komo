@@ -45,7 +45,7 @@ function orderToMovement(order: OrderRow) {
 }
 
 function amountColor(amount: number) {
-  return amount >= 0 ? "text-#1C9690" : "text-red-500";
+  return amount >= 0 ? "text-[#1C9690]" : "text-red-500";
 }
 
 function amountLabel(amount: number) {
@@ -67,7 +67,7 @@ function MovementList({ orders, loading }: { orders: OrderRow[]; loading: boolea
   if (loading) {
     return (
       <div className="flex justify-center py-8">
-        <span className="h-6 w-6 animate-spin rounded-full border-2 border-#92dbc8 border-t-#1C9690" />
+        <span className="h-6 w-6 animate-spin rounded-full border-2 border-[#92dbc8] border-t-#1C9690" />
       </div>
     );
   }
@@ -94,7 +94,7 @@ function MovementList({ orders, loading }: { orders: OrderRow[]; loading: boolea
           >
             <span
               className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                isTopup ? "bg-#c6efe7 text-#1C9690" : "bg-slate-100 text-slate-500"
+                isTopup ? "bg-[#c6efe7] text-[#1C9690]" : "bg-slate-100 text-slate-500"
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -159,9 +159,9 @@ function StudentWallet() {
       className="h-full overflow-y-auto bg-gray-50 [&::-webkit-scrollbar]:hidden"
       style={{ scrollbarWidth: "none" }}
     >
-      <div className="relative w-full bg-#1C9690 px-4 pb-20 pt-10">
+      <div className="relative w-full bg-[#1C9690] px-4 pb-20 pt-10">
         <h1 className="text-center text-lg font-bold text-white">Mi Monedero</h1>
-        <p className="mt-0.5 text-center text-xs font-medium text-#92dbc8">Curso 2025-2026</p>
+        <p className="mt-0.5 text-center text-xs font-medium text-[#92dbc8]">Curso 2025-2026</p>
       </div>
 
       <div className="relative z-10 -mt-12 mx-4 rounded-3xl bg-white p-6 shadow-md">
@@ -177,7 +177,7 @@ function StudentWallet() {
         )}
         <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-gray-100">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-#44b6a1 to-#1C9690 transition-all"
+            className="h-full rounded-full bg-gradient-to-r from-[#44b6a1] to-[#1C9690] transition-all"
             style={{ width: `${Math.min(100, (bal / 20) * 100)}%` }}
           />
         </div>
@@ -384,7 +384,7 @@ function ParentWallet() {
                   type="button"
                   disabled={recharging === child.studentId}
                   onClick={() => handleRecharge(child)}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-#1C9690 py-2.5 text-xs font-bold text-white transition-all hover:bg-#169486 active:scale-[0.97] disabled:opacity-60"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#1C9690] py-2.5 text-xs font-bold text-white transition-all hover:bg-[#169486] active:scale-[0.97] disabled:opacity-60"
                 >
                   {recharging === child.studentId ? (
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />

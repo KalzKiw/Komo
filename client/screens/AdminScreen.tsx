@@ -121,7 +121,7 @@ export default function AdminScreen() {
     if (loading) {
       return (
         <div className="flex h-40 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-#92dbc8 border-t-#1C9690" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#92dbc8] border-t-#1C9690" />
         </div>
       );
     }
@@ -159,7 +159,7 @@ export default function AdminScreen() {
             <button
               type="button"
               onClick={loadData}
-              className="rounded-full p-2 text-#92dbc8 hover:bg-#169486 active:scale-90 transition-all"
+              className="rounded-full p-2 text-[#92dbc8] hover:bg-[#169486] active:scale-90 transition-all"
               title="Actualizar"
             >
               <RefreshCw className="h-4 w-4" />
@@ -167,7 +167,7 @@ export default function AdminScreen() {
             <button
               type="button"
               onClick={logout}
-              className="rounded-full p-2 text-#92dbc8 hover:bg-#169486 active:scale-90 transition-all"
+              className="rounded-full p-2 text-[#92dbc8] hover:bg-[#169486] active:scale-90 transition-all"
               title="Cerrar sesión"
             >
               <LogOut className="h-4 w-4" />
@@ -185,7 +185,7 @@ export default function AdminScreen() {
             onClick={() => setTab(t.id)}
             className={`shrink-0 px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${
               tab === t.id
-                ? "border-#1C9690 text-#169486"
+                ? "border-[#1C9690] text-[#169486]"
                 : "border-transparent text-slate-400 hover:text-slate-600"
             }`}
           >
@@ -220,7 +220,7 @@ function ForecastTab({ kds }: { kds: KdsOrder[] }) {
           <p className="text-xs text-slate-400">Previsión para</p>
           <p className="font-bold text-slate-900 capitalize">{today}</p>
         </div>
-        <span className="rounded-full bg-#c6efe7 px-3 py-1.5 text-sm font-bold text-#169486">
+        <span className="rounded-full bg-[#c6efe7] px-3 py-1.5 text-sm font-bold text-[#169486]">
           {snapshot.totalUnits} unidades
         </span>
       </div>
@@ -318,7 +318,7 @@ function KdsCard({
 }) {
   const ticketColor =
     order.status === "READY"
-      ? "border-#44b6a1 bg-#d9f4ee"
+      ? "border-[#44b6a1] bg-[#d9f4ee]"
       : order.status === "IN_PREPARATION"
       ? "border-blue-400 bg-blue-50"
       : "border-amber-300 bg-amber-50";
@@ -381,7 +381,7 @@ function KdsCard({
             <button
               type="button"
               onClick={() => onStatusChange(order.id, "DELIVERED")}
-              className="flex-1 rounded-xl bg-#1C9690 py-1.5 text-xs font-bold text-white active:scale-95 transition-transform"
+              className="flex-1 rounded-xl bg-[#1C9690] py-1.5 text-xs font-bold text-white active:scale-95 transition-transform"
             >
               Entregar
             </button>
@@ -460,7 +460,7 @@ function OrdersTab({ orders, onStatusChange, apiFetch, showToast }: OrdersTabPro
           placeholder="Buscar alumno, producto…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-#44b6a1"
+          className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#44b6a1]"
         />
         <select
           value={shiftFilter}
@@ -534,7 +534,7 @@ function OrdersTab({ orders, onStatusChange, apiFetch, showToast }: OrdersTabPro
                         <button
                           type="button"
                           onClick={() => onStatusChange(order.id, "DELIVERED")}
-                          className="rounded-lg bg-#c6efe7 px-2.5 py-1 text-xs font-semibold text-#169486"
+                          className="rounded-lg bg-[#c6efe7] px-2.5 py-1 text-xs font-semibold text-[#169486]"
                         >
                           <Check className="h-3.5 w-3.5" />
                         </button>
@@ -590,7 +590,7 @@ function OrderDetailPanel({
           <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide">Productos</h4>
           {order.items.map((item, i) => (
             <div key={i} className="flex gap-2">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-#c6efe7 text-xs font-bold text-#169486">{item.quantity}</span>
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#c6efe7] text-xs font-bold text-[#169486]">{item.quantity}</span>
               <div>
                 <p className="text-sm font-semibold text-slate-800">{item.name}</p>
                 {(item.customizations ?? []).length > 0 && <p className="text-xs text-slate-400">{item.customizations!.join(", ")}</p>}
@@ -609,7 +609,7 @@ function OrderDetailPanel({
         )}
         {(order.status === "IN_PREPARATION" || order.status === "READY") && (
           <>
-            <button type="button" onClick={() => onStatusChange(order.id, "DELIVERED")} className="w-full rounded-2xl bg-#1C9690 py-3 font-bold text-white active:scale-[0.97]">Marcar como entregado</button>
+            <button type="button" onClick={() => onStatusChange(order.id, "DELIVERED")} className="w-full rounded-2xl bg-[#1C9690] py-3 font-bold text-white active:scale-[0.97]">Marcar como entregado</button>
             <button type="button" onClick={() => onStatusChange(order.id, "CANCELLED")} className="w-full rounded-2xl border border-red-200 py-3 font-semibold text-red-500 active:scale-[0.97]">Cancelar pedido</button>
           </>
         )}
@@ -650,7 +650,7 @@ function ProductsTab({ products, apiFetch, onRefresh, showToast }: ProductsTabPr
         <button
           type="button"
           onClick={() => { setEditing(null); setFormOpen(true); }}
-          className="rounded-xl bg-#1C9690 px-4 py-2 text-xs font-bold text-white active:scale-95"
+          className="rounded-xl bg-[#1C9690] px-4 py-2 text-xs font-bold text-white active:scale-95"
         >
           + Añadir
         </button>
@@ -664,7 +664,7 @@ function ProductsTab({ products, apiFetch, onRefresh, showToast }: ProductsTabPr
               <p className="text-xs text-slate-400">{money(p.price)}</p>
             </div>
             <div className="flex items-center gap-2 ml-2 shrink-0">
-              <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${p.isActive ? "bg-#c6efe7 text-#169486" : "bg-slate-100 text-slate-500"}`}>
+              <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${p.isActive ? "bg-[#c6efe7] text-[#169486]" : "bg-slate-100 text-slate-500"}`}>
                 {p.isActive ? "Activo" : "Inactivo"}
               </span>
               <button
@@ -761,14 +761,14 @@ function ProductFormModal({
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-#44b6a1"
+            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#44b6a1]"
           />
           <input
             type="text"
             placeholder="Descripción (opcional)"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-#44b6a1"
+            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#44b6a1]"
           />
           <input
             type="number"
@@ -778,13 +778,13 @@ function ProductFormModal({
             step="0.01"
             min="0"
             required
-            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-#44b6a1"
+            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#44b6a1]"
           />
           <div>
             <p className="text-xs text-slate-400 mb-2">Alérgenos disponibles ({allergens.length})</p>
             {loadingAllergens ? (
               <div className="flex justify-center py-4">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-#92dbc8 border-t-#1C9690" />
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#92dbc8] border-t-#1C9690" />
               </div>
             ) : allergens.length === 0 ? (
               <p className="text-xs text-slate-400 py-2">No hay alérgenos disponibles</p>
@@ -799,7 +799,7 @@ function ProductFormModal({
           <button
             type="submit"
             disabled={saving}
-            className="w-full rounded-2xl bg-#1C9690 py-3 font-bold text-white disabled:opacity-60 active:scale-[0.97]"
+            className="w-full rounded-2xl bg-[#1C9690] py-3 font-bold text-white disabled:opacity-60 active:scale-[0.97]"
           >
             {saving ? "Guardando…" : product ? "Guardar cambios" : "Crear producto"}
           </button>
@@ -848,13 +848,13 @@ function DelegatesTab({
           </div>
           <div className="flex items-center gap-2 ml-2 shrink-0">
             {s.isDelegate && (
-              <span className="rounded-full bg-#c6efe7 px-2.5 py-1 text-[10px] font-bold text-#169486">Delegado</span>
+              <span className="rounded-full bg-[#c6efe7] px-2.5 py-1 text-[10px] font-bold text-[#169486]">Delegado</span>
             )}
             <button
               type="button"
               onClick={() => toggleDelegate(s)}
               className={`rounded-xl px-3 py-1.5 text-xs font-semibold active:scale-95 ${
-                s.isDelegate ? "bg-red-100 text-red-600" : "bg-#c6efe7 text-#169486"
+                s.isDelegate ? "bg-red-100 text-red-600" : "bg-[#c6efe7] text-[#169486]"
               }`}
             >
               {s.isDelegate ? "Revocar" : "Activar"}
@@ -912,7 +912,7 @@ function SettingsTab({
   }
 
   if (!loaded) {
-    return <div className="flex h-40 items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-4 border-#92dbc8 border-t-#1C9690" /></div>;
+    return <div className="flex h-40 items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-4 border-[#92dbc8] border-t-#1C9690" /></div>;
   }
 
   return (
@@ -933,7 +933,7 @@ function SettingsTab({
                 value={row.value}
                 onChange={(e) => row.onChange(e.target.value)}
                 required
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-#44b6a1"
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#44b6a1]"
               />
             </div>
           ))}
@@ -946,13 +946,13 @@ function SettingsTab({
               min="0"
               max="60"
               required
-              className="w-24 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-#44b6a1"
+              className="w-24 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#44b6a1]"
             />
           </div>
           <button
             type="submit"
             disabled={saving}
-            className="w-full rounded-2xl bg-#1C9690 py-3 font-bold text-white disabled:opacity-60 active:scale-[0.97]"
+            className="w-full rounded-2xl bg-[#1C9690] py-3 font-bold text-white disabled:opacity-60 active:scale-[0.97]"
           >
             {saving ? "Guardando…" : "Guardar horarios"}
           </button>
