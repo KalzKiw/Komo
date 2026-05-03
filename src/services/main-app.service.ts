@@ -97,6 +97,10 @@ export async function getMyProfile(user: AuthUser): Promise<Record<string, unkno
 }
 
 export async function updateMyProfile(user: AuthUser, body: UpdateMyProfileBody): Promise<Record<string, unknown>> {
+  if (user.role === "STUDENT" && (body.phone !== undefined || body.paymentCardLast4 !== undefined)) {
+    throw new AppError("Un alumno menor de edad no puede gestionar teléfono ni tarjeta bancaria", 403);
+  }
+
   const payload: Record<string, unknown> = {};
   if (body.phone !== undefined) payload.phone = body.phone;
   if (body.paymentCardLast4 !== undefined) payload.payment_card_last4 = body.paymentCardLast4;
@@ -122,8 +126,12 @@ export async function updateMyProfile(user: AuthUser, body: UpdateMyProfileBody)
 }
 
 export async function topUpMyWallet(user: AuthUser, amount: number): Promise<Record<string, unknown>> {
-  if (!["STUDENT", "DELEGATE"].includes(user.role)) {
-    throw new AppError("Solo los alumnos pueden recargar su propio monedero", 403);
+  if (user.role === "STUDENT") {
+    throw new AppError("El monedero del alumno lo recarga su familia", 403);
+  }
+
+  if (user.role !== "DELEGATE") {
+    throw new AppError("No puedes recargar este monedero desde esta cuenta", 403);
   }
 
   const topUpAmount = roundMoney(amount);
@@ -400,6 +408,10 @@ export async function updateMyAllergies(
   user: AuthUser,
   allergenIds: string[]
 ): Promise<Record<string, unknown>> {
+  if (user.role === "PARENT") {
+    throw new AppError("Los alérgenos se administran desde el perfil de cada alumno", 403);
+  }
+
   const { error: deleteError } = await supabase
     .from("user_allergies")
     .delete()

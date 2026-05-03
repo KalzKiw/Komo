@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const createOrderSchema = z.object({
+  studentId: z.string().uuid().optional(),
   shift: z.enum(["MORNING", "AFTERNOON", "NIGHT"]),
   scheduledFor: z.string().date(),
   items: z

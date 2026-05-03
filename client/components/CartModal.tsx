@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import OrderSummaryModal from "./OrderSummaryModal";
 import AllergenWarningModal from "./AllergenWarningModal";
-import { X, Minus, Plus, ShoppingCart } from "lucide-react";
+import { X, Minus, Plus, ShoppingCart, Users } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
@@ -16,6 +16,10 @@ type Props = {
 interface ApiProduct {
   id: string;
   name: string;
+  productInfo?: {
+    alergenos?: string[];
+    trazas?: string[];
+  } | null;
   allergens?: Array<{
     id: string;
     code: string;
@@ -29,6 +33,12 @@ interface UserAllergen {
   name: string;
 }
 
+interface LinkedChild {
+  studentId: string;
+  studentName: string;
+  walletBalance: number;
+}
+
 interface AllergenWarning {
   allergenId: string;
   allergenName: string;
@@ -36,7 +46,17 @@ interface AllergenWarning {
   productNames: string[];
 }
 
-export default function CartModal({ onClose, onOrderPlaced }: Props) {
+function productInfoAllergens(product?: ApiProduct): Array<{ name: string; code?: string }> {
+  if (!product?.productInfo) return [];
+  return [
+    ...(product.productInfo.alergenos ?? []),
+    ...(product.productInfo.trazas ?? []),
+  ]
+    .filter(Boolean)
+    .map((name) => ({ name, code: name }));
+}
+
+export default function CartModal({ onClose, onOrderPlaced, onShowOrderSummary }: Props) {
   const { cart, updateQty, total, clear } = useCart();
   const { state } = useAuth();
   const { apiFetch } = useApi();
@@ -51,22 +71,47 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
   const [userAllergens, setUserAllergens] = useState<UserAllergen[]>([]);
   const [confirmedWarning, setConfirmedWarning] = useState(false);
   const [productsMap, setProductsMap] = useState<Map<string, ApiProduct>>(new Map());
+  const [children, setChildren] = useState<LinkedChild[]>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState("");
 
   // Load products and user allergies on mount
+  const role = state.status === "authenticated" ? state.user.role : "";
+  const isParent = role === "PARENT";
+
   useEffect(() => {
-    Promise.all([
-      apiFetch<{ data: ApiProduct[] }>("/api/products"),
-      apiFetch<{ data: UserAllergen[] }>("/api/me/allergies"),
-    ])
-      .then(([productsRes, allergiesRes]) => {
+    apiFetch<{ data: ApiProduct[] }>("/api/products")
+      .then((productsRes) => {
         const pMap = new Map(productsRes.data.map((p) => [p.id, p]));
         setProductsMap(pMap);
-        setUserAllergens(allergiesRes.data ?? []);
       })
       .catch(() => {
         // Silently fail, warnings will just not show
       });
   }, [apiFetch]);
+
+  useEffect(() => {
+    if (!isParent) {
+      apiFetch<{ data: UserAllergen[] }>("/api/me/allergies")
+        .then((allergiesRes) => setUserAllergens(allergiesRes.data ?? []))
+        .catch(() => setUserAllergens([]));
+      return;
+    }
+
+    apiFetch<{ data: LinkedChild[] }>("/api/family/children")
+      .then((res) => {
+        const next = res.data ?? [];
+        setChildren(next);
+        setSelectedStudentId((current) => current || next[0]?.studentId || "");
+      })
+      .catch(() => setChildren([]));
+  }, [apiFetch, isParent]);
+
+  useEffect(() => {
+    if (!isParent || !selectedStudentId) return;
+    apiFetch<{ data: UserAllergen[] }>(`/api/family/children/${selectedStudentId}/allergies`)
+      .then((allergiesRes) => setUserAllergens(allergiesRes.data ?? []))
+      .catch(() => setUserAllergens([]));
+  }, [apiFetch, isParent, selectedStudentId]);
 
   function detectAllergenWarnings(): AllergenWarning[] {
     if (userAllergens.length === 0) return [];
@@ -80,16 +125,26 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
     // Check each product in cart
     for (const line of cart) {
       const product = productsMap.get(line.id);
-      const allergens = product?.allergens?.length ? product.allergens : line.allergens ?? [];
+      const allergens = [
+        ...(product?.allergens ?? []),
+        ...productInfoAllergens(product),
+        ...(line.allergens ?? []),
+      ];
       if (allergens.length === 0) continue;
 
       // Check if product has any user allergens
       for (const allergen of allergens) {
         const allergenKey = normalizedText(allergen.name);
+        const allergenCodeKey = allergen.code ? normalizedText(allergen.code) : "";
         const matches =
           (allergen.id && userAllergenIds.has(allergen.id)) ||
           userAllergenKeys.has(allergenKey) ||
-          (allergen.code ? userAllergenKeys.has(normalizedText(allergen.code)) : false);
+          (allergenCodeKey ? userAllergenKeys.has(allergenCodeKey) : false) ||
+          [...userAllergenKeys].some((userKey) =>
+            (userKey.length > 2 && allergenKey.includes(userKey)) ||
+            (allergenKey.length > 2 && userKey.includes(allergenKey)) ||
+            (allergenCodeKey.length > 2 && allergenCodeKey.includes(userKey))
+          );
 
         if (matches) {
           const key = allergen.id ?? allergenKey;
@@ -113,6 +168,11 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
   }
 
   async function handleCheckoutClick() {
+    if (isParent && !selectedStudentId) {
+      setFeedback("Selecciona un hijo para confirmar el pedido");
+      return;
+    }
+
     const warnings = detectAllergenWarnings();
 
     if (warnings.length > 0 && !confirmedWarning) {
@@ -132,6 +192,7 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
     setShowAllergenWarning(false);
     try {
       const payload = {
+        ...(isParent ? { studentId: selectedStudentId } : {}),
         shift: "MORNING",
         scheduledFor: new Date().toISOString().slice(0, 10),
         items: cart.map((line) => ({
@@ -200,8 +261,6 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
     onClose(); // Cierra el modal inmediatamente
   }
 
-  const role = state.status === "authenticated" ? state.user.role : "";
-
   return (
     <>
       <div
@@ -267,6 +326,29 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
                   </span>
                 </div>
               ))
+            )}
+            {cart.length > 0 && isParent && (
+              <div className="rounded-2xl border border-[#c6efe7] bg-[#f0fbf8] p-3">
+                <div className="mb-2 flex items-center gap-2">
+                  <Users className="h-4 w-4 text-[#1C9690]" />
+                  <p className="text-sm font-bold text-slate-800">Pedido para</p>
+                </div>
+                <select
+                  value={selectedStudentId}
+                  onChange={(event) => setSelectedStudentId(event.target.value)}
+                  className="w-full rounded-xl border border-[#92dbc8] bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-[#1C9690]"
+                >
+                  {children.length === 0 ? (
+                    <option value="">Sin hijos vinculados</option>
+                  ) : (
+                    children.map((child) => (
+                      <option key={child.studentId} value={child.studentId}>
+                        {child.studentName} · saldo {money(child.walletBalance)}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
             )}
           </div>
 

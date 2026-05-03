@@ -22,7 +22,6 @@ export default function ProfileScreenV2() {
     courseName: string | null;
   }>(null);
   const [allergies, setAllergies] = useState<Array<{ code: string; name: string }>>([]);
-  const [allergyLabel, setAllergyLabel] = useState("Sin configurar");
   const [phone, setPhone] = useState<string | null>(null);
   const [phoneInput, setPhoneInput] = useState("");
   const [phoneModalOpen, setPhoneModalOpen] = useState(false);
@@ -59,7 +58,6 @@ export default function ProfileScreenV2() {
         setSavedCard(me.paymentCardLast4 || localCard ? { lastFourDigits: me.paymentCardLast4 ?? localCard! } : null);
         const items = allergiesRes.data ?? [];
         setAllergies(items);
-        setAllergyLabel(items.length === 0 ? "Sin configurar" : items.map((a) => a.name).join(", "));
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -94,7 +92,6 @@ export default function ProfileScreenV2() {
       const result = await apiFetch<{ data: Array<{ code: string; name: string }> }>("/api/me/allergies");
       const items = result.data ?? [];
       setAllergies(items);
-      setAllergyLabel(items.length === 0 ? "Sin configurar" : items.map((a) => a.name).join(", "));
     } catch {
       // ignore reload failures silently
     }
@@ -133,11 +130,27 @@ export default function ProfileScreenV2() {
     );
   }
 
+  const isStudent = profile?.role === "STUDENT";
+  const isParent = profile?.role === "PARENT";
+
   return (
     <div className="bg-surface text-on-surface antialiased h-[100dvh] overflow-hidden flex flex-col">
       <header className="shrink-0 bg-white px-4 pt-5 pb-3 shadow-sm">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-3">
           <img src="/logotipo-transparente.png" alt="KOMO" className="h-10 w-auto" />
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={logout}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-red-50 text-red-600 transition active:scale-95 hover:bg-red-100"
+              aria-label="Cerrar sesión"
+              title="Cerrar sesión"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current">
+                <path d="M16 17l5-5-5-5v3H9v4h7v3Zm-2 2H6V5h8v2H8v10h6v2Z" />
+              </svg>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -160,92 +173,84 @@ export default function ProfileScreenV2() {
           <div className="px-5 py-4 border-b border-slate-100">
             <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-slate-400">Cuenta</h2>
           </div>
-          <button
-            type="button"
-            onClick={handleOpenPhoneModal}
-            className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-slate-50"
-          >
-            <div>
-              <p className="text-sm font-medium text-slate-900">Teléfono</p>
-              <p className="text-xs text-slate-500">{phone ?? "Sin añadir"}</p>
-            </div>
-            <span className="text-slate-400 text-sm">Editar</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setBankCardModalOpen(true)}
-            className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-slate-50"
-          >
-            <div>
-              <p className="text-sm font-medium text-slate-900">Métodos de pago</p>
-              <p className="text-xs text-slate-500">
-                {savedCard ? `Tarjeta ****${savedCard.lastFourDigits}` : "Agregar tarjeta"}
-              </p>
-            </div>
-            <span className="text-slate-400 text-sm">
-              {savedCard ? "Cambiar" : "Agregar"}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setAllergyModalOpen(true)}
-            className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-slate-50"
-          >
-            <div>
-              <p className="text-sm font-medium text-slate-900">Mis alérgenos</p>
-              {allergies.length === 0 ? (
-                <p className="text-xs text-slate-500">Sin configurar</p>
-              ) : (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {allergies.map((allergen) => {
-                    const visual = allergenVisual(allergen.name);
-                    return (
-                      <span
-                        key={allergen.code}
-                        title={allergen.name}
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-lg"
-                      >
-                        {visual.icon}
-                      </span>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-            <span className="text-slate-400 text-sm">Editar</span>
-          </button>
-        </section>
-
-        <section className="mb-6">
-          {profile?.role === "STUDENT" ? (
-            <StudentFamilyLink />
-          ) : (
-            <div className="rounded-3xl bg-slate-950 p-5 text-white shadow-md">
-              <div className="flex items-center justify-between">
+          {!isStudent && (
+            <>
+              <button
+                type="button"
+                onClick={handleOpenPhoneModal}
+                className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-slate-50"
+              >
                 <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Cuenta familiar</p>
-                  <p className="mt-2 text-sm font-semibold">Gestiona tus hijos desde el panel familiar.</p>
+                  <p className="text-sm font-medium text-slate-900">Teléfono</p>
+                  <p className="text-xs text-slate-500">{phone ?? "Sin añadir"}</p>
                 </div>
-                <span className="rounded-2xl bg-white/10 px-4 py-2 text-sm font-bold text-white">
-                  Solo estudiantes
+                <span className="text-slate-400 text-sm">Editar</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setBankCardModalOpen(true)}
+                className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-slate-50"
+              >
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Métodos de pago</p>
+                  <p className="text-xs text-slate-500">
+                    {savedCard ? `Tarjeta ****${savedCard.lastFourDigits}` : "Agregar tarjeta"}
+                  </p>
+                </div>
+                <span className="text-slate-400 text-sm">
+                  {savedCard ? "Cambiar" : "Agregar"}
                 </span>
+              </button>
+            </>
+          )}
+          {!isParent && (
+            <button
+              type="button"
+              onClick={() => setAllergyModalOpen(true)}
+              className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-slate-50"
+            >
+              <div>
+                <p className="text-sm font-medium text-slate-900">{isStudent ? "Alérgenos registrados" : "Mis alérgenos"}</p>
+                {allergies.length === 0 ? (
+                  <p className="text-xs text-slate-500">Sin configurar</p>
+                ) : (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {allergies.map((allergen) => {
+                      const visual = allergenVisual(allergen.name);
+                      return (
+                        <span
+                          key={allergen.code}
+                          title={allergen.name}
+                          className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-lg"
+                        >
+                          {visual.icon}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+                {isStudent && (
+                  <p className="mt-2 text-xs leading-relaxed text-slate-400">
+                    Esta información se usa para avisarte antes de pedir productos con riesgo.
+                  </p>
+                )}
               </div>
+              <span className="text-slate-400 text-sm">Editar</span>
+            </button>
+          )}
+          {isStudent && (
+            <div className="px-5 py-4 text-sm text-slate-500">
+              Tu cuenta de alumno usa solo monedero escolar. No necesita teléfono ni tarjeta bancaria.
             </div>
           )}
         </section>
 
-        <section className="flex justify-center mt-8">
-          <button
-            type="button"
-            onClick={logout}
-            className="inline-flex items-center gap-2 rounded-3xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-100"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current text-red-700">
-              <path d="M16 17l5-5-5-5v3H9v4h7v3Zm-2 2H6V5h8v2H8v10h6v2Z" />
-            </svg>
-            Cerrar sesión
-          </button>
-        </section>
+        {profile?.role === "STUDENT" && (
+          <section className="mb-6">
+            <StudentFamilyLink />
+          </section>
+        )}
+
       </main>
 
       {phoneModalOpen && (
@@ -294,8 +299,7 @@ export default function ProfileScreenV2() {
       <AllergenPickerScreen
         open={allergyModalOpen}
         onClose={() => setAllergyModalOpen(false)}
-        onSaved={(label) => {
-          setAllergyLabel(label);
+        onSaved={() => {
           reloadAllergies();
           setAllergyModalOpen(false);
         }}

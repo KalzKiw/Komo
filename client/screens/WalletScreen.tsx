@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { ArrowDownCircle, RefreshCw, Eye, ShoppingBag, Coffee, UtensilsCrossed, ArrowLeft, ChevronRight, CreditCard } from "lucide-react";
+import { ArrowDownCircle, RefreshCw, Eye, ShoppingBag, Coffee, UtensilsCrossed, ChevronRight, Copy, Check, Plus, BarChart3, WalletCards } from "lucide-react";
 import { useAuth, type UserRole } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
 import { useToast } from "../context/ToastContext";
-import { money } from "../lib/utils";
-import BankCardModal from "../components/BankCardModal";
+import { formatNonFutureDateTime, money } from "../lib/utils";
+import ChildProfileScreen from "./ChildProfileScreen";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -26,6 +26,11 @@ interface Child {
   walletBalance: number;
 }
 
+interface TokenResponse {
+  tokenCode: string;
+  expiresAt: string;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function orderToMovement(order: OrderRow) {
@@ -39,7 +44,7 @@ function orderToMovement(order: OrderRow) {
     ? "Desayuno"
     : "Almuerzo";
   const Icon = order.status === "TOPUP" ? ArrowDownCircle : isRefund ? ArrowDownCircle : order.shift === "BREAKFAST" ? Coffee : UtensilsCrossed;
-  const date = new Date(order.createdAt).toLocaleString("es-ES", {
+  const date = formatNonFutureDateTime(order.createdAt, {
     day: "numeric",
     month: "short",
     hour: "2-digit",
@@ -83,6 +88,13 @@ function sortMovements(orders: OrderRow[]) {
   return [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
+function tokenExpiryLabel(expiresAt: string): string {
+  const ms = new Date(expiresAt).getTime() - Date.now();
+  if (ms <= 0) return "Expirado";
+  const min = Math.max(1, Math.floor(ms / 60000));
+  return `Caduca en ${min} min si no se usa`;
+}
+
 function readLocalTopups(storageKey: string): OrderRow[] {
   try {
     return JSON.parse(localStorage.getItem(storageKey) ?? "[]") as OrderRow[];
@@ -95,6 +107,10 @@ function writeLocalTopups(storageKey: string, rows: OrderRow[]) {
   localStorage.setItem(storageKey, JSON.stringify(rows.slice(0, 30)));
 }
 
+function familyTopupsStorageKey(parentId: string, studentId: string) {
+  return `cafes-family-wallet-topups:${parentId}:${studentId}`;
+}
+
 function MovementChart({ orders }: { orders: OrderRow[] }) {
   const recent = sortMovements(orders).slice(0, 7).reverse();
   const values = recent.map((order) => orderToMovement(order).amount);
@@ -104,23 +120,31 @@ function MovementChart({ orders }: { orders: OrderRow[] }) {
 
   return (
     <div className="rounded-3xl bg-white p-4 shadow-sm">
-      <h2 className="mb-3 text-sm font-bold text-slate-700">Gráfica</h2>
-      <div className="flex h-32 items-end gap-2">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-bold text-slate-700">Actividad reciente</h2>
+          <p className="text-xs text-slate-400">Últimos {recent.length} movimientos</p>
+        </div>
+        <BarChart3 className="h-4 w-4 text-[#1C9690]" />
+      </div>
+      <div className="flex h-36 items-end gap-2">
         {recent.map((order) => {
           const movement = orderToMovement(order);
           const height = Math.max(8, (Math.abs(movement.amount) / max) * 100);
+          const date = formatNonFutureDateTime(order.createdAt, { day: "2-digit", month: "short" });
           return (
             <div key={order.id} className="flex flex-1 flex-col items-center gap-1">
+              <span className={`text-[10px] font-bold tabular-nums ${amountColor(movement.amount)}`}>
+                {amountLabel(movement.amount)}
+              </span>
               <div className="flex h-24 w-full items-end justify-center rounded-xl bg-slate-50 px-1">
                 <div
-                  className={`w-full rounded-t-lg ${movement.amount >= 0 ? "bg-[#1C9690]" : "bg-red-500"}`}
+                  className={`w-full rounded-t-lg transition-all ${movement.amount >= 0 ? "bg-[#1C9690]" : "bg-red-500"}`}
                   style={{ height: `${height}%` }}
                   title={amountLabel(movement.amount)}
                 />
               </div>
-              <span className={`text-[10px] font-bold tabular-nums ${amountColor(movement.amount)}`}>
-                {movement.amount >= 0 ? "+" : "-"}
-              </span>
+              <span className="text-[9px] font-semibold text-slate-400">{date}</span>
             </div>
           );
         })}
@@ -154,6 +178,84 @@ function AnalyticsPanel({ title, orders }: { title: string; orders: OrderRow[] }
             {stats.net >= 0 ? "+" : "-"}{money(Math.abs(stats.net))}
           </p>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ChildBreakdownChart({
+  children,
+  childMovements,
+}: {
+  children: Child[];
+  childMovements: Record<string, OrderRow[]>;
+}) {
+  const rows = children.map((child) => {
+    const stats = movementStats(childMovements[child.studentId] ?? []);
+    return { child, stats };
+  });
+  const maxSpent = Math.max(1, ...rows.map((row) => row.stats.expenses));
+
+  if (children.length === 0) return null;
+
+  return (
+    <div className="rounded-3xl bg-white p-4 shadow-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-bold text-slate-700">Gasto por hijo</h2>
+          <p className="text-xs text-slate-400">Comparativa individual</p>
+        </div>
+        <ShoppingBag className="h-4 w-4 text-red-400" />
+      </div>
+      <div className="space-y-3">
+        {rows.map(({ child, stats }) => (
+          <div key={child.studentId}>
+            <div className="mb-1 flex items-center justify-between gap-3">
+              <span className="truncate text-xs font-bold text-slate-700">{child.studentName}</span>
+              <span className="text-xs font-black tabular-nums text-red-500">-{money(stats.expenses)}</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-red-50">
+              <div
+                className="h-full rounded-full bg-red-400 transition-all"
+                style={{ width: `${Math.max(4, (stats.expenses / maxSpent) * 100)}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BalanceChart({ children }: { children: Child[] }) {
+  const maxBalance = Math.max(1, ...children.map((child) => child.walletBalance));
+  if (children.length === 0) return null;
+
+  return (
+    <div className="rounded-3xl bg-white p-4 shadow-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-bold text-slate-700">Saldo disponible</h2>
+          <p className="text-xs text-slate-400">Monedero actual por hijo</p>
+        </div>
+        <WalletCards className="h-4 w-4 text-[#1C9690]" />
+      </div>
+      <div className="flex h-32 items-end gap-3">
+        {children.map((child) => {
+          const height = Math.max(8, (child.walletBalance / maxBalance) * 100);
+          return (
+            <div key={child.studentId} className="flex flex-1 flex-col items-center gap-1">
+              <span className="text-xs font-black tabular-nums text-[#169486]">{money(child.walletBalance)}</span>
+              <div className="flex h-24 w-full items-end rounded-xl bg-[#f0fbf8] px-1.5">
+                <div
+                  className="w-full rounded-t-lg bg-gradient-to-t from-[#1C9690] to-[#44b6a1]"
+                  style={{ height: `${height}%` }}
+                />
+              </div>
+              <span className="max-w-full truncate text-[10px] font-semibold text-slate-400">{child.studentName}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -216,17 +318,11 @@ function MovementList({ orders, loading }: { orders: OrderRow[]; loading: boolea
 function StudentWallet() {
   const { apiFetch } = useApi();
   const { state } = useAuth();
-  const { showToast } = useToast();
   const [balance, setBalance] = useState<number | null>(null);
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loadingBalance, setLoadingBalance] = useState(true);
   const [loadingOrders, setLoadingOrders] = useState(true);
-  const [bankCardModalOpen, setBankCardModalOpen] = useState(false);
-  const [savedCard, setSavedCard] = useState<{ lastFourDigits: string } | null>(null);
-  const [topUpAmount, setTopUpAmount] = useState("10");
-  const [toppingUp, setToppingUp] = useState(false);
   const userId = state.status === "authenticated" ? state.user.id : "anonymous";
-  const cardStorageKey = `cafes-payment-card-last4:${userId}`;
   const topupsStorageKey = `cafes-wallet-topups:${userId}`;
 
   const loadWalletData = async () => {
@@ -238,8 +334,6 @@ function StudentWallet() {
         apiFetch<{ data: OrderRow[] }>("/api/me/wallet-movements?limit=30"),
       ]);
       setBalance(profile.walletBalance);
-      const localCard = localStorage.getItem(cardStorageKey);
-      setSavedCard(profile.paymentCardLast4 || localCard ? { lastFourDigits: profile.paymentCardLast4 ?? localCard! } : null);
       const localTopups = readLocalTopups(topupsStorageKey);
       const backendIds = new Set((history.data ?? []).map((item) => item.id));
       setOrders(sortMovements([...(history.data ?? []), ...localTopups.filter((item) => !backendIds.has(item.id))]));
@@ -262,68 +356,6 @@ function StudentWallet() {
   }, [apiFetch, topupsStorageKey]);
 
   const bal = balance ?? 0;
-  const parsedTopUpAmount = Number(topUpAmount.replace(",", "."));
-  const canTopUp = Number.isFinite(parsedTopUpAmount) && parsedTopUpAmount > 0 && parsedTopUpAmount <= 200 && !toppingUp;
-
-  function adjustTopUp(delta: number) {
-    const current = Number.isFinite(parsedTopUpAmount) ? parsedTopUpAmount : 0;
-    setTopUpAmount(String(Math.min(200, Math.max(1, current + delta))));
-  }
-
-  async function handleSaveCard(cardData: {
-    cardNumber: string;
-    cardholderName: string;
-    expiryMonth: string;
-    expiryYear: string;
-    cvv: string;
-  }) {
-    try {
-      const lastFour = cardData.cardNumber.slice(-4);
-      try {
-        await apiFetch("/api/me", {
-          method: "PATCH",
-          body: JSON.stringify({ paymentCardLast4: lastFour }),
-        });
-      } catch {
-        localStorage.setItem(cardStorageKey, lastFour);
-      }
-      setSavedCard({ lastFourDigits: lastFour });
-      window.dispatchEvent(new Event("profileChanged"));
-    } catch (error) {
-      throw new Error("Error al guardar la tarjeta");
-    }
-  }
-
-  async function handleTopUp() {
-    if (!canTopUp) return;
-    const amount = Math.round(parsedTopUpAmount * 100) / 100;
-    setToppingUp(true);
-    try {
-      const result = await apiFetch<{ walletBalance: number; amount: number }>("/api/me/wallet/topup", {
-        method: "POST",
-        body: JSON.stringify({ amount }),
-      });
-      setBalance(result.walletBalance);
-      showToast(`Has ingresado ${money(result.amount)} al monedero`, "success");
-      const localTopup: OrderRow = {
-        id: `local-topup-${Date.now()}`,
-        shift: "TOPUP",
-        scheduledFor: new Date().toISOString(),
-        status: "TOPUP",
-        total: result.amount,
-        creditedToWallet: true,
-        createdAt: new Date().toISOString(),
-        concept: "Ingreso de saldo",
-      };
-      writeLocalTopups(topupsStorageKey, [localTopup, ...readLocalTopups(topupsStorageKey)]);
-      await loadWalletData();
-      setOrders((prev) => sortMovements([localTopup, ...prev.filter((item) => item.id !== localTopup.id)]));
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : "No se pudo recargar el monedero", "error");
-    } finally {
-      setToppingUp(false);
-    }
-  }
 
   return (
     <div
@@ -357,68 +389,12 @@ function StudentWallet() {
       </div>
 
       <div className="mt-6 px-4 pb-6">
-        <h2 className="mb-3 text-sm font-bold text-slate-700">Recargar saldo</h2>
-        <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="grid grid-cols-[44px_1fr_44px] items-center gap-2">
-            <button
-              type="button"
-              onClick={() => adjustTopUp(-1)}
-              className="h-11 rounded-2xl border border-slate-200 bg-slate-50 text-xl font-bold text-slate-600"
-              aria-label="Reducir importe"
-            >
-              -
-            </button>
-            <input
-              inputMode="decimal"
-              value={topUpAmount}
-              onChange={(event) => setTopUpAmount(event.target.value.replace(/[^\d.,]/g, ""))}
-              onBlur={() => {
-                if (!Number.isFinite(parsedTopUpAmount) || parsedTopUpAmount <= 0) setTopUpAmount("1");
-                else setTopUpAmount(String(Math.round(parsedTopUpAmount * 100) / 100));
-              }}
-              className="h-12 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 text-center text-xl font-bold tabular-nums text-slate-900 outline-none focus:border-[#1C9690] focus:bg-white"
-            />
-            <button
-              type="button"
-              onClick={() => adjustTopUp(1)}
-              className="h-11 rounded-2xl border border-slate-200 bg-slate-50 text-xl font-bold text-slate-600"
-              aria-label="Aumentar importe"
-            >
-              +
-            </button>
-          </div>
-          <button
-            type="button"
-            disabled={!canTopUp}
-            onClick={handleTopUp}
-            className="rounded-2xl bg-[#1C9690] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#169486] disabled:opacity-50"
-          >
-            {toppingUp ? "Ingresando…" : "Ingresar saldo"}
-          </button>
-          <p className="text-xs text-slate-400">El saldo se guarda en tu cuenta y el movimiento queda registrado aquí.</p>
+        <div className="rounded-3xl border border-[#c6efe7] bg-[#f0fbf8] p-4 shadow-sm">
+          <h2 className="text-sm font-bold text-slate-800">Monedero escolar</h2>
+          <p className="mt-1 text-xs leading-relaxed text-slate-500">
+            Las recargas y métodos de pago los gestiona tu familia desde su panel parental.
+          </p>
         </div>
-      </div>
-
-      <div className="px-4 pb-6">
-        <h2 className="mb-3 text-sm font-bold text-slate-700">Métodos de pago</h2>
-        <button
-          type="button"
-          onClick={() => setBankCardModalOpen(true)}
-          className="w-full flex items-center gap-3 rounded-2xl bg-white shadow-sm px-4 py-4 text-left transition hover:bg-slate-50"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-            <CreditCard className="h-5 w-5 text-blue-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-slate-900">Tarjeta de banco</p>
-            <p className="text-xs text-slate-500">
-              {savedCard ? `Tarjeta ****${savedCard.lastFourDigits}` : "Agregar tarjeta"}
-            </p>
-          </div>
-          <span className="text-slate-400 text-sm">
-            {savedCard ? "Cambiar" : "Agregar"}
-          </span>
-        </button>
       </div>
 
       <div className="space-y-4 px-4 pb-6">
@@ -429,135 +405,128 @@ function StudentWallet() {
           <MovementList orders={orders} loading={loadingOrders} />
         </div>
       </div>
-
-      <BankCardModal
-        open={bankCardModalOpen}
-        onClose={() => setBankCardModalOpen(false)}
-        onSave={handleSaveCard}
-      />
     </div>
   );
 }
 
 // ─── Parent view ──────────────────────────────────────────────────────────────
 
-function ChildOrders({
-  child,
-  onBack,
-}: {
-  child: Child;
-  onBack: () => void;
-}) {
-  const { apiFetch } = useApi();
-  const [orders, setOrders] = useState<OrderRow[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    apiFetch<{ data: OrderRow[] }>(`/api/family/children/${child.studentId}/orders`)
-      .then((r) => setOrders(r.data))
-      .catch(() => setOrders([]))
-      .finally(() => setLoading(false));
-  }, [apiFetch, child.studentId]);
-
-  return (
-    <div
-      className="h-full overflow-y-auto bg-gray-50 [&::-webkit-scrollbar]:hidden"
-      style={{ scrollbarWidth: "none" }}
-    >
-      {/* Header */}
-      <div className="shrink-0 flex items-center gap-3 bg-white px-4 py-3 shadow-sm">
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label="Volver"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-slate-500 transition-all active:scale-90 hover:bg-gray-200"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <div>
-          <p className="font-bold text-slate-900">{child.studentName}</p>
-          <p className="text-xs text-slate-400">Saldo: {money(child.walletBalance)}</p>
-        </div>
-      </div>
-
-      <div className="px-4 py-5">
-        <h2 className="mb-3 text-sm font-bold text-slate-700">Últimos movimientos</h2>
-        <MovementList orders={orders} loading={loading} />
-      </div>
-    </div>
-  );
-}
-
 function ParentWallet() {
   const { apiFetch } = useApi();
+  const { showToast } = useToast();
+  const { state } = useAuth();
   const [children, setChildren] = useState<Child[]>([]);
   const [childMovements, setChildMovements] = useState<Record<string, OrderRow[]>>({});
   const [loading, setLoading] = useState(true);
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
   const [analyticsChildId, setAnalyticsChildId] = useState<string>("ALL");
   const [recharging, setRecharging] = useState<string | null>(null);
-  const [rechargeAmount] = useState(10);
+  const [rechargeAmount, setRechargeAmount] = useState("10");
+  const [token, setToken] = useState<TokenResponse | null>(null);
+  const [generatingToken, setGeneratingToken] = useState(false);
+  const [copiedToken, setCopiedToken] = useState(false);
+
+  async function loadFamilyWallet() {
+    const parentId = state.status === "authenticated" ? state.user.id : "anonymous";
+    setLoading(true);
+    try {
+      const r = await apiFetch<{ data: Child[] }>("/api/family/children");
+      const nextChildren = r.data ?? [];
+      setChildren(nextChildren);
+      const entries = await Promise.all(
+        nextChildren.map(async (child) => {
+          try {
+            const res = await apiFetch<{ data: OrderRow[] }>(`/api/family/children/${child.studentId}/orders`);
+            const backendRows = res.data ?? [];
+            const backendIds = new Set(backendRows.map((item) => item.id));
+            const localRows = readLocalTopups(familyTopupsStorageKey(parentId, child.studentId))
+              .filter((item) => !backendIds.has(item.id));
+            return [child.studentId, sortMovements([...backendRows, ...localRows])] as const;
+          } catch {
+            return [child.studentId, readLocalTopups(familyTopupsStorageKey(parentId, child.studentId))] as const;
+          }
+        })
+      );
+      setChildMovements(Object.fromEntries(entries));
+    } catch {
+      setChildren([]);
+      setChildMovements({});
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    apiFetch<{ data: Child[] }>("/api/family/children")
-      .then(async (r) => {
-        const nextChildren = r.data ?? [];
-        setChildren(nextChildren);
-        const entries = await Promise.all(
-          nextChildren.map(async (child) => {
-            try {
-              const res = await apiFetch<{ data: OrderRow[] }>(`/api/family/children/${child.studentId}/orders`);
-              return [child.studentId, res.data ?? []] as const;
-            } catch {
-              return [child.studentId, []] as const;
-            }
-          })
-        );
-        setChildMovements(Object.fromEntries(entries));
-      })
-      .catch(() => setChildren([]))
-      .finally(() => setLoading(false));
+    loadFamilyWallet();
   }, [apiFetch]);
 
   async function handleRecharge(child: Child) {
+    const parentId = state.status === "authenticated" ? state.user.id : "anonymous";
+    const amount = Number(rechargeAmount.replace(",", "."));
+    if (!Number.isFinite(amount) || amount <= 0) return;
     setRecharging(child.studentId);
     try {
-      const res = await apiFetch<{ newBalance: number }>("/api/family/topup", {
+      const res = await apiFetch<{ newBalance: number; movementPersisted?: boolean }>("/api/family/topup", {
         method: "POST",
-        body: JSON.stringify({ studentId: child.studentId, amount: rechargeAmount }),
+        body: JSON.stringify({ studentId: child.studentId, amount }),
       });
       setChildren((prev) =>
         prev.map((c) =>
           c.studentId === child.studentId ? { ...c, walletBalance: res.newBalance } : c
         )
       );
-      setChildMovements((prev) => ({
-        ...prev,
-        [child.studentId]: [
-          {
-            id: `family-topup-${Date.now()}`,
-            shift: "TOPUP",
-            scheduledFor: new Date().toISOString(),
-            status: "TOPUP",
-            total: rechargeAmount,
-            creditedToWallet: true,
-            createdAt: new Date().toISOString(),
-          },
-          ...(prev[child.studentId] ?? []),
-        ],
-      }));
-    } catch {
-      // silent – balance stays unchanged
+      if (res.movementPersisted === false) {
+        const storageKey = familyTopupsStorageKey(parentId, child.studentId);
+        const localTopup: OrderRow = {
+          id: `local-family-topup-${Date.now()}`,
+          shift: "TOPUP",
+          scheduledFor: new Date().toISOString(),
+          status: "TOPUP",
+          total: amount,
+          creditedToWallet: true,
+          createdAt: new Date().toISOString(),
+          concept: "Ingreso familiar",
+        };
+        writeLocalTopups(storageKey, [localTopup, ...readLocalTopups(storageKey)]);
+      }
+      await loadFamilyWallet();
+      showToast(`Ingresados ${money(amount)} a ${child.studentName}`, "success");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "No se pudo recargar el monedero", "error");
     } finally {
       setRecharging(null);
     }
   }
 
+  async function generateToken() {
+    setGeneratingToken(true);
+    try {
+      const res = await apiFetch<TokenResponse>("/api/family/token", { method: "POST" });
+      setToken(res);
+      setCopiedToken(false);
+    } finally {
+      setGeneratingToken(false);
+    }
+  }
+
+  function copyToken() {
+    if (!token) return;
+    navigator.clipboard.writeText(token.tokenCode).catch(() => {});
+    setCopiedToken(true);
+    setTimeout(() => setCopiedToken(false), 2200);
+  }
+
   if (selectedChild) {
     return (
-      <ChildOrders
-        child={selectedChild}
+      <ChildProfileScreen
+        studentId={selectedChild.studentId}
+        studentName={selectedChild.studentName}
+        linkId={selectedChild.linkId}
         onBack={() => setSelectedChild(null)}
+        onUnlinked={() => {
+          setSelectedChild(null);
+          loadFamilyWallet();
+        }}
       />
     );
   }
@@ -571,17 +540,31 @@ function ParentWallet() {
     analyticsChildId === "ALL"
       ? "Resumen conjunto"
       : `Resumen de ${children.find((child) => child.studentId === analyticsChildId)?.studentName ?? "alumno"}`;
+  const hasLinkedChildren = children.length > 0;
 
   return (
     <div
       className="h-full overflow-y-auto bg-gray-50 [&::-webkit-scrollbar]:hidden"
       style={{ scrollbarWidth: "none" }}
     >
-      <div className="bg-gradient-to-b from-violet-700 to-violet-500 px-4 pb-20 pt-10">
-        <h1 className="text-center text-lg font-bold text-white">Control Familiar</h1>
-        <p className="mt-0.5 text-center text-xs font-medium text-violet-200">
-          Gestiona el saldo de tus hijos
-        </p>
+      <div className="bg-gradient-to-b from-[#169486] to-[#44b6a1] px-4 pb-20 pt-10">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold text-white">Control Familiar</h1>
+            <p className="mt-0.5 text-xs font-medium text-[#d9f4ee]">
+              Pedidos, monedero, alérgenos y gastos de tus hijos
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={generateToken}
+            disabled={generatingToken}
+            className="flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-white/15 px-3 py-2 text-xs font-bold text-white ring-1 ring-white/20 transition active:scale-[0.97] hover:bg-white/20 disabled:opacity-60"
+          >
+            {generatingToken ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" /> : <Plus className="h-3.5 w-3.5" />}
+            Añadir hijo
+          </button>
+        </div>
       </div>
 
       <div className="relative z-10 -mt-12 mx-4 rounded-3xl bg-white p-6 shadow-md">
@@ -598,13 +581,51 @@ function ParentWallet() {
       </div>
 
       <div className="space-y-4 px-4 py-5">
+        {token && (
+          <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
+            <div className="px-4 pb-3 pt-4">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#1C9690]">Vinculación</p>
+              <h2 className="mt-1 text-sm font-bold text-slate-900">Código temporal para tus hijos</h2>
+            </div>
+            <div className="px-4 pb-4">
+              <div className="flex items-center justify-center rounded-2xl bg-[#d9f4ee] py-5">
+                <span className="select-all font-mono text-3xl font-black tracking-[0.18em] text-[#169486]">
+                  {token.tokenCode}
+                </span>
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <span className="text-xs text-slate-400">{tokenExpiryLabel(token.expiresAt)}</span>
+                <div className="flex gap-2">
+                  <button type="button" onClick={copyToken} className="flex items-center gap-1 rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-600">
+                    {copiedToken ? <Check className="h-3.5 w-3.5 text-[#1C9690]" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copiedToken ? "Copiado" : "Copiar"}
+                  </button>
+                  <button type="button" onClick={generateToken} disabled={generatingToken} className="flex items-center gap-1 rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-600 disabled:opacity-50">
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    Nuevo
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!hasLinkedChildren && !token && (
+          <div className="rounded-2xl bg-white p-4 shadow-sm">
+            <p className="text-sm font-bold text-slate-900">Aún no tienes hijos vinculados</p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-400">
+              Usa el botón superior para generar un código temporal.
+            </p>
+          </div>
+        )}
+
         <div className="space-y-3">
           <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none" }}>
             <button
               type="button"
               onClick={() => setAnalyticsChildId("ALL")}
               className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold ${
-                analyticsChildId === "ALL" ? "bg-violet-600 text-white" : "bg-white text-slate-500"
+                analyticsChildId === "ALL" ? "bg-[#1C9690] text-white" : "bg-white text-slate-500"
               }`}
             >
               Conjunto
@@ -615,7 +636,7 @@ function ParentWallet() {
                 type="button"
                 onClick={() => setAnalyticsChildId(child.studentId)}
                 className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold ${
-                  analyticsChildId === child.studentId ? "bg-violet-600 text-white" : "bg-white text-slate-500"
+                  analyticsChildId === child.studentId ? "bg-[#1C9690] text-white" : "bg-white text-slate-500"
                 }`}
               >
                 {child.studentName}
@@ -624,13 +645,19 @@ function ParentWallet() {
           </div>
           <AnalyticsPanel title={selectedAnalyticsName} orders={selectedAnalyticsOrders} />
           <MovementChart orders={selectedAnalyticsOrders} />
+          {analyticsChildId === "ALL" && (
+            <>
+              <ChildBreakdownChart children={children} childMovements={childMovements} />
+              <BalanceChart children={children} />
+            </>
+          )}
         </div>
 
         <h2 className="text-sm font-bold text-slate-700">Hijos vinculados</h2>
 
         {loading ? (
           <div className="flex justify-center py-8">
-            <span className="h-7 w-7 animate-spin rounded-full border-4 border-violet-200 border-t-violet-600" />
+            <span className="h-7 w-7 animate-spin rounded-full border-4 border-[#92dbc8] border-t-[#1C9690]" />
           </div>
         ) : children.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-slate-400">
@@ -641,7 +668,7 @@ function ParentWallet() {
           children.map((child) => (
             <div key={child.studentId} className="overflow-hidden rounded-2xl bg-white shadow-sm">
               <div className="flex items-center gap-3 px-4 pb-3 pt-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-violet-100 text-sm font-bold text-violet-700">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#d9f4ee] text-sm font-bold text-[#169486]">
                   {initials(child.studentName)}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -659,13 +686,20 @@ function ParentWallet() {
               <div className="px-4 pb-3">
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-violet-400 to-violet-600 transition-all"
+                    className="h-full rounded-full bg-gradient-to-r from-[#44b6a1] to-[#1C9690] transition-all"
                     style={{ width: `${Math.min(100, (child.walletBalance / 20) * 100)}%` }}
                   />
                 </div>
               </div>
 
-              <div className="flex gap-2.5 border-t border-gray-50 px-4 py-3">
+              <div className="grid grid-cols-[88px_1fr_1fr] gap-2.5 border-t border-gray-50 px-4 py-3">
+                <input
+                  inputMode="decimal"
+                  value={rechargeAmount}
+                  onChange={(event) => setRechargeAmount(event.target.value.replace(/[^\d.,]/g, ""))}
+                  className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-bold text-slate-700 outline-none focus:border-[#1C9690]"
+                  aria-label="Importe de recarga"
+                />
                 <button
                   type="button"
                   disabled={recharging === child.studentId}
@@ -677,7 +711,7 @@ function ParentWallet() {
                   ) : (
                     <RefreshCw className="h-3.5 w-3.5" />
                   )}
-                  Recargar +{rechargeAmount}€
+                  Recargar
                 </button>
                 <button
                   type="button"
@@ -685,7 +719,7 @@ function ParentWallet() {
                   className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 py-2.5 text-xs font-semibold text-slate-600 transition-all hover:bg-slate-50 active:scale-[0.97]"
                 >
                   <Eye className="h-3.5 w-3.5" />
-                  Ver movimientos
+                  Administrar
                   <ChevronRight className="h-3 w-3 opacity-50" />
                 </button>
               </div>

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Wallet, ShoppingBag, Coffee, UtensilsCrossed, ArrowDownCircle, AlertTriangle, GraduationCap, CheckCircle } from "lucide-react";
+import { ArrowLeft, Wallet, ShoppingBag, Coffee, UtensilsCrossed, ArrowDownCircle, AlertTriangle, GraduationCap, CheckCircle, Link2Off } from "lucide-react";
 import { useApi } from "../hooks/useApi";
+import { useToast } from "../context/ToastContext";
 import { money } from "../lib/utils";
 import { allergenVisual } from "../lib/allergens";
+import AllergenPickerScreen from "./AllergenPickerScreen";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -77,18 +79,24 @@ function initials(name: string) {
 interface Props {
   studentId: string;
   studentName: string;
+  linkId?: string;
   onBack: () => void;
+  onUnlinked?: () => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function ChildProfileScreen({ studentId, studentName, onBack }: Props) {
+export default function ChildProfileScreen({ studentId, studentName, linkId, onBack, onUnlinked }: Props) {
   const { apiFetch } = useApi();
+  const { showToast } = useToast();
 
   const [profile, setProfile] = useState<ChildProfile | null>(null);
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [allergyModalOpen, setAllergyModalOpen] = useState(false);
+  const [unlinkModalOpen, setUnlinkModalOpen] = useState(false);
+  const [unlinking, setUnlinking] = useState(false);
 
   useEffect(() => {
     apiFetch<ChildProfile>(`/api/family/children/${studentId}/profile`)
@@ -101,6 +109,28 @@ export default function ChildProfileScreen({ studentId, studentName, onBack }: P
       .catch(() => setOrders([]))
       .finally(() => setLoadingOrders(false));
   }, [apiFetch, studentId]);
+
+  function reloadProfile() {
+    apiFetch<ChildProfile>(`/api/family/children/${studentId}/profile`)
+      .then(setProfile)
+      .catch(() => {});
+  }
+
+  async function handleUnlinkChild() {
+    if (!linkId) return;
+    setUnlinking(true);
+    try {
+      await apiFetch(`/api/family/links/${linkId}`, { method: "DELETE" });
+      showToast("Vínculo familiar eliminado", "success");
+      setUnlinkModalOpen(false);
+      onUnlinked?.();
+      if (!onUnlinked) onBack();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "No se pudo quitar el vínculo", "error");
+    } finally {
+      setUnlinking(false);
+    }
+  }
 
   const activeOrders = orders.filter((o) =>
     ["PENDING", "IN_PREPARATION", "READY"].includes(o.status)
@@ -120,7 +150,17 @@ export default function ChildProfileScreen({ studentId, studentName, onBack }: P
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h2 className="font-bold text-slate-900">{studentName}</h2>
+        <h2 className="min-w-0 flex-1 truncate font-bold text-slate-900">{studentName}</h2>
+        {linkId && (
+          <button
+            type="button"
+            onClick={() => setUnlinkModalOpen(true)}
+            className="flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-2 text-xs font-bold text-slate-400 transition active:scale-95 hover:bg-red-50 hover:text-red-500"
+          >
+            <Link2Off className="h-3.5 w-3.5" />
+            Quitar vínculo
+          </button>
+        )}
       </div>
 
       <div
@@ -203,6 +243,13 @@ export default function ChildProfileScreen({ studentId, studentName, onBack }: P
             <div className="flex items-center gap-2 px-4 py-3.5 border-b border-gray-50">
               <AlertTriangle className="h-4 w-4 text-amber-500" />
               <h3 className="text-sm font-bold text-slate-800">Alérgenos</h3>
+              <button
+                type="button"
+                onClick={() => setAllergyModalOpen(true)}
+                className="ml-auto rounded-xl bg-[#d9f4ee] px-3 py-1.5 text-xs font-bold text-[#169486] transition active:scale-95"
+              >
+                Ajustar
+              </button>
             </div>
             {profile.allergens.length === 0 ? (
               <p className="px-4 py-3 text-sm text-slate-400">Sin alérgenos registrados</p>
@@ -280,6 +327,52 @@ export default function ChildProfileScreen({ studentId, studentName, onBack }: P
           )}
         </div>
       </div>
+
+      <AllergenPickerScreen
+        open={allergyModalOpen}
+        onClose={() => setAllergyModalOpen(false)}
+        selectedEndpoint={`/api/family/children/${studentId}/allergies`}
+        saveEndpoint={`/api/family/children/${studentId}/allergies`}
+        title={`Alérgenos de ${studentName}`}
+        subtitle="Esta información la administra la familia"
+        onSaved={() => {
+          setAllergyModalOpen(false);
+          reloadProfile();
+        }}
+      />
+
+      {unlinkModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 px-5 backdrop-blur-[2px]">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-50 text-red-500">
+              <Link2Off className="h-5 w-5" />
+            </div>
+            <h2 className="mt-4 text-lg font-black text-slate-900">Quitar vínculo</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Vas a desvincular a <strong className="text-slate-700">{studentName}</strong> de tu cuenta familiar.
+              Dejarás de poder recargar su monedero, ver sus pedidos y administrar sus alérgenos.
+            </p>
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setUnlinkModalOpen(false)}
+                disabled={unlinking}
+                className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600 transition active:scale-[0.98] disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleUnlinkChild}
+                disabled={unlinking}
+                className="rounded-2xl bg-red-500 px-4 py-3 text-sm font-bold text-white transition active:scale-[0.98] disabled:opacity-60"
+              >
+                {unlinking ? "Quitando..." : "Quitar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

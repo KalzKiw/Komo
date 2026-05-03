@@ -17,11 +17,23 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onSaved: (newLabel: string) => void;
+  selectedEndpoint?: string;
+  saveEndpoint?: string;
+  title?: string;
+  subtitle?: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function AllergenPickerScreen({ open, onClose, onSaved }: Props) {
+export default function AllergenPickerScreen({
+  open,
+  onClose,
+  onSaved,
+  selectedEndpoint = "/api/me/allergies",
+  saveEndpoint = "/api/me/allergies",
+  title = "Mis alérgenos",
+  subtitle = "Marca los que aplican a ti",
+}: Props) {
   const { apiFetch } = useApi();
 
   const [allAllergens, setAllAllergens] = useState<Allergen[]>([]);
@@ -35,7 +47,7 @@ export default function AllergenPickerScreen({ open, onClose, onSaved }: Props) 
     setLoading(true);
     Promise.all([
       apiFetch<{ data: Allergen[] }>("/api/allergens"),
-      apiFetch<{ data: Allergen[] }>("/api/me/allergies"),
+      apiFetch<{ data: Allergen[] }>(selectedEndpoint),
     ])
       .then(([all, mine]) => {
         setAllAllergens(all.data ?? []);
@@ -43,7 +55,7 @@ export default function AllergenPickerScreen({ open, onClose, onSaved }: Props) 
       })
       .catch(() => setError("Error al cargar los alérgenos"))
       .finally(() => setLoading(false));
-  }, [apiFetch, open]);
+  }, [apiFetch, open, selectedEndpoint]);
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -59,7 +71,7 @@ export default function AllergenPickerScreen({ open, onClose, onSaved }: Props) 
     setSaving(true);
     setError(null);
     try {
-      await apiFetch("/api/me/allergies", {
+      await apiFetch(saveEndpoint, {
         method: "PUT",
         body: JSON.stringify({ allergenIds: [...selected] }),
       });
@@ -86,8 +98,8 @@ export default function AllergenPickerScreen({ open, onClose, onSaved }: Props) 
       <div className="w-full max-w-lg rounded-3xl bg-white shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">Mis alérgenos</h2>
-            <p className="text-xs text-slate-500">Marca los que aplican a ti</p>
+            <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+            <p className="text-xs text-slate-500">{subtitle}</p>
           </div>
           <button
             type="button"

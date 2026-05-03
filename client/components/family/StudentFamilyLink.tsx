@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle, ArrowRight, Unlink } from "lucide-react";
+import { CheckCircle, ArrowRight } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
 import { money } from "../../lib/utils";
 
@@ -10,6 +10,12 @@ interface LinkedState {
   linkId: string;
   parentName: string;
   parentWalletBalance: number;
+  parents?: Array<{
+    linkId: string;
+    parentId: string;
+    parentName: string;
+    parentWalletBalance: number;
+  }>;
 }
 
 interface UnlinkedState {
@@ -41,6 +47,10 @@ export default function StudentFamilyLink() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [studentBalance, setStudentBalance] = useState<number | null>(null);
+  const [pendingUnlink, setPendingUnlink] = useState<null | {
+    linkId: string;
+    parentName: string;
+  }>(null);
 
   // Load current link status + student balance on mount
   useEffect(() => {
@@ -87,12 +97,15 @@ export default function StudentFamilyLink() {
     }
   }
 
-  async function handleUnlink() {
+  async function handleUnlink(linkId?: string) {
     if (!linkState?.linked) return;
     try {
-      await apiFetch(`/api/family/links/${linkState.linkId}`, { method: "DELETE" });
-      setLinkState({ linked: false });
+      await apiFetch(`/api/family/links/${linkId ?? linkState.linkId}`, { method: "DELETE" });
+      const updated = await apiFetch<ParentLinkResponse>("/api/family/my-parent");
+      setLinkState(updated);
+      setPendingUnlink(null);
       setInput("");
+      setTimeout(() => inputRef.current?.focus(), 0);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al desvincular");
     }
@@ -109,46 +122,100 @@ export default function StudentFamilyLink() {
 
   // ── Linked state ─────────────────────────────────────────────────────────
   if (linkState?.linked) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center bg-gray-50 px-6 py-8">
-        <div className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-sm">
-          {/* Green header */}
-          <div className="flex flex-col items-center bg-[#1C9690] px-6 pb-8 pt-8">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20">
-              <CheckCircle className="h-8 w-8 text-white" />
-            </div>
-            <h2 className="mt-3 text-xl font-bold text-white">Cuenta vinculada</h2>
-            <p className="mt-1 text-sm text-[#c6efe7]">La vinculación familiar está activa</p>
-          </div>
+    const parents = linkState.parents?.length
+      ? linkState.parents
+      : [{
+          linkId: linkState.linkId,
+          parentId: "",
+          parentName: linkState.parentName,
+          parentWalletBalance: linkState.parentWalletBalance,
+        }];
 
-          {/* Details */}
-          <div className="space-y-4 px-6 py-5">
-            <div className="rounded-xl bg-gray-50 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Vinculado con</p>
-              <p className="mt-1 text-base font-bold text-slate-900">{linkState.parentName}</p>
+    return (
+      <div className="bg-gray-50">
+        <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
+          <div className="space-y-3 px-5 py-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#d9f4ee] text-[#169486]">
+                <CheckCircle className="h-5 w-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-slate-900">Cuenta familiar vinculada</p>
+                <p className="truncate text-xs text-slate-400">
+                  {parents.length} familiar{parents.length !== 1 ? "es" : ""} asociado{parents.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {parents.map((parent) => (
+                <div key={parent.linkId} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-bold text-slate-700">{parent.parentName}</p>
+                    <p className="text-[11px] text-slate-400">Puede recargar y supervisar tu monedero.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPendingUnlink({
+                      linkId: parent.linkId,
+                      parentName: parent.parentName,
+                    })}
+                    className="shrink-0 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-400 hover:bg-white hover:text-red-500"
+                  >
+                    Quitar
+                  </button>
+                </div>
+              ))}
             </div>
 
             {studentBalance !== null && (
-              <div className="rounded-xl bg-[#d9f4ee] px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Saldo disponible</p>
-                <p className="mt-1 text-2xl font-black tabular-nums text-[#169486]">
-                  {money(studentBalance)}
-                </p>
-              </div>
+              <p className="rounded-xl bg-[#f0fbf8] px-3 py-2 text-xs font-semibold text-slate-500">
+                Saldo disponible: <span className="font-black tabular-nums text-[#169486]">{money(studentBalance)}</span>
+              </p>
             )}
 
             {error && <p className="text-center text-sm text-red-500">{error}</p>}
 
-            <button
-              type="button"
-              onClick={handleUnlink}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-red-100 py-3 text-sm font-semibold text-red-400 transition-all active:scale-[0.97] hover:bg-red-50"
-            >
-              <Unlink className="h-4 w-4" />
-              Desvincular cuenta
-            </button>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setLinkState({ linked: false })}
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500 transition-all active:scale-[0.97] hover:bg-slate-200"
+              >
+                <ArrowRight className="h-3.5 w-3.5" />
+                Añadir otro familiar
+              </button>
+            </div>
           </div>
         </div>
+
+        {pendingUnlink && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 px-5 backdrop-blur-[2px]">
+            <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl">
+              <h2 className="text-lg font-black text-slate-900">Quitar familiar</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Vas a desvincular a <strong className="text-slate-700">{pendingUnlink.parentName}</strong>.
+                Ya no podrá supervisar ni recargar tu monedero desde su panel.
+              </p>
+              <div className="mt-5 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPendingUnlink(null)}
+                  className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600 transition active:scale-[0.98]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleUnlink(pendingUnlink.linkId)}
+                  className="rounded-2xl bg-red-500 px-4 py-3 text-sm font-bold text-white transition active:scale-[0.98]"
+                >
+                  Quitar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

@@ -10,6 +10,7 @@ import {
   getAllFamilyRelationships,
   getChildOrders,
   getChildProfile,
+  updateChildAllergies,
 } from "../services/family.service";
 
 // ─── Validators ───────────────────────────────────────────────────────────────
@@ -128,6 +129,31 @@ export async function getChildProfileController(req: Request, res: Response, nex
     const { studentId } = z.object({ studentId: z.string().uuid() }).parse(req.params);
     const profile = await getChildProfile(req.user, studentId);
     res.status(200).json(profile);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** PUT /api/family/children/:studentId/allergies — parent edits child allergens */
+export async function updateChildAllergiesController(req: Request, res: Response, next: NextFunction): Promise<void> {
+  if (!req.user) { res.status(401).json({ message: "Unauthorized" }); return; }
+  try {
+    const { studentId } = z.object({ studentId: z.string().uuid() }).parse(req.params);
+    const { allergenIds } = z.object({ allergenIds: z.array(z.string().uuid()) }).parse(req.body);
+    const result = await updateChildAllergies(req.user, studentId, allergenIds);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** GET /api/family/children/:studentId/allergies — parent reads child allergens */
+export async function getChildAllergiesController(req: Request, res: Response, next: NextFunction): Promise<void> {
+  if (!req.user) { res.status(401).json({ message: "Unauthorized" }); return; }
+  try {
+    const { studentId } = z.object({ studentId: z.string().uuid() }).parse(req.params);
+    const profile = await getChildProfile(req.user, studentId);
+    res.status(200).json({ data: profile.allergens });
   } catch (error) {
     next(error);
   }

@@ -146,7 +146,7 @@ export async function register(payload: RegisterInput): Promise<Record<string, u
 
   const user = data as UserRow;
 
-  if (payload.allergenIds && payload.allergenIds.length > 0) {
+  if (payload.role === "STUDENT" && payload.allergenIds && payload.allergenIds.length > 0) {
     const rows = payload.allergenIds.map((allergen_id) => ({
       user_id: user.id,
       allergen_id

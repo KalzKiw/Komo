@@ -11,6 +11,8 @@ import {
   adminFamilyController,
   getChildOrdersController,
   getChildProfileController,
+  getChildAllergiesController,
+  updateChildAllergiesController,
 } from "../controllers/family.controller";
 
 export const familyRouter = Router();
@@ -44,3 +46,9 @@ familyRouter.get("/family/children/:studentId/orders", requireRoles(["PARENT"]),
 
 /** Parent: full profile of a linked child */
 familyRouter.get("/family/children/:studentId/profile", requireRoles(["PARENT"]), getChildProfileController);
+
+/** Parent: allergens of a linked child */
+familyRouter.get("/family/children/:studentId/allergies", requireRoles(["PARENT"]), getChildAllergiesController);
+
+/** Parent: update allergens of a linked child */
+familyRouter.put("/family/children/:studentId/allergies", requireRoles(["PARENT"]), updateChildAllergiesController);

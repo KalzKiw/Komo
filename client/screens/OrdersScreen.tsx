@@ -3,7 +3,7 @@ import { ArrowLeft, RotateCcw, XCircle } from "lucide-react";
 import { useApi } from "../hooks/useApi";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
-import { money, formatOrderStatus, formatShiftLabel, statusColor } from "../lib/utils";
+import { formatNonFutureDateTime, money, formatOrderStatus, formatShiftLabel, statusColor } from "../lib/utils";
 import { ChefHat, CheckCircle } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -66,7 +66,7 @@ function applyFilter(orders: OrderSummary[], filter: Filter): OrderSummary[] {
 
 export default function OrdersScreen({ onShowOrderSummary }: { onShowOrderSummary?: (summary: { items: any[]; total: number; feedback: string }) => void }) {
   const { apiFetch } = useApi();
-  const { addWithSignature, cart, total } = useCart();
+  const { addWithSignature } = useCart();
   const { showToast } = useToast();
   const { state: authState } = useAuth();
 
@@ -198,7 +198,7 @@ export default function OrdersScreen({ onShowOrderSummary }: { onShowOrderSummar
   if (detail) {
     const d = new Date(detail.createdAt);
     const datePart = d.toLocaleDateString("es-ES", { day: "numeric", month: "long" });
-    const timePart = d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+    const timePart = formatNonFutureDateTime(detail.createdAt, { hour: "2-digit", minute: "2-digit" });
     const formattedDate = `${datePart}, ${timePart}`;
     const cancellable = isCancellable(detail.status) && detail.status !== "CANCELLED";
 
@@ -227,7 +227,7 @@ export default function OrdersScreen({ onShowOrderSummary }: { onShowOrderSummar
             {/* Número grande */}
             <span className="text-6xl font-extrabold text-[#169486] tracking-widest mt-2 mb-2">{Number((detail as any).pickupNumber) || (100 + (parseInt(detail.id, 36) % 900))}</span>
             {/* Fecha y hora */}
-            <span className="text-base text-slate-500 mb-1">{d.toLocaleDateString("es-ES", { day: "numeric", month: "short" })}, {d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}</span>
+            <span className="text-base text-slate-500 mb-1">{d.toLocaleDateString("es-ES", { day: "numeric", month: "short" })}, {timePart}</span>
             {/* Turno debajo de la fecha */}
             <span className="flex items-center gap-1 text-sm text-slate-500 mb-3">
               <svg width="16" height="16" fill="none" stroke="#64748b" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 7v5l3 2" /></svg> {formatShiftLabel(detail.shift)}
@@ -404,7 +404,7 @@ export default function OrdersScreen({ onShowOrderSummary }: { onShowOrderSummar
                 </svg>
               );
             }
-            const date = new Date(order.createdAt).toLocaleDateString("es-ES", {
+            const date = formatNonFutureDateTime(order.createdAt, {
               day: "2-digit",
               month: "short",
               year: "numeric",

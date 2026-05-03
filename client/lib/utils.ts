@@ -14,11 +14,25 @@ export function escapeHtml(value: string): string {
 }
 
 export function elapsedFrom(dateLike: string | Date): string {
-  const created = new Date(dateLike);
+  const created = coerceNonFutureDate(dateLike);
   const diffMs = Math.max(0, Date.now() - created.getTime());
   const minutes = Math.floor(diffMs / 60000);
   const seconds = Math.floor((diffMs % 60000) / 1000);
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+export function coerceNonFutureDate(dateLike: string | Date): Date {
+  const date = new Date(dateLike);
+  if (Number.isNaN(date.getTime())) return new Date();
+  const now = Date.now();
+  return date.getTime() > now ? new Date(now) : date;
+}
+
+export function formatNonFutureDateTime(
+  dateLike: string | Date,
+  options: Intl.DateTimeFormatOptions
+): string {
+  return coerceNonFutureDate(dateLike).toLocaleString("es-ES", options);
 }
 
 export function formatShiftLabel(shift: string): string {

@@ -3,26 +3,6 @@ import { AppError } from "../errors/app-error";
 import { AuthUser } from "../types/domain";
 import { roundMoney } from "../utils/money";
 
-const DEMO_PARENT_ID = "eeeeeeee-0000-0000-0000-000000000001";
-const DEMO_STUDENT_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
-
-async function ensureDemoFamilyLink(userId: string): Promise<void> {
-  if (userId !== DEMO_STUDENT_ID && userId !== DEMO_PARENT_ID) return;
-
-  await supabase
-    .from("family_links")
-    .upsert(
-      {
-        id: "abababab-abab-abab-abab-abababababab",
-        parent_user_id: DEMO_PARENT_ID,
-        student_user_id: DEMO_STUDENT_ID,
-        relation: "PARENT",
-        status: "ACTIVE"
-      },
-      { onConflict: "id" }
-    );
-}
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface FamilyLinkRow {
@@ -99,16 +79,16 @@ export async function redeemLinkingToken(student: AuthUser, tokenCode: string): 
     throw new AppError("El código ha expirado. Pide uno nuevo.", 410);
   }
 
-  // Check not already linked to this parent
+  // Check previous relationship with this parent. If it was revoked, the new
+  // valid token reactivates it instead of inserting a duplicate row.
   const { data: existingLink } = await supabase
     .from("family_links")
-    .select("id")
+    .select("id, status")
     .eq("parent_user_id", token.parent_id)
     .eq("student_user_id", student.id)
-    .eq("status", "ACTIVE")
     .maybeSingle();
 
-  if (existingLink) {
+  if (existingLink?.status === "ACTIVE") {
     throw new AppError("Ya estás vinculado con este familiar", 409);
   }
 
@@ -125,20 +105,28 @@ export async function redeemLinkingToken(student: AuthUser, tokenCode: string): 
     throw new AppError("Error al validar el código", 500);
   }
 
-  const { error: linkError } = await supabase
-    .from("family_links")
-    .insert({
-      parent_user_id: token.parent_id,
-      student_user_id: student.id,
-      relation: "PARENT",
-      status: "ACTIVE",
-    });
+  const linkMutation = existingLink
+    ? supabase
+        .from("family_links")
+        .update({ status: "ACTIVE" })
+        .eq("id", existingLink.id)
+    : supabase
+        .from("family_links")
+        .insert({
+          parent_user_id: token.parent_id,
+          student_user_id: student.id,
+          relation: "PARENT",
+          status: "ACTIVE",
+        });
+
+  const { error: linkError } = await linkMutation;
 
   if (linkError) {
     await supabase
       .from("linking_tokens")
       .update({ used: false })
       .eq("id", token.id);
+    console.error("family link mutation failed", linkError);
     throw new AppError("Error al crear el vínculo familiar", 500);
   }
 
@@ -167,8 +155,6 @@ export async function getLinkedChildren(parent: AuthUser): Promise<Array<{
   if (parent.role !== "PARENT" && parent.role !== "ADMIN") {
     throw new AppError("Acceso denegado", 403);
   }
-
-  await ensureDemoFamilyLink(parent.id);
 
   const { data, error } = await supabase
     .from("family_links")
@@ -205,9 +191,13 @@ export async function getMyParentLink(student: AuthUser): Promise<{
   parentId?: string;
   parentName?: string;
   parentWalletBalance?: number;
+  parents?: Array<{
+    linkId: string;
+    parentId: string;
+    parentName: string;
+    parentWalletBalance: number;
+  }>;
 } > {
-  await ensureDemoFamilyLink(student.id);
-
   const { data, error } = await supabase
     .from("family_links")
     .select(`
@@ -220,24 +210,32 @@ export async function getMyParentLink(student: AuthUser): Promise<{
       )
     `)
     .eq("student_user_id", student.id)
-    .eq("status", "ACTIVE")
-    .maybeSingle();
+    .eq("status", "ACTIVE");
 
   if (error) {
     throw new AppError("Error al consultar el vínculo familiar", 500);
   }
 
-  if (!data) {
-    return { linked: false };
+  const rows = (data ?? []) as any[];
+  if (rows.length === 0) {
+    return { linked: false, parents: [] };
   }
 
-  const row = data as any;
-  return {
-    linked: true,
+  const parents = rows.map((row) => ({
     linkId: row.id,
     parentId: row.parent_user_id,
     parentName: row.users?.full_name ?? "Tu familiar",
     parentWalletBalance: Number(row.users?.wallet_balance ?? 0),
+  }));
+  const firstParent = parents[0];
+
+  return {
+    linked: true,
+    linkId: firstParent.linkId,
+    parentId: firstParent.parentId,
+    parentName: firstParent.parentName,
+    parentWalletBalance: firstParent.parentWalletBalance,
+    parents,
   };
 }
 
@@ -279,7 +277,7 @@ export async function topUpChildWallet(
   parent: AuthUser,
   studentId: string,
   amount: number
-): Promise<{ newBalance: number }> {
+): Promise<{ newBalance: number; movementPersisted: boolean }> {
   if (parent.role !== "PARENT") {
     throw new AppError("Solo los padres pueden recargar el saldo de sus hijos", 403);
   }
@@ -328,7 +326,6 @@ export async function topUpChildWallet(
     .from("users")
     .update({ wallet_balance: newBalance })
     .eq("id", studentId)
-    .eq("wallet_balance", currentBalance)
     .select("wallet_balance")
     .maybeSingle();
 
@@ -337,16 +334,23 @@ export async function topUpChildWallet(
   }
 
   if (!updated) {
-    throw new AppError("El saldo ha cambiado. Vuelve a intentarlo.", 409);
+    throw new AppError("No se pudo actualizar el saldo del alumno", 500);
   }
 
-  await supabase.from("wallet_transactions").insert({
-    user_id: studentId,
-    amount: topUpAmount,
-    concept: "Ingreso familiar"
-  });
+  const { error: transactionError } = await supabase
+    .from("wallet_transactions")
+    .insert({
+      user_id: studentId,
+      amount: topUpAmount,
+      concept: "Ingreso familiar"
+    });
 
-  return { newBalance };
+  if (transactionError) {
+    console.warn("wallet_transactions insert failed; wallet top-up kept without backend movement", transactionError);
+    return { newBalance, movementPersisted: false };
+  }
+
+  return { newBalance, movementPersisted: true };
 }
 
 // ─── 9) PARENT: get a child's profile ───────────────────────────────────────────
@@ -480,11 +484,54 @@ export async function getChildOrders(
         total: Number(row.amount),
         creditedToWallet: true,
         createdAt: row.created_at,
+        concept: row.concept,
       }));
 
   return [...orders, ...transactions]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 30);
+}
+
+export async function updateChildAllergies(
+  parent: AuthUser,
+  studentId: string,
+  allergenIds: string[]
+): Promise<{ success: boolean; count: number }> {
+  if (parent.role !== "PARENT") {
+    throw new AppError("Solo los padres pueden ajustar los alérgenos de sus hijos", 403);
+  }
+
+  const { data: link } = await supabase
+    .from("family_links")
+    .select("id")
+    .eq("parent_user_id", parent.id)
+    .eq("student_user_id", studentId)
+    .eq("status", "ACTIVE")
+    .maybeSingle();
+
+  if (!link) {
+    throw new AppError("No tienes un hijo vinculado con ese ID", 403);
+  }
+
+  const uniqueIds = [...new Set(allergenIds)];
+  const { error: deleteError } = await supabase
+    .from("user_allergies")
+    .delete()
+    .eq("user_id", studentId);
+
+  if (deleteError) {
+    throw new AppError("Error al actualizar los alérgenos del alumno", 500);
+  }
+
+  if (uniqueIds.length > 0) {
+    const rows = uniqueIds.map((allergen_id) => ({ user_id: studentId, allergen_id }));
+    const { error: insertError } = await supabase.from("user_allergies").insert(rows);
+    if (insertError) {
+      throw new AppError("Error al guardar los alérgenos del alumno", 500);
+    }
+  }
+
+  return { success: true, count: uniqueIds.length };
 }
 
 export async function getAllFamilyRelationships(): Promise<Array<{

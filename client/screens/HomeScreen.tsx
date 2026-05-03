@@ -117,6 +117,10 @@ export default function HomeScreen() {
       ...payload.extras.map((x) => `+ ${x.label}`),
       ...Object.values(payload.requiredChoices),
     ];
+    const info = product.productInfo ?? resolveProductInfo(product.name);
+    const fallbackAllergens = info
+      ? [...info.alergenos, ...info.trazas].map((name) => ({ name, code: name }))
+      : [];
     addLine({
       id: product.id,
       name: product.name,
@@ -124,7 +128,7 @@ export default function HomeScreen() {
       qty: payload.qty,
       options,
       note: payload.kitchenNote,
-      allergens: product.allergens ?? [],
+      allergens: product.allergens?.length ? product.allergens : fallbackAllergens,
     });
     setDetailProduct(null);
   }

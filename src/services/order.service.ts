@@ -12,10 +12,36 @@ import { buildCancellationDeadline } from "../utils/schedule";
 interface ProductRow {
   id: string;
   price: number;
+  name?: string;
+  product_info?: {
+    alergenos?: string[];
+    trazas?: string[];
+  } | null;
+  product_allergens?: Array<{
+    allergens?: { id: string; code: string; name: string } | { id: string; code: string; name: string }[] | null;
+  }>;
 }
 
 interface WalletRow {
   wallet_balance: number;
+}
+
+interface UserAllergyCheckRow {
+  allergens?: { id: string; code: string; name: string } | { id: string; code: string; name: string }[] | null;
+}
+
+function normalized(value: string): string {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function firstAllergen(
+  value?: { id: string; code: string; name: string } | { id: string; code: string; name: string }[] | null
+) {
+  return Array.isArray(value) ? value[0] : value;
 }
 
 interface OrderRow {
@@ -87,29 +113,111 @@ interface OrderDetailRow {
 
 export async function createOrder(user: AuthUser, payload: unknown): Promise<Record<string, unknown>> {
   const data: CreateOrderInput = createOrderSchema.parse(payload);
+  let orderUserId = user.id;
+
+  if (data.studentId) {
+    if (user.role !== "PARENT") {
+      throw new AppError("Solo un padre puede pedir en nombre de un hijo", 403);
+    }
+
+    const { data: link } = await supabase
+      .from("family_links")
+      .select("id")
+      .eq("parent_user_id", user.id)
+      .eq("student_user_id", data.studentId)
+      .eq("status", "ACTIVE")
+      .maybeSingle();
+
+    if (!link) {
+      throw new AppError("No tienes un hijo vinculado con ese ID", 403);
+    }
+
+    orderUserId = data.studentId;
+  } else if (user.role === "PARENT") {
+    throw new AppError("Selecciona para qué hijo quieres hacer el pedido", 400);
+  }
 
   const productIds = data.items.map((item) => item.productId);
 
-  const { data: products, error: productsError } = await supabase
+  const productSelectWithInfo = "id, name, price, is_active, product_info, product_allergens(allergens(id, code, name))";
+  const productSelectLegacy = "id, name, price, is_active, product_allergens(allergens(id, code, name))";
+
+  let { data: products, error: productsError } = await supabase
     .from("products")
-    .select("id, price, is_active")
+    .select(productSelectWithInfo)
     .in("id", productIds);
 
   if (productsError) {
+    const message = productsError.message ?? "";
+    if (message.includes("product_info") || message.includes("schema cache")) {
+      const fallback = await supabase
+        .from("products")
+        .select(productSelectLegacy)
+        .in("id", productIds);
+      products = fallback.data as any;
+      productsError = fallback.error;
+    }
+  }
+
+  if (productsError) {
+    console.error("Unable to load products for order", productsError);
     throw new AppError("Unable to load products", 500);
   }
 
-  const productMap = new Map((products as ProductRow[]).map((p) => [p.id, p]));
+  const productRows = products as unknown as ProductRow[];
+  const productMap = new Map(productRows.map((p) => [p.id, p]));
   const missingProducts = productIds.filter((id) => !productMap.has(id));
 
   if (missingProducts.length > 0) {
     throw new AppError("One or more products do not exist", 404);
   }
 
-  const hasInactiveProduct = (products as (ProductRow & { is_active: boolean })[]).some((p) => !p.is_active);
+  const hasInactiveProduct = productRows.some((p) => !(p as ProductRow & { is_active: boolean }).is_active);
 
   if (hasInactiveProduct) {
     throw new AppError("One or more selected products are inactive", 409);
+  }
+
+  if (!data.acknowledgedAllergenWarning) {
+    const { data: userAllergies } = await supabase
+      .from("user_allergies")
+      .select("allergens(id, code, name)")
+      .eq("user_id", orderUserId);
+
+    const userAllergenKeys = new Set(
+      ((userAllergies ?? []) as unknown as UserAllergyCheckRow[])
+        .flatMap((row) => {
+          const allergen = firstAllergen(row.allergens);
+          return [allergen?.code, allergen?.name].filter(Boolean) as string[];
+        })
+        .map(normalized)
+    );
+
+    if (userAllergenKeys.size > 0) {
+      const riskyProduct = productRows.find((product) => {
+        const relationAllergens = (product.product_allergens ?? [])
+          .flatMap((row) => {
+            const allergen = firstAllergen(row.allergens);
+            return [allergen?.code, allergen?.name].filter(Boolean) as string[];
+          });
+        const infoAllergens = [
+          ...(product.product_info?.alergenos ?? []),
+          ...(product.product_info?.trazas ?? [])
+        ];
+        const productKeys = [...relationAllergens, ...infoAllergens].map(normalized);
+        return productKeys.some((productKey) =>
+          [...userAllergenKeys].some((userKey) =>
+            productKey === userKey ||
+            (userKey.length > 2 && productKey.includes(userKey)) ||
+            (productKey.length > 2 && userKey.includes(productKey))
+          )
+        );
+      });
+
+      if (riskyProduct) {
+        throw new AppError(`Este pedido contiene alérgenos configurados: ${riskyProduct.name ?? "producto con riesgo"}`, 409);
+      }
+    }
   }
 
   const orderItems = data.items.map((item) => {
@@ -144,7 +252,7 @@ export async function createOrder(user: AuthUser, payload: unknown): Promise<Rec
     const { data: wallet, error: walletError } = await supabase
       .from("users")
       .select("wallet_balance")
-      .eq("id", user.id)
+      .eq("id", orderUserId)
       .single();
 
     if (walletError || !wallet) {
@@ -161,7 +269,7 @@ export async function createOrder(user: AuthUser, payload: unknown): Promise<Rec
     const { data: updatedWallet, error: debitError } = await supabase
       .from("users")
       .update({ wallet_balance: nextBalance })
-      .eq("id", user.id)
+      .eq("id", orderUserId)
       .eq("wallet_balance", currentBalance)
       .select("id")
       .maybeSingle();
@@ -195,7 +303,7 @@ export async function createOrder(user: AuthUser, payload: unknown): Promise<Rec
   const { data: insertedOrder, error: orderInsertError } = await supabase
     .from("orders")
     .insert({
-      user_id: user.id,
+      user_id: orderUserId,
       placed_by_user_id: user.id,
       shift: data.shift,
       scheduled_for: data.scheduledFor,
@@ -209,7 +317,7 @@ export async function createOrder(user: AuthUser, payload: unknown): Promise<Rec
 
   if (orderInsertError || !insertedOrder) {
     if (debitedWallet) {
-      await refundWallet(user.id, total);
+      await refundWallet(orderUserId, total);
     }
     throw new AppError("Unable to persist order", 500);
   }
@@ -237,7 +345,7 @@ export async function createOrder(user: AuthUser, payload: unknown): Promise<Rec
     });
     await supabase.from("orders").delete().eq("id", insertedOrder.id);
     if (debitedWallet) {
-      await refundWallet(user.id, total);
+      await refundWallet(orderUserId, total);
     }
     throw new AppError(
       `Unable to persist order items: ${itemsInsertError?.message || "Unknown error"}`,
@@ -312,6 +420,25 @@ export async function cancelOrder(user: AuthUser, orderId: string): Promise<Reco
 }
 
 export async function listOrders(user: AuthUser, query: ListOrdersQuery): Promise<Record<string, unknown>> {
+  let familyStudentIds: string[] | null = null;
+
+  if (user.role === "PARENT") {
+    const { data: links, error: linkError } = await supabase
+      .from("family_links")
+      .select("student_user_id")
+      .eq("parent_user_id", user.id)
+      .eq("status", "ACTIVE");
+
+    if (linkError) {
+      throw new AppError("Unable to list family orders", 500);
+    }
+
+    familyStudentIds = (links ?? []).map((row: any) => row.student_user_id);
+    if (familyStudentIds.length === 0) {
+      return { data: [] };
+    }
+  }
+
   let statement = supabase
     .from("orders")
     .select("id, user_id, shift, scheduled_for, status, total, credited_to_wallet, created_at")
@@ -333,7 +460,11 @@ export async function listOrders(user: AuthUser, query: ListOrdersQuery): Promis
   const canViewAll = user.role === "ADMIN" || user.role === "STAFF";
 
   if (!canViewAll) {
-    statement = statement.eq("user_id", user.id);
+    if (familyStudentIds) {
+      statement = statement.in("user_id", familyStudentIds);
+    } else {
+      statement = statement.eq("user_id", user.id);
+    }
   }
 
   const { data, error } = await statement;
@@ -415,7 +546,21 @@ export async function getOrderDetail(user: AuthUser, orderId: string): Promise<R
   const canViewAll = user.role === "ADMIN" || user.role === "STAFF";
 
   if (!canViewAll && order.user_id !== user.id) {
-    throw new AppError("You are not allowed to view this order", 403);
+    if (user.role !== "PARENT") {
+      throw new AppError("You are not allowed to view this order", 403);
+    }
+
+    const { data: link } = await supabase
+      .from("family_links")
+      .select("id")
+      .eq("parent_user_id", user.id)
+      .eq("student_user_id", order.user_id)
+      .eq("status", "ACTIVE")
+      .maybeSingle();
+
+    if (!link) {
+      throw new AppError("You are not allowed to view this order", 403);
+    }
   }
 
   return {

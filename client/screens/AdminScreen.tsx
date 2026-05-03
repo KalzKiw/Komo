@@ -3,7 +3,7 @@ import { LogOut, RefreshCw, ChevronRight, X, Check, ArrowRight, ArrowLeft } from
 import { useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
 import { useToast } from "../context/ToastContext";
-import { money, formatOrderStatus, formatShiftLabel, elapsedFrom, adminProductCategory, statusColor } from "../lib/utils";
+import { money, formatOrderStatus, formatShiftLabel, elapsedFrom, adminProductCategory, statusColor, formatNonFutureDateTime } from "../lib/utils";
 import AdminFamilyRelationships from "../components/family/AdminFamilyRelationships";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -499,7 +499,7 @@ function OrdersTab({ orders, onStatusChange, apiFetch, showToast }: OrdersTabPro
         <div className="space-y-2">
           {filtered.map((order) => {
             const hour = order.createdAt
-              ? new Date(order.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })
+              ? formatNonFutureDateTime(order.createdAt, { hour: "2-digit", minute: "2-digit" })
               : "--:--";
             return (
               <div
