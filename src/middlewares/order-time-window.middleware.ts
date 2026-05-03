@@ -30,6 +30,11 @@ export async function orderCutoffMiddleware(req: Request, res: Response, next: N
     return;
   }
 
+  if (schedule.disabled) {
+    next();
+    return;
+  }
+
   const cutoffByShift: Record<OrderShift, { hour: number; minute: number }> = {
     MORNING: schedule.morning,
     AFTERNOON: schedule.afternoon,
@@ -50,4 +55,3 @@ export async function orderCutoffMiddleware(req: Request, res: Response, next: N
 
   next();
 }
-

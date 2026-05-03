@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-05-03
+
+### Añadido
+
+- Persistencia de teléfono y tarjeta resumida en el perfil del usuario.
+- Endpoint de recarga real del monedero del alumno y movimientos `wallet_transactions`.
+- Migración `20260503_wallet_profile_persistence.sql` para perfil persistente y movimientos de monedero.
+- Ficha alimentaria e imagen editable desde el panel de administración.
+- Switch temporal en Administración para desactivar los límites de reserva.
+
+### Corregido
+
+- El monedero del alumno ya no suma saldo solo en React: la recarga actualiza el backend.
+- El input de recarga se sustituyó por un control móvil con botones de incremento/decremento.
+- Alumno demo y padre demo quedan vinculados por seed/fallback de demo.
+- Horarios de corte ajustados a mañana 09:00, tarde 15:00 y noche 18:00, sin minutos de gracia por defecto.
+
 ## 2026-05-01
 
 ### Añadido

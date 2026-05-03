@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { allergenVisual } from "../lib/allergens";
 
@@ -29,7 +30,25 @@ export default function AllergenWarningModal({
   onCancel,
   isLoading = false,
 }: AllergenWarningModalProps) {
+  const [secondsLeft, setSecondsLeft] = useState(5);
+
+  useEffect(() => {
+    if (!open) {
+      setSecondsLeft(5);
+      return;
+    }
+
+    setSecondsLeft(5);
+    const interval = window.setInterval(() => {
+      setSecondsLeft((current) => Math.max(0, current - 1));
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [open]);
+
   if (!open) return null;
+
+  const canContinue = secondsLeft === 0 && !isLoading;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 py-6">
@@ -123,11 +142,13 @@ export default function AllergenWarningModal({
           <button
             type="button"
             onClick={onConfirm}
-            disabled={isLoading}
+            disabled={!canContinue}
             className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+            ) : secondsLeft > 0 ? (
+              `Continuar de todas formas (${secondsLeft}s)`
             ) : (
               <>
                 <CheckCircle2 className="h-4 w-4" />

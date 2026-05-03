@@ -41,6 +41,11 @@ VALUES
   ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee')
 ON CONFLICT (user_id, allergen_id) DO NOTHING;
 
+INSERT INTO family_links (id, parent_user_id, student_user_id, relation, status)
+VALUES
+  ('abababab-abab-abab-abab-abababababab', 'eeeeeeee-0000-0000-0000-000000000001', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'PARENT', 'ACTIVE')
+ON CONFLICT (id) DO UPDATE SET status = 'ACTIVE';
+
 INSERT INTO products (id, name, description, price, is_official_menu, is_active)
 VALUES
   ('12121212-1212-1212-1212-121212121212', 'Bocadillo Oficial', 'Menu oficial escolar', 2.50, true, true),

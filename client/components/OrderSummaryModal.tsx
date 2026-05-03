@@ -27,14 +27,15 @@ const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({
 }) => {
   if (!open) return null;
 
+  const isSuccess = feedback.startsWith("✓") && items.length > 0;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl p-7 flex flex-col">
-        <h2 className="font-extrabold text-2xl mb-2 text-[#169486] text-center">
-          {feedback && feedback.includes("añadido al carrito") ? "Repetir pedido" : "¡Pedido realizado!"}
+        <h2 className={`font-extrabold text-2xl mb-2 text-center ${isSuccess ? "text-[#169486]" : "text-red-600"}`}>
+          {isSuccess ? "¡Pedido realizado!" : feedback && feedback.includes("añadido al carrito") ? "Repetir pedido" : "Error al crear el pedido"}
         </h2>
-        {/* Feedback solo si es error, no si es éxito */}
-        {feedback && !feedback.includes("✓") && (
+        {feedback && !isSuccess && (
           <p className="text-center text-red-500 mb-4">{feedback}</p>
         )}
         <div className="mb-6 mt-2">

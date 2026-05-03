@@ -5,7 +5,7 @@ import { X, Minus, Plus, ShoppingCart } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
-import { money } from "../lib/utils";
+import { money, normalizedText } from "../lib/utils";
 
 type Props = {
   onClose: () => void;
@@ -72,25 +72,36 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
     if (userAllergens.length === 0) return [];
 
     const userAllergenIds = new Set(userAllergens.map((a) => a.id));
+    const userAllergenKeys = new Set(
+      userAllergens.flatMap((a) => [a.code, a.name].filter(Boolean).map((value) => normalizedText(value)))
+    );
     const warningMap = new Map<string, AllergenWarning>();
 
     // Check each product in cart
     for (const line of cart) {
       const product = productsMap.get(line.id);
-      if (!product || !product.allergens) continue;
+      const allergens = product?.allergens?.length ? product.allergens : line.allergens ?? [];
+      if (allergens.length === 0) continue;
 
       // Check if product has any user allergens
-      for (const allergen of product.allergens) {
-        if (userAllergenIds.has(allergen.id)) {
-          if (!warningMap.has(allergen.id)) {
-            warningMap.set(allergen.id, {
-              allergenId: allergen.id,
+      for (const allergen of allergens) {
+        const allergenKey = normalizedText(allergen.name);
+        const matches =
+          (allergen.id && userAllergenIds.has(allergen.id)) ||
+          userAllergenKeys.has(allergenKey) ||
+          (allergen.code ? userAllergenKeys.has(normalizedText(allergen.code)) : false);
+
+        if (matches) {
+          const key = allergen.id ?? allergenKey;
+          if (!warningMap.has(key)) {
+            warningMap.set(key, {
+              allergenId: key,
               allergenName: allergen.name,
-              allergenCode: allergen.code,
+              allergenCode: allergen.code ?? allergen.name,
               productNames: [],
             });
           }
-          const warning = warningMap.get(allergen.id)!;
+          const warning = warningMap.get(key)!;
           if (!warning.productNames.includes(line.name)) {
             warning.productNames.push(line.name);
           }
@@ -111,15 +122,14 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
     }
 
     // Proceed with checkout
-    await checkout();
+    await checkout(confirmedWarning);
   }
 
-  async function checkout() {
+  async function checkout(acknowledgedAllergenWarning = false) {
     if (cart.length === 0) return;
     setFeedback("");
     setLoading(true);
     setShowAllergenWarning(false);
-    setConfirmedWarning(false);
     try {
       const payload = {
         shift: "MORNING",
@@ -130,7 +140,7 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
           customizations: line.options ?? [],
           kitchenNote: line.note || undefined,
         })),
-        acknowledgedAllergenWarning: confirmedWarning,
+        acknowledgedAllergenWarning,
       };
       const res = await apiFetch("/api/orders", { method: "POST", body: JSON.stringify(payload) });
       const summary = {
@@ -148,6 +158,7 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
       setLastOrder(summary);
       setFeedback(summary.feedback);
       setShowSummary(true);
+      window.dispatchEvent(new Event("walletBalanceChanged"));
       console.log("RESUMEN (success)", summary);
       if (typeof onShowOrderSummary === "function") {
         onShowOrderSummary(summary);
@@ -167,6 +178,7 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
         onShowOrderSummary(summary);
       }
     } finally {
+      setConfirmedWarning(false);
       setLoading(false);
     }
   }
@@ -294,7 +306,7 @@ export default function CartModal({ onClose, onOrderPlaced }: Props) {
           setConfirmedWarning(true);
           setShowAllergenWarning(false);
           // Call checkout after confirming
-          checkout();
+          checkout(true);
         }}
         onCancel={() => {
           setShowAllergenWarning(false);

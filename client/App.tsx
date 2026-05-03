@@ -76,24 +76,6 @@ function ConsumerApp({ role }: { role: UserRole }) {
         {tab === "wallet" && <WalletScreen role={role} />}
         {tab === "orders" && <OrdersScreen onShowOrderSummary={handleShowOrderSummary} />}
         {tab === "profile" && <ProfileScreenWrapper />}
-        {/* CartModal solo si está abierto y NO se muestra el resumen */}
-        {cartOpen && !showOrderSummary && (
-          <CartModal
-            onClose={() => setCartOpen(false)}
-            onShowOrderSummary={handleShowOrderSummary}
-          />
-        )}
-        {/* Modal de resumen de pedido */}
-        {showOrderSummary && orderSummary && (
-          <OrderSummaryModal
-            open={showOrderSummary}
-            items={orderSummary.items}
-            total={orderSummary.total}
-            feedback={orderSummary.feedback}
-            onClose={handleCloseOrderSummary}
-            onGoToOrders={handleGoToOrders}
-          />
-        )}
       </div>
 
       {/* ── Bottom Nav ───────────────────────────────────────────── */}

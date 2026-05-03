@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { ArrowDownCircle, RefreshCw, Eye, ShoppingBag, Coffee, UtensilsCrossed, ArrowLeft, ChevronRight, CreditCard } from "lucide-react";
-import type { UserRole } from "../context/AuthContext";
+import { useAuth, type UserRole } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
+import { useToast } from "../context/ToastContext";
 import { money } from "../lib/utils";
 import BankCardModal from "../components/BankCardModal";
 
@@ -15,6 +16,7 @@ interface OrderRow {
   total: number;
   creditedToWallet: boolean;
   createdAt: string;
+  concept?: string;
 }
 
 interface Child {
@@ -27,14 +29,16 @@ interface Child {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function orderToMovement(order: OrderRow) {
-  const isRefund = order.creditedToWallet;
+  const isRefund = order.creditedToWallet || order.status === "TOPUP";
   const amount = isRefund ? order.total : -order.total;
-  const concept = isRefund
+  const concept = order.status === "TOPUP"
+    ? order.concept ?? "Ingreso de saldo"
+    : isRefund
     ? "Devolución (pedido cancelado)"
     : order.shift === "BREAKFAST"
     ? "Desayuno"
     : "Almuerzo";
-  const Icon = isRefund ? ArrowDownCircle : order.shift === "BREAKFAST" ? Coffee : UtensilsCrossed;
+  const Icon = order.status === "TOPUP" ? ArrowDownCircle : isRefund ? ArrowDownCircle : order.shift === "BREAKFAST" ? Coffee : UtensilsCrossed;
   const date = new Date(order.createdAt).toLocaleString("es-ES", {
     day: "numeric",
     month: "short",
@@ -49,7 +53,7 @@ function amountColor(amount: number) {
 }
 
 function amountLabel(amount: number) {
-  return `${amount >= 0 ? "+" : ""}${money(Math.abs(amount))}`;
+  return `${amount >= 0 ? "+" : "-"}${money(Math.abs(amount))}`;
 }
 
 function initials(name: string) {
@@ -59,6 +63,100 @@ function initials(name: string) {
     .map((w) => w[0])
     .join("")
     .toUpperCase();
+}
+
+function movementStats(orders: OrderRow[]) {
+  return orders.reduce(
+    (acc, order) => {
+      const amount = orderToMovement(order).amount;
+      if (amount >= 0) acc.income += amount;
+      else acc.expenses += Math.abs(amount);
+      acc.net += amount;
+      acc.count += 1;
+      return acc;
+    },
+    { income: 0, expenses: 0, net: 0, count: 0 }
+  );
+}
+
+function sortMovements(orders: OrderRow[]) {
+  return [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+function readLocalTopups(storageKey: string): OrderRow[] {
+  try {
+    return JSON.parse(localStorage.getItem(storageKey) ?? "[]") as OrderRow[];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalTopups(storageKey: string, rows: OrderRow[]) {
+  localStorage.setItem(storageKey, JSON.stringify(rows.slice(0, 30)));
+}
+
+function MovementChart({ orders }: { orders: OrderRow[] }) {
+  const recent = sortMovements(orders).slice(0, 7).reverse();
+  const values = recent.map((order) => orderToMovement(order).amount);
+  const max = Math.max(1, ...values.map((value) => Math.abs(value)));
+
+  if (recent.length === 0) return null;
+
+  return (
+    <div className="rounded-3xl bg-white p-4 shadow-sm">
+      <h2 className="mb-3 text-sm font-bold text-slate-700">Gráfica</h2>
+      <div className="flex h-32 items-end gap-2">
+        {recent.map((order) => {
+          const movement = orderToMovement(order);
+          const height = Math.max(8, (Math.abs(movement.amount) / max) * 100);
+          return (
+            <div key={order.id} className="flex flex-1 flex-col items-center gap-1">
+              <div className="flex h-24 w-full items-end justify-center rounded-xl bg-slate-50 px-1">
+                <div
+                  className={`w-full rounded-t-lg ${movement.amount >= 0 ? "bg-[#1C9690]" : "bg-red-500"}`}
+                  style={{ height: `${height}%` }}
+                  title={amountLabel(movement.amount)}
+                />
+              </div>
+              <span className={`text-[10px] font-bold tabular-nums ${amountColor(movement.amount)}`}>
+                {movement.amount >= 0 ? "+" : "-"}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsPanel({ title, orders }: { title: string; orders: OrderRow[] }) {
+  const stats = movementStats(orders);
+  return (
+    <div className="rounded-3xl bg-white p-4 shadow-sm">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-bold text-slate-700">{title}</h2>
+        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-500">
+          {stats.count} mov.
+        </span>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-2xl bg-[#d9f4ee] p-3">
+          <p className="text-[10px] font-bold uppercase text-[#1C9690]">Ingresos</p>
+          <p className="mt-1 text-sm font-black tabular-nums text-[#1C9690]">+{money(stats.income)}</p>
+        </div>
+        <div className="rounded-2xl bg-red-50 p-3">
+          <p className="text-[10px] font-bold uppercase text-red-500">Gastos</p>
+          <p className="mt-1 text-sm font-black tabular-nums text-red-500">-{money(stats.expenses)}</p>
+        </div>
+        <div className="rounded-2xl bg-slate-50 p-3">
+          <p className="text-[10px] font-bold uppercase text-slate-500">Neto</p>
+          <p className={`mt-1 text-sm font-black tabular-nums ${stats.net >= 0 ? "text-[#1C9690]" : "text-red-500"}`}>
+            {stats.net >= 0 ? "+" : "-"}{money(Math.abs(stats.net))}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ─── Movement list (shared) ───────────────────────────────────────────────────
@@ -117,25 +215,60 @@ function MovementList({ orders, loading }: { orders: OrderRow[]; loading: boolea
 
 function StudentWallet() {
   const { apiFetch } = useApi();
+  const { state } = useAuth();
+  const { showToast } = useToast();
   const [balance, setBalance] = useState<number | null>(null);
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loadingBalance, setLoadingBalance] = useState(true);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [bankCardModalOpen, setBankCardModalOpen] = useState(false);
   const [savedCard, setSavedCard] = useState<{ lastFourDigits: string } | null>(null);
+  const [topUpAmount, setTopUpAmount] = useState("10");
+  const [toppingUp, setToppingUp] = useState(false);
+  const userId = state.status === "authenticated" ? state.user.id : "anonymous";
+  const cardStorageKey = `cafes-payment-card-last4:${userId}`;
+  const topupsStorageKey = `cafes-wallet-topups:${userId}`;
+
+  const loadWalletData = async () => {
+    setLoadingBalance(true);
+    setLoadingOrders(true);
+    try {
+      const [profile, history] = await Promise.all([
+        apiFetch<{ walletBalance: number; paymentCardLast4?: string | null }>("/api/me"),
+        apiFetch<{ data: OrderRow[] }>("/api/me/wallet-movements?limit=30"),
+      ]);
+      setBalance(profile.walletBalance);
+      const localCard = localStorage.getItem(cardStorageKey);
+      setSavedCard(profile.paymentCardLast4 || localCard ? { lastFourDigits: profile.paymentCardLast4 ?? localCard! } : null);
+      const localTopups = readLocalTopups(topupsStorageKey);
+      const backendIds = new Set((history.data ?? []).map((item) => item.id));
+      setOrders(sortMovements([...(history.data ?? []), ...localTopups.filter((item) => !backendIds.has(item.id))]));
+    } catch {
+      setBalance((prev) => prev ?? 0);
+      setOrders((prev) => prev ?? []);
+    } finally {
+      setLoadingBalance(false);
+      setLoadingOrders(false);
+    }
+  };
 
   useEffect(() => {
-    apiFetch<{ walletBalance: number }>("/api/me")
-      .then((r) => setBalance(r.walletBalance))
-      .catch(() => setBalance(0))
-      .finally(() => setLoadingBalance(false));
-    apiFetch<{ data: OrderRow[] }>("/api/me/orders?limit=30")
-      .then((r) => setOrders(r.data))
-      .catch(() => setOrders([]))
-      .finally(() => setLoadingOrders(false));
-  }, [apiFetch]);
+    loadWalletData();
+    const onWalletChanged = () => {
+      loadWalletData();
+    };
+    window.addEventListener("walletBalanceChanged", onWalletChanged);
+    return () => window.removeEventListener("walletBalanceChanged", onWalletChanged);
+  }, [apiFetch, topupsStorageKey]);
 
   const bal = balance ?? 0;
+  const parsedTopUpAmount = Number(topUpAmount.replace(",", "."));
+  const canTopUp = Number.isFinite(parsedTopUpAmount) && parsedTopUpAmount > 0 && parsedTopUpAmount <= 200 && !toppingUp;
+
+  function adjustTopUp(delta: number) {
+    const current = Number.isFinite(parsedTopUpAmount) ? parsedTopUpAmount : 0;
+    setTopUpAmount(String(Math.min(200, Math.max(1, current + delta))));
+  }
 
   async function handleSaveCard(cardData: {
     cardNumber: string;
@@ -145,12 +278,50 @@ function StudentWallet() {
     cvv: string;
   }) {
     try {
-      // In a real app, you would send this to a secure backend endpoint
-      // For now, we'll just save the last 4 digits for display
       const lastFour = cardData.cardNumber.slice(-4);
+      try {
+        await apiFetch("/api/me", {
+          method: "PATCH",
+          body: JSON.stringify({ paymentCardLast4: lastFour }),
+        });
+      } catch {
+        localStorage.setItem(cardStorageKey, lastFour);
+      }
       setSavedCard({ lastFourDigits: lastFour });
+      window.dispatchEvent(new Event("profileChanged"));
     } catch (error) {
       throw new Error("Error al guardar la tarjeta");
+    }
+  }
+
+  async function handleTopUp() {
+    if (!canTopUp) return;
+    const amount = Math.round(parsedTopUpAmount * 100) / 100;
+    setToppingUp(true);
+    try {
+      const result = await apiFetch<{ walletBalance: number; amount: number }>("/api/me/wallet/topup", {
+        method: "POST",
+        body: JSON.stringify({ amount }),
+      });
+      setBalance(result.walletBalance);
+      showToast(`Has ingresado ${money(result.amount)} al monedero`, "success");
+      const localTopup: OrderRow = {
+        id: `local-topup-${Date.now()}`,
+        shift: "TOPUP",
+        scheduledFor: new Date().toISOString(),
+        status: "TOPUP",
+        total: result.amount,
+        creditedToWallet: true,
+        createdAt: new Date().toISOString(),
+        concept: "Ingreso de saldo",
+      };
+      writeLocalTopups(topupsStorageKey, [localTopup, ...readLocalTopups(topupsStorageKey)]);
+      await loadWalletData();
+      setOrders((prev) => sortMovements([localTopup, ...prev.filter((item) => item.id !== localTopup.id)]));
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "No se pudo recargar el monedero", "error");
+    } finally {
+      setToppingUp(false);
     }
   }
 
@@ -159,9 +330,10 @@ function StudentWallet() {
       className="h-full overflow-y-auto bg-gray-50 [&::-webkit-scrollbar]:hidden"
       style={{ scrollbarWidth: "none" }}
     >
-      <div className="relative w-full bg-[#1C9690] px-4 pb-20 pt-10">
-        <h1 className="text-center text-lg font-bold text-white">Mi Monedero</h1>
-        <p className="mt-0.5 text-center text-xs font-medium text-[#92dbc8]">Curso 2025-2026</p>
+      <div className="relative w-full bg-white px-4 pb-20 pt-10 shadow-sm">
+        <div className="flex items-center justify-center gap-3">
+          <img src="/logotipo-transparente.png" alt="KOMO" className="h-10 w-auto" />
+        </div>
       </div>
 
       <div className="relative z-10 -mt-12 mx-4 rounded-3xl bg-white p-6 shadow-md">
@@ -185,8 +357,46 @@ function StudentWallet() {
       </div>
 
       <div className="mt-6 px-4 pb-6">
-        <h2 className="mb-3 text-sm font-bold text-slate-700">Últimos movimientos</h2>
-        <MovementList orders={orders} loading={loadingOrders} />
+        <h2 className="mb-3 text-sm font-bold text-slate-700">Recargar saldo</h2>
+        <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="grid grid-cols-[44px_1fr_44px] items-center gap-2">
+            <button
+              type="button"
+              onClick={() => adjustTopUp(-1)}
+              className="h-11 rounded-2xl border border-slate-200 bg-slate-50 text-xl font-bold text-slate-600"
+              aria-label="Reducir importe"
+            >
+              -
+            </button>
+            <input
+              inputMode="decimal"
+              value={topUpAmount}
+              onChange={(event) => setTopUpAmount(event.target.value.replace(/[^\d.,]/g, ""))}
+              onBlur={() => {
+                if (!Number.isFinite(parsedTopUpAmount) || parsedTopUpAmount <= 0) setTopUpAmount("1");
+                else setTopUpAmount(String(Math.round(parsedTopUpAmount * 100) / 100));
+              }}
+              className="h-12 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 text-center text-xl font-bold tabular-nums text-slate-900 outline-none focus:border-[#1C9690] focus:bg-white"
+            />
+            <button
+              type="button"
+              onClick={() => adjustTopUp(1)}
+              className="h-11 rounded-2xl border border-slate-200 bg-slate-50 text-xl font-bold text-slate-600"
+              aria-label="Aumentar importe"
+            >
+              +
+            </button>
+          </div>
+          <button
+            type="button"
+            disabled={!canTopUp}
+            onClick={handleTopUp}
+            className="rounded-2xl bg-[#1C9690] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#169486] disabled:opacity-50"
+          >
+            {toppingUp ? "Ingresando…" : "Ingresar saldo"}
+          </button>
+          <p className="text-xs text-slate-400">El saldo se guarda en tu cuenta y el movimiento queda registrado aquí.</p>
+        </div>
       </div>
 
       <div className="px-4 pb-6">
@@ -209,6 +419,15 @@ function StudentWallet() {
             {savedCard ? "Cambiar" : "Agregar"}
           </span>
         </button>
+      </div>
+
+      <div className="space-y-4 px-4 pb-6">
+        <AnalyticsPanel title="Resumen" orders={orders} />
+        <MovementChart orders={orders} />
+        <div>
+          <h2 className="mb-3 text-sm font-bold text-slate-700">Movimientos</h2>
+          <MovementList orders={orders} loading={loadingOrders} />
+        </div>
       </div>
 
       <BankCardModal
@@ -272,14 +491,30 @@ function ChildOrders({
 function ParentWallet() {
   const { apiFetch } = useApi();
   const [children, setChildren] = useState<Child[]>([]);
+  const [childMovements, setChildMovements] = useState<Record<string, OrderRow[]>>({});
   const [loading, setLoading] = useState(true);
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
+  const [analyticsChildId, setAnalyticsChildId] = useState<string>("ALL");
   const [recharging, setRecharging] = useState<string | null>(null);
   const [rechargeAmount] = useState(10);
 
   useEffect(() => {
     apiFetch<{ data: Child[] }>("/api/family/children")
-      .then((r) => setChildren(r.data))
+      .then(async (r) => {
+        const nextChildren = r.data ?? [];
+        setChildren(nextChildren);
+        const entries = await Promise.all(
+          nextChildren.map(async (child) => {
+            try {
+              const res = await apiFetch<{ data: OrderRow[] }>(`/api/family/children/${child.studentId}/orders`);
+              return [child.studentId, res.data ?? []] as const;
+            } catch {
+              return [child.studentId, []] as const;
+            }
+          })
+        );
+        setChildMovements(Object.fromEntries(entries));
+      })
       .catch(() => setChildren([]))
       .finally(() => setLoading(false));
   }, [apiFetch]);
@@ -296,6 +531,21 @@ function ParentWallet() {
           c.studentId === child.studentId ? { ...c, walletBalance: res.newBalance } : c
         )
       );
+      setChildMovements((prev) => ({
+        ...prev,
+        [child.studentId]: [
+          {
+            id: `family-topup-${Date.now()}`,
+            shift: "TOPUP",
+            scheduledFor: new Date().toISOString(),
+            status: "TOPUP",
+            total: rechargeAmount,
+            creditedToWallet: true,
+            createdAt: new Date().toISOString(),
+          },
+          ...(prev[child.studentId] ?? []),
+        ],
+      }));
     } catch {
       // silent – balance stays unchanged
     } finally {
@@ -313,6 +563,14 @@ function ParentWallet() {
   }
 
   const totalBalance = children.reduce((acc, c) => acc + c.walletBalance, 0);
+  const selectedAnalyticsOrders =
+    analyticsChildId === "ALL"
+      ? children.flatMap((child) => childMovements[child.studentId] ?? [])
+      : childMovements[analyticsChildId] ?? [];
+  const selectedAnalyticsName =
+    analyticsChildId === "ALL"
+      ? "Resumen conjunto"
+      : `Resumen de ${children.find((child) => child.studentId === analyticsChildId)?.studentName ?? "alumno"}`;
 
   return (
     <div
@@ -339,7 +597,35 @@ function ParentWallet() {
         )}
       </div>
 
-      <div className="space-y-3 px-4 py-5">
+      <div className="space-y-4 px-4 py-5">
+        <div className="space-y-3">
+          <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none" }}>
+            <button
+              type="button"
+              onClick={() => setAnalyticsChildId("ALL")}
+              className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold ${
+                analyticsChildId === "ALL" ? "bg-violet-600 text-white" : "bg-white text-slate-500"
+              }`}
+            >
+              Conjunto
+            </button>
+            {children.map((child) => (
+              <button
+                key={child.studentId}
+                type="button"
+                onClick={() => setAnalyticsChildId(child.studentId)}
+                className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold ${
+                  analyticsChildId === child.studentId ? "bg-violet-600 text-white" : "bg-white text-slate-500"
+                }`}
+              >
+                {child.studentName}
+              </button>
+            ))}
+          </div>
+          <AnalyticsPanel title={selectedAnalyticsName} orders={selectedAnalyticsOrders} />
+          <MovementChart orders={selectedAnalyticsOrders} />
+        </div>
+
         <h2 className="text-sm font-bold text-slate-700">Hijos vinculados</h2>
 
         {loading ? (

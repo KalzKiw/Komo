@@ -1,7 +1,22 @@
 import { NextFunction, Request, Response } from "express";
 
-import { getMyProfile, listAllAllergens, listMyAllergies, listMyOrders, listProductsForMainApp, updateMyAllergies } from "../services/main-app.service";
-import { listMyOrdersQuerySchema, listProductsQuerySchema } from "../validators/main-app.validator";
+import {
+  getMyProfile,
+  listAllAllergens,
+  listMyAllergies,
+  listMyOrders,
+  listMyWalletMovements,
+  listProductsForMainApp,
+  topUpMyWallet,
+  updateMyAllergies,
+  updateMyProfile
+} from "../services/main-app.service";
+import {
+  listMyOrdersQuerySchema,
+  listProductsQuerySchema,
+  topUpMyWalletBodySchema,
+  updateMyProfileBodySchema
+} from "../validators/main-app.validator";
 import { z } from "zod";
 
 export async function getMyProfileController(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -13,6 +28,51 @@ export async function getMyProfileController(req: Request, res: Response, next: 
   try {
     const profile = await getMyProfile(req.user);
     res.status(200).json(profile);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateMyProfileController(req: Request, res: Response, next: NextFunction): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const body = updateMyProfileBodySchema.parse(req.body);
+    const profile = await updateMyProfile(req.user, body);
+    res.status(200).json(profile);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function topUpMyWalletController(req: Request, res: Response, next: NextFunction): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const { amount } = topUpMyWalletBodySchema.parse(req.body);
+    const result = await topUpMyWallet(req.user, amount);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listMyWalletMovementsController(req: Request, res: Response, next: NextFunction): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const { limit } = z.object({ limit: z.coerce.number().int().min(1).max(100).optional() }).parse(req.query);
+    const result = await listMyWalletMovements(req.user, limit ?? 30);
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }

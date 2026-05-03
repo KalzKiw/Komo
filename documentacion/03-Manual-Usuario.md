@@ -67,6 +67,9 @@ La cuenta familiar permite:
 - Consultar hijos vinculados.
 - Recargar saldo del monedero del alumno.
 - Revisar movimientos y pedidos recientes.
+- En la cuenta de alumno, recargar su propio monedero desde la pestaña Monedero.
+- Guardar teléfono y método de pago desde Perfil. La app muestra solo los últimos cuatro dígitos de la tarjeta.
+- Desde Administración se pueden ajustar los cortes de reservas y desactivarlos temporalmente para pruebas.
 
 ## Uso como Administrador
 

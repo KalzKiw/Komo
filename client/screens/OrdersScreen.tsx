@@ -329,8 +329,10 @@ export default function OrdersScreen({ onShowOrderSummary }: { onShowOrderSummar
     <div className="flex h-full flex-col bg-gray-50">
       {/* Header */}
       <div className="shrink-0 bg-white px-4 pt-5 pb-3 shadow-sm">
-        <div className="flex items-center justify-between mb-1">
-          <h1 className="text-xl font-bold text-slate-900">Mis pedidos</h1>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <img src="/logotipo-transparente.png" alt="KOMO" className="h-10 w-auto" />
+          </div>
           {inProgress > 0 && (
             <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
               {inProgress} en curso

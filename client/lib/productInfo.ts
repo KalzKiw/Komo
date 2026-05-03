@@ -8,9 +8,9 @@ export interface ProductNutritionalInfo {
 }
 
 export interface ProductInfo {
-  id: string;
-  nombre: string;
-  categoria: "bebida-caliente" | "bebida-fria" | "golosina" | "bocadillo" | "croissant" | "sandwich" | "extra";
+  id?: string;
+  nombre?: string;
+  categoria?: "bebida-caliente" | "bebida-fria" | "golosina" | "bocadillo" | "croissant" | "sandwich" | "extra";
   ingredientes: string[];
   alergenos: string[];
   trazas: string[];
@@ -815,3 +815,36 @@ export const productInfoCatalog: ProductInfo[] = [
     fuente: []
   }
 ];
+
+function normalizedText(value: string): string {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function words(value: string): string[] {
+  return normalizedText(value)
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+}
+
+export function resolveProductInfo(productName: string): ProductInfo | null {
+  const normalizedName = normalizedText(productName);
+  const exact = productInfoCatalog.find((item) => normalizedName === normalizedText(item.nombre ?? ""));
+  if (exact) return exact;
+
+  const nameWords = words(productName);
+  return (
+    productInfoCatalog.find((item) => {
+      const catalogName = normalizedText(item.nombre ?? "");
+      const catalogWords = words(item.nombre ?? "");
+      return (
+        normalizedName.includes(catalogName) ||
+        catalogName.includes(normalizedName) ||
+        catalogWords.every((word) => nameWords.includes(word))
+      );
+    }) ?? null
+  );
+}

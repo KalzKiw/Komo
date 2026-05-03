@@ -4,7 +4,6 @@ import { useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
 import { useToast } from "../context/ToastContext";
 import { money, formatOrderStatus, formatShiftLabel, elapsedFrom, adminProductCategory, statusColor } from "../lib/utils";
-import { getDefaultAllergens } from "../lib/allergens";
 import AdminFamilyRelationships from "../components/family/AdminFamilyRelationships";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -13,9 +12,29 @@ type Product = {
   id: string;
   name: string;
   description?: string;
+  imageUrl?: string | null;
+  productInfo?: ProductInfoForm | null;
+  allergenIds?: string[];
   price: number;
   isActive: boolean;
   isOfficialMenu?: boolean;
+};
+
+type ProductInfoForm = {
+  ingredientes: string[];
+  alergenos: string[];
+  trazas: string[];
+  informacionNutricional: {
+    kcal?: number;
+    grasas?: number;
+    hidratos?: number;
+    azucares?: number;
+    proteinas?: number;
+    sal?: number;
+  };
+  conservacion?: string;
+  caducidad?: string;
+  fuente: string[];
 };
 
 type Student = {
@@ -712,9 +731,23 @@ function ProductFormModal({
   onSaved: () => void;
   showToast: (msg: string, type?: "success" | "error" | "info") => void;
 }) {
+  const info = product?.productInfo;
   const [name, setName] = useState(product?.name ?? "");
   const [description, setDescription] = useState(product?.description ?? "");
+  const [imageUrl, setImageUrl] = useState(product?.imageUrl ?? "");
   const [price, setPrice] = useState(product?.price?.toString() ?? "");
+  const [ingredients, setIngredients] = useState(info?.ingredientes?.join("\n") ?? "");
+  const [traces, setTraces] = useState(info?.trazas?.join(", ") ?? "");
+  const [conservation, setConservation] = useState(info?.conservacion ?? "consumo inmediato; refrigeracion entre 0 y 4 oC");
+  const [expiration, setExpiration] = useState(info?.caducidad ?? "consumir preferentemente antes de 24 horas");
+  const [sources, setSources] = useState(info?.fuente?.join("\n") ?? "");
+  const [kcal, setKcal] = useState(info?.informacionNutricional?.kcal?.toString() ?? "");
+  const [fat, setFat] = useState(info?.informacionNutricional?.grasas?.toString() ?? "");
+  const [carbs, setCarbs] = useState(info?.informacionNutricional?.hidratos?.toString() ?? "");
+  const [sugars, setSugars] = useState(info?.informacionNutricional?.azucares?.toString() ?? "");
+  const [protein, setProtein] = useState(info?.informacionNutricional?.proteinas?.toString() ?? "");
+  const [salt, setSalt] = useState(info?.informacionNutricional?.sal?.toString() ?? "");
+  const [selectedAllergens, setSelectedAllergens] = useState<Set<string>>(new Set(product?.allergenIds ?? []));
   const [saving, setSaving] = useState(false);
   const [allergens, setAllergens] = useState<Array<{ id: string; code: string; name: string }>>([]);
   const [loadingAllergens, setLoadingAllergens] = useState(true);
@@ -726,12 +759,64 @@ function ProductFormModal({
       .finally(() => setLoadingAllergens(false));
   }, [apiFetch]);
 
+  function splitMultiline(value: string): string[] {
+    return value
+      .split(/\n|;/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  function splitComma(value: string): string[] {
+    return value
+      .split(/,|\n/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  function numeric(value: string): number | undefined {
+    if (!value.trim()) return undefined;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  function toggleAllergen(id: string) {
+    setSelectedAllergens((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !price) return;
     setSaving(true);
     try {
-      const body = { name: name.trim(), description: description.trim(), price: parseFloat(price) };
+      const selectedAllergenRows = allergens.filter((allergen) => selectedAllergens.has(allergen.id));
+      const productInfo: ProductInfoForm = {
+        ingredientes: splitMultiline(ingredients),
+        alergenos: selectedAllergenRows.map((allergen) => allergen.name.toLowerCase()),
+        trazas: splitComma(traces),
+        informacionNutricional: {
+          kcal: numeric(kcal),
+          grasas: numeric(fat),
+          hidratos: numeric(carbs),
+          azucares: numeric(sugars),
+          proteinas: numeric(protein),
+          sal: numeric(salt),
+        },
+        conservacion: conservation.trim(),
+        caducidad: expiration.trim(),
+        fuente: splitMultiline(sources),
+      };
+      const body = {
+        name: name.trim(),
+        description: description.trim(),
+        imageUrl: imageUrl.trim() || null,
+        price: parseFloat(price),
+        allergenIds: [...selectedAllergens],
+        productInfo,
+      };
       if (product) {
         await apiFetch(`/api/admin/products/${product.id}`, { method: "PATCH", body: JSON.stringify(body) });
         showToast("Producto actualizado");
@@ -770,6 +855,35 @@ function ProductFormModal({
             onChange={(e) => setDescription(e.target.value)}
             className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#44b6a1]"
           />
+          <div className="space-y-2">
+            <input
+              type="url"
+              placeholder="URL de imagen"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#44b6a1]"
+            />
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                ["Bocadillo", "https://images.unsplash.com/photo-1553909489-cd47e0907980?auto=format&fit=crop&w=800&q=80"],
+                ["Sándwich", "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=800&q=80"],
+                ["Croissant", "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80"],
+                ["Zumo", "https://images.unsplash.com/photo-1600271886742-f049cd451bba?auto=format&fit=crop&w=800&q=80"],
+              ].map(([label, url]) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => setImageUrl(url)}
+                  className="rounded-lg bg-slate-100 px-2 py-1.5 text-xs font-semibold text-slate-600"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {imageUrl.trim() && (
+              <img src={imageUrl} alt="" className="h-28 w-full rounded-2xl object-cover" />
+            )}
+          </div>
           <input
             type="number"
             placeholder="Precio (€)"
@@ -781,7 +895,7 @@ function ProductFormModal({
             className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#44b6a1]"
           />
           <div>
-            <p className="text-xs text-slate-400 mb-2">Alérgenos disponibles ({allergens.length})</p>
+            <p className="text-xs text-slate-400 mb-2">Alérgenos del producto ({selectedAllergens.size})</p>
             {loadingAllergens ? (
               <div className="flex justify-center py-4">
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#92dbc8] border-t-#1C9690" />
@@ -791,10 +905,80 @@ function ProductFormModal({
             ) : (
               <div className="flex flex-wrap gap-2">
                 {allergens.map((a) => (
-                  <span key={a.id} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">{a.name}</span>
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => toggleAllergen(a.id)}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                      selectedAllergens.has(a.id)
+                        ? "bg-[#d9f4ee] text-[#1C9690]"
+                        : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    {a.name}
+                  </button>
                 ))}
               </div>
             )}
+          </div>
+          <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Ficha del producto</p>
+            <textarea
+              placeholder="Ingredientes, uno por línea"
+              value={ingredients}
+              onChange={(e) => setIngredients(e.target.value)}
+              rows={4}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#44b6a1]"
+            />
+            <input
+              type="text"
+              placeholder="Trazas separadas por coma"
+              value={traces}
+              onChange={(e) => setTraces(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#44b6a1]"
+            />
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                ["Kcal", kcal, setKcal],
+                ["Grasas g", fat, setFat],
+                ["Hidratos g", carbs, setCarbs],
+                ["Azúcares g", sugars, setSugars],
+                ["Proteínas g", protein, setProtein],
+                ["Sal g", salt, setSalt],
+              ].map(([label, value, setter]) => (
+                <input
+                  key={String(label)}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder={String(label)}
+                  value={value as string}
+                  onChange={(e) => (setter as React.Dispatch<React.SetStateAction<string>>)(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#44b6a1]"
+                />
+              ))}
+            </div>
+            <input
+              type="text"
+              placeholder="Conservación"
+              value={conservation}
+              onChange={(e) => setConservation(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#44b6a1]"
+            />
+            <input
+              type="text"
+              placeholder="Caducidad"
+              value={expiration}
+              onChange={(e) => setExpiration(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#44b6a1]"
+            />
+            <textarea
+              placeholder="Fuentes, una por línea"
+              value={sources}
+              onChange={(e) => setSources(e.target.value)}
+              rows={2}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#44b6a1]"
+            />
           </div>
           <button
             type="submit"
@@ -876,20 +1060,22 @@ function SettingsTab({
   showToast: (msg: string, type?: "success" | "error" | "info") => void;
 }) {
   const [morning, setMorning] = useState("09:00");
-  const [afternoon, setAfternoon] = useState("13:00");
-  const [night, setNight] = useState("20:00");
-  const [grace, setGrace] = useState("5");
+  const [afternoon, setAfternoon] = useState("15:00");
+  const [night, setNight] = useState("18:00");
+  const [grace, setGrace] = useState("0");
+  const [cutoffDisabled, setCutoffDisabled] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    apiFetch<{ morning: { hour: number; minute: number }; afternoon: { hour: number; minute: number }; night: { hour: number; minute: number }; graceMinutes: number }>("/api/admin/settings/schedule")
+    apiFetch<{ morning: { hour: number; minute: number }; afternoon: { hour: number; minute: number }; night: { hour: number; minute: number }; graceMinutes: number; disabled: boolean }>("/api/admin/settings/schedule")
       .then((s) => {
         const pad = (n: number) => String(n).padStart(2, "0");
         setMorning(`${pad(s.morning.hour)}:${pad(s.morning.minute)}`);
         setAfternoon(`${pad(s.afternoon.hour)}:${pad(s.afternoon.minute)}`);
         setNight(`${pad(s.night.hour)}:${pad(s.night.minute)}`);
         setGrace(String(s.graceMinutes));
+        setCutoffDisabled(s.disabled);
         setLoaded(true);
       })
       .catch(() => setLoaded(true));
@@ -901,7 +1087,7 @@ function SettingsTab({
     try {
       await apiFetch("/api/admin/settings/schedule", {
         method: "PATCH",
-        body: JSON.stringify({ morning, afternoon, night, graceMinutes: Number(grace) }),
+        body: JSON.stringify({ morning, afternoon, night, graceMinutes: Number(grace), disabled: cutoffDisabled }),
       });
       showToast("Horarios guardados");
     } catch (err) {
@@ -919,8 +1105,20 @@ function SettingsTab({
     <div className="px-4 py-4 space-y-4">
       <div className="rounded-2xl bg-white p-4 shadow-sm">
         <h3 className="font-bold text-slate-900 mb-1">Horarios de corte de pedidos</h3>
-        <p className="text-xs text-slate-400 mb-4">Los pedidos no se admiten después de la hora de corte + minutos de gracia.</p>
+        <p className="text-xs text-slate-400 mb-4">Los pedidos se admiten fuera del horario escolar hasta el límite de cada turno.</p>
         <form onSubmit={save} className="space-y-3">
+          <label className="flex items-center justify-between rounded-2xl bg-amber-50 px-4 py-3">
+            <div>
+              <p className="text-sm font-semibold text-amber-900">Desactivar límites temporalmente</p>
+              <p className="text-xs text-amber-700">Úsalo solo para pruebas: permitirá pedidos a cualquier hora.</p>
+            </div>
+            <input
+              type="checkbox"
+              checked={cutoffDisabled}
+              onChange={(e) => setCutoffDisabled(e.target.checked)}
+              className="h-5 w-5 accent-[#1C9690]"
+            />
+          </label>
           {[
             { label: "Turno mañana", value: morning, onChange: setMorning },
             { label: "Turno tarde", value: afternoon, onChange: setAfternoon },
@@ -961,5 +1159,3 @@ function SettingsTab({
     </div>
   );
 }
-
-

@@ -7,7 +7,7 @@ import StudentFamilyLink from "../components/family/StudentFamilyLink";
 import { allergenVisual } from "../lib/allergens";
 
 export default function ProfileScreenV2() {
-  const { logout } = useAuth();
+  const { logout, state } = useAuth();
   const { apiFetch } = useApi();
 
   const [profile, setProfile] = useState<null | {
@@ -17,6 +17,8 @@ export default function ProfileScreenV2() {
     role: string;
     isBeneficiary: boolean;
     walletBalance: number;
+    phone?: string | null;
+    paymentCardLast4?: string | null;
     courseName: string | null;
   }>(null);
   const [allergies, setAllergies] = useState<Array<{ code: string; name: string }>>([]);
@@ -28,28 +30,40 @@ export default function ProfileScreenV2() {
   const [allergyModalOpen, setAllergyModalOpen] = useState(false);
   const [bankCardModalOpen, setBankCardModalOpen] = useState(false);
   const [savedCard, setSavedCard] = useState<{ lastFourDigits: string } | null>(null);
+  const userId = state.status === "authenticated" ? state.user.id : "anonymous";
+  const phoneStorageKey = `cafes-profile-phone:${userId}`;
+  const cardStorageKey = `cafes-payment-card-last4:${userId}`;
 
   useEffect(() => {
-    const savedPhone = localStorage.getItem("cafes-profile-phone");
-    if (savedPhone) {
-      setPhone(savedPhone);
-    }
-
     Promise.all([
-      apiFetch<{ id: string; email: string; fullName: string; role: string; isBeneficiary: boolean; walletBalance: number; courseName: string | null }>(
+      apiFetch<{
+        id: string;
+        email: string;
+        fullName: string;
+        role: string;
+        isBeneficiary: boolean;
+        walletBalance: number;
+        phone?: string | null;
+        paymentCardLast4?: string | null;
+        courseName: string | null;
+      }>(
         "/api/me"
       ),
       apiFetch<{ data: Array<{ code: string; name: string }> }>("/api/me/allergies"),
     ])
       .then(([me, allergiesRes]) => {
         setProfile(me);
+        const localPhone = localStorage.getItem(phoneStorageKey);
+        const localCard = localStorage.getItem(cardStorageKey);
+        setPhone(me.phone ?? localPhone ?? null);
+        setSavedCard(me.paymentCardLast4 || localCard ? { lastFourDigits: me.paymentCardLast4 ?? localCard! } : null);
         const items = allergiesRes.data ?? [];
         setAllergies(items);
         setAllergyLabel(items.length === 0 ? "Sin configurar" : items.map((a) => a.name).join(", "));
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [apiFetch]);
+  }, [apiFetch, cardStorageKey, phoneStorageKey]);
 
   async function handleSaveCard(cardData: {
     cardNumber: string;
@@ -59,10 +73,17 @@ export default function ProfileScreenV2() {
     cvv: string;
   }) {
     try {
-      // In a real app, you would send this to a secure backend endpoint
-      // For now, we'll just save the last 4 digits for display
       const lastFour = cardData.cardNumber.slice(-4);
+      try {
+        await apiFetch("/api/me", {
+          method: "PATCH",
+          body: JSON.stringify({ paymentCardLast4: lastFour }),
+        });
+      } catch {
+        localStorage.setItem(cardStorageKey, lastFour);
+      }
       setSavedCard({ lastFourDigits: lastFour });
+      window.dispatchEvent(new Event("profileChanged"));
     } catch (error) {
       throw new Error("Error al guardar la tarjeta");
     }
@@ -84,16 +105,24 @@ export default function ProfileScreenV2() {
     setPhoneModalOpen(true);
   }
 
-  function handleSavePhone() {
+  async function handleSavePhone() {
     const cleaned = phoneInput.trim();
-    if (cleaned.length > 0) {
-      setPhone(cleaned);
-      localStorage.setItem("cafes-profile-phone", cleaned);
-    } else {
-      setPhone(null);
-      localStorage.removeItem("cafes-profile-phone");
+    try {
+      await apiFetch("/api/me", {
+        method: "PATCH",
+        body: JSON.stringify({ phone: cleaned.length > 0 ? cleaned : null }),
+      });
+      if (cleaned.length > 0) localStorage.setItem(phoneStorageKey, cleaned);
+      else localStorage.removeItem(phoneStorageKey);
+      setPhone(cleaned.length > 0 ? cleaned : null);
+      window.dispatchEvent(new Event("profileChanged"));
+      setPhoneModalOpen(false);
+    } catch {
+      if (cleaned.length > 0) localStorage.setItem(phoneStorageKey, cleaned);
+      else localStorage.removeItem(phoneStorageKey);
+      setPhone(cleaned.length > 0 ? cleaned : null);
+      setPhoneModalOpen(false);
     }
-    setPhoneModalOpen(false);
   }
 
   if (loading) {
@@ -106,11 +135,13 @@ export default function ProfileScreenV2() {
 
   return (
     <div className="bg-surface text-on-surface antialiased h-[100dvh] overflow-hidden flex flex-col">
-      <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-4 h-16 bg-white border-b border-slate-200">
-        <span className="text-[#2D3748] font-bold tracking-tight text-lg">KOMO</span>
+      <header className="shrink-0 bg-white px-4 pt-5 pb-3 shadow-sm">
+        <div className="flex items-center gap-3">
+          <img src="/logotipo-transparente.png" alt="KOMO" className="h-10 w-auto" />
+        </div>
       </header>
 
-      <main className="pt-20 pb-24 px-4 max-w-md mx-auto flex-1 overflow-y-auto w-full">
+      <main className="pb-24 px-4 max-w-md mx-auto flex-1 overflow-y-auto w-full pt-4">
         <section className="mb-6">
           <div className="bg-white rounded-3xl p-6 shadow-sm text-center">
             <div className="mx-auto mb-4 h-24 w-24 overflow-hidden rounded-full bg-[#d9f4ee] shadow-inner">

@@ -145,9 +145,6 @@ const LoginModern: React.FC = () => {
               className="h-20 w-auto object-contain"
             />
           </div>
-          <p className="text-[#2D3748] font-body text-lg leading-relaxed">
-            Cafetería Escolar Digital
-          </p>
         </header>
 
         <section className="bg-surface-container-lowest ambient-shadow rounded-[1.5rem] p-8 md:p-12 flex flex-col gap-6" style={{ boxShadow: "0 8px 32px -8px rgba(25,28,27,0.06)" }}>

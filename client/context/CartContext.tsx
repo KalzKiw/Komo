@@ -12,6 +12,7 @@ export type CartLine = {
   qty: number;
   options: string[];
   note: string;
+  allergens?: Array<{ id?: string; code?: string; name: string }>;
 };
 
 type CartContextValue = {

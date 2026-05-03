@@ -2,11 +2,14 @@ import { Router } from "express";
 
 import {
   getMyProfileController,
+  listMyWalletMovementsController,
   listMyAllergiesController,
   listMyOrdersController,
   listProductsController,
   listAllAllergensController,
+  topUpMyWalletController,
   updateMyAllergiesController,
+  updateMyProfileController,
 } from "../controllers/main-app.controller";
 import { mockAuthMiddleware } from "../middlewares/auth.middleware";
 
@@ -26,6 +29,9 @@ export const mainAppRouter = Router();
  *         description: Profile data
  */
 mainAppRouter.get("/me", mockAuthMiddleware, getMyProfileController);
+mainAppRouter.patch("/me", mockAuthMiddleware, updateMyProfileController);
+mainAppRouter.get("/me/wallet-movements", mockAuthMiddleware, listMyWalletMovementsController);
+mainAppRouter.post("/me/wallet/topup", mockAuthMiddleware, topUpMyWalletController);
 
 /**
  * @swagger

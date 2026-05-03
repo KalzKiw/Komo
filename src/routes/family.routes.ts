@@ -15,8 +15,8 @@ import {
 
 export const familyRouter = Router();
 
-// All family routes require authentication
-familyRouter.use(mockAuthMiddleware);
+// All family routes require authentication.
+familyRouter.use(["/family", "/admin/family"], mockAuthMiddleware);
 
 /** Parent generates a short-lived linking token */
 familyRouter.post("/family/token", requireRoles(["PARENT"]), generateTokenController);

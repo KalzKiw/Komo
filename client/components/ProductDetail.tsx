@@ -79,7 +79,10 @@ export function resolveAllergenChips(keys: string[]): AllergenChip[] {
 // ─── Preset modifier groups (mirrors ingredientPreset logic) ─────────────────
 
 export function defaultModifierGroups(product: ProductDetailProduct): ModifierGroup[] {
-  const text = `${product.name} ${product.description ?? ""}`.toLowerCase();
+  const text = `${product.name} ${product.description ?? ""}`
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 
   if (text.includes("bocadillo") || text.includes("sandwich")) {
     return [
@@ -100,8 +103,9 @@ export function defaultModifierGroups(product: ProductDetailProduct): ModifierGr
         subtitle: "Opcional",
         type: "extra",
         options: [
-          { id: "extra-queso", label: "Extra queso", priceAdd: 0.5 },
-          { id: "extra-salsa", label: "Extra salsa", priceAdd: 0.3 },
+          { id: "extra-queso", label: "Extra queso", priceAdd: 0.3 },
+          { id: "extra-tomate-lechuga", label: "Extra tomate y lechuga", priceAdd: 0.3 },
+          { id: "extra-salsa", label: "Salsa", priceAdd: 0.2 },
         ],
       },
       {
@@ -129,6 +133,17 @@ export function defaultModifierGroups(product: ProductDetailProduct): ModifierGr
           { id: "con-hielo", label: "Con hielo" },
         ],
       },
+      ...(text.includes("cafe") || text.includes("cacao") || text.includes("infusion")
+        ? [
+            {
+              id: "suplementos-bebida",
+              title: "Suplementos",
+              subtitle: "Opcional",
+              type: "extra" as const,
+              options: [{ id: "para-llevar", label: "Para llevar", priceAdd: 0.1 }],
+            },
+          ]
+        : []),
     ];
   }
 
@@ -139,7 +154,7 @@ export function defaultModifierGroups(product: ProductDetailProduct): ModifierGr
       subtitle: "Opcional",
       type: "extra",
       options: [
-        { id: "extra-salsa", label: "Extra salsa", priceAdd: 0.3 },
+        { id: "extra-salsa", label: "Salsa", priceAdd: 0.2 },
         { id: "calentar", label: "Calentar", priceAdd: 0 },
       ],
     },

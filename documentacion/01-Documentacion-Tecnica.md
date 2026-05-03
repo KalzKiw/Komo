@@ -34,6 +34,9 @@ La aplicación puede ejecutarse como un servicio Node único que sirve tanto la 
 - `POST /api/auth/register`: registro de alumno o familiar.
 - `GET /api/health`: comprobación de estado.
 - `GET /api/me`: perfil del usuario autenticado.
+- `PATCH /api/me`: actualización de datos persistentes de perfil, como teléfono y tarjeta guardada.
+- `GET /api/me/wallet-movements`: movimientos del monedero del alumno.
+- `POST /api/me/wallet/topup`: recarga del monedero propio del alumno.
 - `GET /api/products`: catálogo activo.
 - `GET /api/me/orders`: pedidos del usuario.
 - `POST /api/orders`: creación de pedido.
@@ -55,7 +58,7 @@ Los endpoints protegidos usan cabeceras de autenticación mock:
 
 El modelo se basa en las siguientes entidades:
 
-- `users`: usuarios con rol, saldo y curso.
+- `users`: usuarios con rol, saldo, teléfono, tarjeta resumida y curso.
 - `courses`: cursos escolares.
 - `products`: productos disponibles.
 - `allergens`: catálogo de alérgenos.
@@ -65,6 +68,7 @@ El modelo se basa en las siguientes entidades:
 - `order_items`: líneas de pedido.
 - `family_links`: relación familiar entre padre/madre y alumno.
 - `linking_tokens`: códigos temporales de vinculación familiar.
+- `wallet_transactions`: movimientos de recarga del monedero.
 - `settings`: configuración global, especialmente horarios de corte.
 
 El diagrama se mantiene en `db/erd.mmd`.
@@ -72,8 +76,12 @@ El diagrama se mantiene en `db/erd.mmd`.
 ## Reglas de Negocio Relevantes
 
 - Los pedidos se organizan por turno: `MORNING`, `AFTERNOON` y `NIGHT`.
+- Los límites de reserva por turno son configurables: mañana 09:00, tarde 15:00 y noche 18:00 por defecto.
+- Administración puede desactivar temporalmente los límites de reserva para pruebas.
 - Los estados de pedido son: `PENDING`, `IN_PREPARATION`, `READY`, `DELIVERED` y `CANCELLED`.
 - El backend valida productos activos, cantidades, personalizaciones y alérgenos.
 - La aplicación advierte cuando un producto contiene alérgenos declarados por el usuario.
 - La cancelación puede generar devolución al monedero si cumple la ventana de cancelación.
+- Las recargas de monedero actualizan el saldo en backend y se registran como movimientos.
+- Teléfono y tarjeta se guardan en el perfil del usuario; por seguridad solo se conserva el último bloque visible de la tarjeta.
 - Administración y cocina pueden consultar la cola KDS y actualizar estados.

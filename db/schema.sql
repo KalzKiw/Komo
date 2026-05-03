@@ -20,6 +20,8 @@ CREATE TABLE users (
   course_id UUID REFERENCES courses(id) ON DELETE SET NULL,
   is_beneficiary BOOLEAN NOT NULL DEFAULT FALSE,
   wallet_balance NUMERIC(10,2) NOT NULL DEFAULT 0.00 CHECK (wallet_balance >= 0),
+  phone TEXT,
+  payment_card_last4 TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -29,15 +31,26 @@ CREATE TABLE family_links (
   parent_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   student_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   relation family_relation NOT NULL,
+  status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'REVOKED')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT uq_family_link UNIQUE (parent_user_id, student_user_id, relation),
   CONSTRAINT ck_family_not_self CHECK (parent_user_id <> student_user_id)
+);
+
+CREATE TABLE wallet_transactions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  amount NUMERIC(10,2) NOT NULL,
+  concept TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   description TEXT,
+  image_url TEXT,
+  product_info JSONB,
   price NUMERIC(10,2) NOT NULL CHECK (price >= 0),
   is_official_menu BOOLEAN NOT NULL DEFAULT FALSE,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,

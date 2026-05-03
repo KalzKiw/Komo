@@ -15,3 +15,14 @@ export const listMyOrdersQuerySchema = z.object({
 });
 
 export type ListMyOrdersQuery = z.infer<typeof listMyOrdersQuerySchema>;
+
+export const updateMyProfileBodySchema = z.object({
+  phone: z.string().max(40).nullable().optional(),
+  paymentCardLast4: z.string().regex(/^\d{4}$/).nullable().optional()
+});
+
+export const topUpMyWalletBodySchema = z.object({
+  amount: z.coerce.number().min(0.01).max(200)
+});
+
+export type UpdateMyProfileBody = z.infer<typeof updateMyProfileBodySchema>;

@@ -65,25 +65,25 @@ export function computeCutoffCountdown(): string {
 }
 
 export function adminProductCategory(name: string): string {
-  const text = String(name || "").toLowerCase();
+  const text = normalizedText(String(name || ""));
   if (text.includes("menu")) return "Productos";
   if (text.includes("platano") || text.includes("manzana") || text.includes("fruta")) return "Fruta";
-  if (text.includes("zumo") || text.includes("agua") || text.includes("bebida") || text.includes("batido")) return "Bebidas";
+  if (text.includes("zumo") || text.includes("agua") || text.includes("bebida") || text.includes("batido") || text.includes("cafe") || text.includes("cacao") || text.includes("infusion") || text.includes("refresco")) return "Bebidas";
   if (text.includes("bocadillo") || text.includes("sandwich")) return "Bocadillos";
   return "Snacks";
 }
 
 export function productCategory(product: { name: string; description?: string | null }): string {
-  const text = `${product.name} ${product.description ?? ""}`.toLowerCase();
-  if (text.includes("zumo") || text.includes("agua") || text.includes("bebida") || text.includes("cafe")) return "BEBIDA";
-  if (text.includes("bocadillo") || text.includes("sandwich")) return "BOCADILLO";
+  const text = normalizedText(`${product.name} ${product.description ?? ""}`);
+  if (text.includes("zumo") || text.includes("agua") || text.includes("bebida") || text.includes("cafe") || text.includes("cacao") || text.includes("infusion") || text.includes("refresco")) return "BEBIDA";
+  if (text.includes("bocadillo") || text.includes("sandwich") || text.includes("pulguita") || text.includes("croissant")) return "BOCADILLO";
   return "SNACK";
 }
 
 export function ingredientPreset(product: { name: string; description?: string | null }): string[] {
-  const text = `${product.name} ${product.description ?? ""}`.toLowerCase();
+  const text = normalizedText(`${product.name} ${product.description ?? ""}`);
   if (text.includes("bocadillo") || text.includes("sandwich")) return ["Sin tomate", "Sin cebolla", "Extra queso", "Pan integral"];
-  if (text.includes("zumo") || text.includes("cafe") || text.includes("bebida")) return ["Sin azúcar", "Con hielo", "Vaso grande"];
+  if (text.includes("zumo") || text.includes("cafe") || text.includes("bebida") || text.includes("cacao") || text.includes("infusion")) return ["Sin azúcar", "Con hielo", "Vaso grande"];
   return ["Sin sal", "Extra salsa", "Calentar"];
 }
 

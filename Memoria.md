@@ -62,6 +62,7 @@ Desarrollar una aplicación web funcional para gestionar pedidos anticipados en 
 - Implementar una cola KDS para cocina.
 - Permitir vinculación entre familiares y alumnos.
 - Gestionar saldo o monedero escolar.
+- Persistir teléfono, método de pago resumido y movimientos de recarga del monedero.
 - Diseñar una base de datos relacional coherente.
 - Validar datos de entrada en backend.
 - Preparar la aplicación para despliegue.
@@ -390,14 +391,14 @@ El resultado es una aplicación funcional que cubre el flujo principal de cafete
 
 - Los alumnos pueden consultar productos y crear pedidos.
 - La administración puede gestionar la operativa.
-- El sistema contempla alérgenos, familias y monedero.
+- El sistema contempla alérgenos, familias, monedero y datos persistentes de perfil.
 - La API está estructurada y validada.
 - La aplicación se puede desplegar.
 
 ### 9.2 Limitaciones detectadas
 
 - La autenticación ya acepta tokens de Supabase Auth, aunque se conserva compatibilidad temporal con usuarios demo por cabeceras.
-- No existe todavía integración de pago real.
+- No existe todavía integración de pago real; se guarda únicamente una referencia visual de tarjeta con los últimos cuatro dígitos.
 - La PWA/offline se ha desactivado temporalmente para evitar problemas de caché.
 - No hay suite E2E completa.
 - El panel administrador puede seguir mejorándose en usabilidad y permisos.

@@ -3,6 +3,7 @@ import { useApi } from "../hooks/useApi";
 import { useCart } from "../context/CartContext";
 import ProductDetail, { type AddToCartPayload, defaultModifierGroups, resolveAllergenChips } from "../components/ProductDetail";
 import { resolveSanitaryInfoReact } from "../lib/sanitary";
+import { resolveProductInfo, type ProductInfo } from "../lib/productInfo";
 import { productCategory } from "../lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -12,6 +13,8 @@ export type ApiProduct = {
   name: string;
   description: string | null;
   price: number;
+  imageUrl?: string | null;
+  productInfo?: ProductInfo | null;
   isActive: boolean;
   allergens?: Array<{
     id: string;
@@ -34,13 +37,50 @@ const CATEGORIES: Array<{ id: Category; label: string }> = [
   { id: "SNACK", label: "Snacks" },
 ];
 
-function productImageUrl(productId: string) {
-  const seed = productId.slice(0, 8);
-  return `https://picsum.photos/seed/${seed}/800/500`;
+function productImageUrl(productId: string, productName: string, imageUrl?: string | null) {
+  if (imageUrl?.trim()) return imageUrl.trim();
+
+  const lowerName = productName
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  if (lowerName.includes("zumo") || lowerName.includes("jugo") || lowerName.includes("bebida") || lowerName.includes("agua") || lowerName.includes("refresco")) {
+    return "https://images.unsplash.com/photo-1600271886742-f049cd451bba?auto=format&fit=crop&w=800&q=80";
+  }
+  if (lowerName.includes("cafe")) {
+    return "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80";
+  }
+  if (lowerName.includes("croissant")) {
+    return "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80";
+  }
+  if (lowerName.includes("sandwich") || lowerName.includes("sándwich")) {
+    return "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=800&q=80";
+  }
+  if (lowerName.includes("bocadillo")) {
+    return "https://images.unsplash.com/photo-1553909489-cd47e0907980?auto=format&fit=crop&w=800&q=80";
+  }
+  if (lowerName.includes("tortilla")) {
+    return "https://images.unsplash.com/photo-1510693206972-df098062cb71?auto=format&fit=crop&w=800&q=80";
+  }
+  if (lowerName.includes("galleta") || lowerName.includes("snack")) {
+    return "https://images.unsplash.com/photo-1621939514649-280e2ee25f60?auto=format&fit=crop&w=800&q=80";
+  }
+  const fallback = Number.parseInt(productId.slice(0, 2), 16) % 2;
+  return fallback === 0
+    ? "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=800&q=80"
+    : "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80";
 }
 
 function money(value: number) {
   return value.toLocaleString("es-ES", { style: "currency", currency: "EUR" });
+}
+
+function readableIngredient(value: string) {
+  const [main, ...rest] = value.split("(");
+  return {
+    title: main.trim().replace(/,$/, ""),
+    detail: rest.length > 0 ? rest.join("(").replace(/\)+$/, "").trim() : "",
+  };
 }
 
 // ─── Home Screen ──────────────────────────────────────────────────────────────
@@ -53,6 +93,8 @@ export default function HomeScreen() {
   const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState<Category>("ALL");
   const [detailProduct, setDetailProduct] = useState<ApiProduct | null>(null);
+  const [showProductInfo, setShowProductInfo] = useState(false);
+  const [showCutoffInfo, setShowCutoffInfo] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -82,6 +124,7 @@ export default function HomeScreen() {
       qty: payload.qty,
       options,
       note: payload.kitchenNote,
+      allergens: product.allergens ?? [],
     });
     setDetailProduct(null);
   }
@@ -89,6 +132,14 @@ export default function HomeScreen() {
   // ── Product detail ────────────────────────────────────────────────────────
   if (detailProduct) {
     const sanitary = resolveSanitaryInfoReact(detailProduct.name);
+    const productInfo = detailProduct.productInfo ?? resolveProductInfo(detailProduct.name);
+    const nutrition = productInfo?.informacionNutricional;
+    const detailAllergens =
+      detailProduct.allergens && detailProduct.allergens.length > 0
+        ? detailProduct.allergens.map((allergen) => allergen.name)
+        : productInfo
+          ? [...productInfo.alergenos, ...productInfo.trazas]
+          : sanitary.alergenos;
     return (
       <>
         <ProductDetail
@@ -98,18 +149,134 @@ export default function HomeScreen() {
             description: detailProduct.description ?? "Menú oficial escolar",
             price: detailProduct.price,
             badge: detailProduct.isOfficialMenu ? "Popular" : undefined,
-            imageUrl: productImageUrl(detailProduct.id),
+            imageUrl: productImageUrl(detailProduct.id, detailProduct.name, detailProduct.imageUrl),
           }}
-          allergens={resolveAllergenChips(sanitary.alergenos)}
+          allergens={resolveAllergenChips(detailAllergens)}
           modifierGroups={defaultModifierGroups({
             id: detailProduct.id,
             name: detailProduct.name,
             description: detailProduct.description ?? "",
             price: detailProduct.price,
           })}
-          onBack={() => setDetailProduct(null)}
+          onBack={() => {
+            setShowProductInfo(false);
+            setDetailProduct(null);
+          }}
+          onInfo={() => setShowProductInfo(true)}
           onAdd={(payload) => handleAdd(payload, detailProduct)}
         />
+
+        {showProductInfo && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+            <div className="max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#1C9690]">Ficha del producto</p>
+                  <h2 className="mt-1 text-xl font-bold text-slate-900">{productInfo?.nombre ?? detailProduct.name}</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowProductInfo(false)}
+                  className="rounded-full bg-slate-100 p-2 text-slate-600 transition hover:bg-slate-200"
+                  aria-label="Cerrar información"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-700">Ingredientes</h3>
+                  {productInfo ? (
+                    <div className="mt-2 space-y-2">
+                      {productInfo.ingredientes.map((ingredient) => {
+                        const item = readableIngredient(ingredient);
+                        return (
+                          <div key={ingredient} className="rounded-2xl bg-slate-50 p-3">
+                            <p className="text-sm font-semibold capitalize text-slate-800">{item.title}</p>
+                            {item.detail && (
+                              <p className="mt-1 text-xs leading-relaxed text-slate-500">{item.detail}</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm leading-relaxed text-slate-600">{sanitary.ingredientes}</p>
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-700">Alérgenos</h3>
+                  {(productInfo?.alergenos ?? sanitary.alergenos).length > 0 ? (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {(productInfo?.alergenos ?? sanitary.alergenos).map((allergen) => (
+                        <span key={allergen} className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
+                          {allergen}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-slate-500">No tiene alérgenos declarados.</p>
+                  )}
+                </div>
+                {productInfo && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-700">Trazas</h3>
+                    {productInfo.trazas.length > 0 ? (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {productInfo.trazas.map((trace) => (
+                          <span key={trace} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                            {trace}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-sm text-slate-500">Sin trazas declaradas.</p>
+                    )}
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-700">Información nutricional</h3>
+                  <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                    <div className="rounded-2xl bg-slate-50 p-3">
+                      <p className="text-xs text-slate-400">Energía</p>
+                      <p className="font-bold text-slate-800">{nutrition?.kcal ?? sanitary.nutricion.kcal} kcal</p>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 p-3">
+                      <p className="text-xs text-slate-400">Grasas</p>
+                      <p className="font-bold text-slate-800">{nutrition?.grasas ?? sanitary.nutricion.grasas} g</p>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 p-3">
+                      <p className="text-xs text-slate-400">Hidratos</p>
+                      <p className="font-bold text-slate-800">{nutrition?.hidratos ?? sanitary.nutricion.hidratos} g</p>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 p-3">
+                      <p className="text-xs text-slate-400">Azúcares</p>
+                      <p className="font-bold text-slate-800">{nutrition?.azucares ?? sanitary.nutricion.azucares} g</p>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 p-3">
+                      <p className="text-xs text-slate-400">Proteínas</p>
+                      <p className="font-bold text-slate-800">{nutrition?.proteinas ?? sanitary.nutricion.proteinas} g</p>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 p-3">
+                      <p className="text-xs text-slate-400">Sal</p>
+                      <p className="font-bold text-slate-800">{nutrition?.sal ?? sanitary.nutricion.sal} g</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid gap-3 text-sm text-slate-600">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-700">Conservación</h3>
+                    <p className="mt-1">{productInfo?.conservacion ?? sanitary.conservacion}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-700">Caducidad</h3>
+                    <p className="mt-1">{productInfo?.caducidad ?? sanitary.caducidad}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </>
     );
   }
@@ -126,19 +293,20 @@ export default function HomeScreen() {
               alt="KOMO"
               className="h-11 w-auto object-contain"
             />
-            <p className="mt-1 text-xs font-medium text-slate-400">Cafetería Escolar Digital</p>
           </div>
-          <div className="shrink-0 rounded-2xl bg-[#d9f4ee] px-3 py-2 text-right">
+          <button
+            type="button"
+            onClick={() => setShowCutoffInfo(true)}
+            className="shrink-0 rounded-2xl bg-[#d9f4ee] px-3 py-2 text-right transition active:scale-[0.98]"
+            aria-label="Ver explicación del cierre de pedidos"
+          >
             <p className="text-[10px] font-bold uppercase tracking-wide text-[#1C9690]">Cierre</p>
-            <p className="text-sm font-bold tabular-nums text-slate-800">09:05</p>
-          </div>
+            <p className="text-sm font-bold tabular-nums text-slate-800">09:00</p>
+          </button>
         </div>
 
-        <div className="mb-3 flex items-end justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">Productos</h1>
-            <p className="text-xs text-slate-400">{filtered.length} disponibles</p>
-          </div>
+        <div className="mb-3">
+          <p className="text-xs font-medium text-slate-400">{filtered.length} disponibles</p>
         </div>
 
         {/* Category pills */}
@@ -192,7 +360,7 @@ export default function HomeScreen() {
               >
                 <div className="relative h-28 shrink-0 overflow-hidden bg-gradient-to-br from-[#d9f4ee] to-[#c6efe7]">
                   <img
-                    src={productImageUrl(product.id)}
+                    src={productImageUrl(product.id, product.name, product.imageUrl)}
                     alt={product.name}
                     className="h-full w-full object-cover"
                     loading="lazy"
@@ -219,6 +387,46 @@ export default function HomeScreen() {
           </div>
         )}
       </div>
+
+      {showCutoffInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#1C9690]">Cortes por turno</p>
+                <h2 className="mt-1 text-xl font-bold text-slate-900">Sistema de tiempos</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCutoffInfo(false)}
+                className="rounded-full bg-slate-100 px-3 py-1.5 text-lg leading-none text-slate-600 transition hover:bg-slate-200"
+                aria-label="Cerrar explicación"
+              >
+                ×
+              </button>
+            </div>
+            <div className="space-y-3 text-sm leading-relaxed text-slate-600">
+              <p>Las reservas se pueden hacer fuera del horario escolar, pero cada turno tiene una hora máxima.</p>
+              <div className="grid gap-2">
+                <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                  <p className="font-semibold text-slate-900">Turno mañana</p>
+                  <p>Pedidos hasta las 09:00.</p>
+                </div>
+                <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                  <p className="font-semibold text-slate-900">Turno tarde</p>
+                  <p>Pedidos hasta las 15:00.</p>
+                </div>
+                <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                  <p className="font-semibold text-slate-900">Turno noche</p>
+                  <p>Pedidos hasta las 18:00.</p>
+                </div>
+              </div>
+              <p>Los cambios de primera a segunda hora se tratan dentro del margen operativo del centro.</p>
+              <p>Si cancelas antes del corte de tu turno, el importe vuelve al monedero. Después del corte, el pedido queda planificado para cocina.</p>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

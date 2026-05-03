@@ -90,17 +90,13 @@ export async function createOrder(user: AuthUser, payload: unknown): Promise<Rec
 
   const productIds = data.items.map((item) => item.productId);
 
-  const [{ data: products, error: productsError }, { data: userAllergies, error: allergyError }] =
-    await Promise.all([
-      supabase
-        .from("products")
-        .select("id, price, is_active")
-        .in("id", productIds),
-      supabase.from("user_allergies").select("allergen_id").eq("user_id", user.id)
-    ]);
+  const { data: products, error: productsError } = await supabase
+    .from("products")
+    .select("id, price, is_active")
+    .in("id", productIds);
 
-  if (productsError || allergyError) {
-    throw new AppError("Unable to load products or user allergies", 500);
+  if (productsError) {
+    throw new AppError("Unable to load products", 500);
   }
 
   const productMap = new Map((products as ProductRow[]).map((p) => [p.id, p]));
@@ -114,22 +110,6 @@ export async function createOrder(user: AuthUser, payload: unknown): Promise<Rec
 
   if (hasInactiveProduct) {
     throw new AppError("One or more selected products are inactive", 409);
-  }
-
-  const { data: productAllergens, error: productAllergensError } = await supabase
-    .from("product_allergens")
-    .select("product_id, allergen_id")
-    .in("product_id", productIds);
-
-  if (productAllergensError) {
-    throw new AppError("Unable to validate allergens", 500);
-  }
-
-  const userAllergenSet = new Set((userAllergies ?? []).map((row) => row.allergen_id));
-  const allergicConflict = (productAllergens ?? []).some((link) => userAllergenSet.has(link.allergen_id));
-
-  if (allergicConflict && !data.acknowledgedAllergenWarning) {
-    throw new AppError("Order rejected: selected products contain allergens in your profile", 409);
   }
 
   const orderItems = data.items.map((item) => {

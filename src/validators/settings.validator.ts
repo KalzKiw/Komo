@@ -6,7 +6,8 @@ export const updateScheduleBodySchema = z.object({
   morning: z.string().regex(timePattern, "Formato HH:MM requerido").optional(),
   afternoon: z.string().regex(timePattern, "Formato HH:MM requerido").optional(),
   night: z.string().regex(timePattern, "Formato HH:MM requerido").optional(),
-  graceMinutes: z.coerce.number().int().min(0).max(60).optional()
+  graceMinutes: z.coerce.number().int().min(0).max(60).optional(),
+  disabled: z.boolean().optional()
 });
 
 export type UpdateScheduleBody = z.infer<typeof updateScheduleBodySchema>;

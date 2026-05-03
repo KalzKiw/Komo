@@ -32,9 +32,72 @@ interface ProductRow {
   id: string;
   name: string;
   description: string | null;
+  image_url?: string | null;
+  product_info?: Record<string, unknown> | null;
   price: number;
   is_active: boolean;
   created_at: string;
+  product_allergens?: Array<{
+    allergen_id: string;
+    allergens?: { id: string; code: string; name: string } | { id: string; code: string; name: string }[] | null;
+  }>;
+}
+
+const PRODUCT_SELECT_WITH_DETAILS = `id, name, description, image_url, product_info, price, is_active, created_at,
+  product_allergens (
+    allergen_id,
+    allergens!product_allergens_allergen_id_fkey (id, code, name)
+  )`;
+const PRODUCT_SELECT_LEGACY = `id, name, description, price, is_active, created_at,
+  product_allergens (
+    allergen_id,
+    allergens!product_allergens_allergen_id_fkey (id, code, name)
+  )`;
+
+function isMissingProductInfoColumns(error: unknown): boolean {
+  const message = String((error as { message?: string } | null)?.message ?? "");
+  return message.includes("image_url") || message.includes("product_info");
+}
+
+function mapProduct(row: ProductRow): Record<string, unknown> {
+  const allergens = (row.product_allergens ?? [])
+    .map((pa) => Array.isArray(pa.allergens) ? pa.allergens[0] : pa.allergens)
+    .filter(Boolean);
+
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    imageUrl: row.image_url ?? null,
+    productInfo: row.product_info ?? null,
+    price: row.price,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+    allergens,
+    allergenIds: allergens.map((allergen) => allergen?.id).filter(Boolean)
+  };
+}
+
+async function syncProductAllergens(productId: string, allergenIds: string[] | undefined): Promise<void> {
+  if (allergenIds === undefined) return;
+
+  const { error: deleteError } = await supabase
+    .from("product_allergens")
+    .delete()
+    .eq("product_id", productId);
+
+  if (deleteError) {
+    throw new AppError("Unable to update product allergens", 500);
+  }
+
+  if (allergenIds.length === 0) return;
+
+  const rows = allergenIds.map((allergen_id) => ({ product_id: productId, allergen_id }));
+  const { error: insertError } = await supabase.from("product_allergens").insert(rows);
+
+  if (insertError) {
+    throw new AppError("Unable to update product allergens", 500);
+  }
 }
 
 export async function listStudentsForAdmin(): Promise<Record<string, unknown>> {
@@ -175,53 +238,72 @@ export async function listKdsQueue(): Promise<Record<string, unknown>> {
 }
 
 export async function listProductsForAdmin(): Promise<Record<string, unknown>> {
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("products")
-    .select("id, name, description, price, is_active, created_at")
+    .select(PRODUCT_SELECT_WITH_DETAILS)
     .order("created_at", { ascending: false })
     .limit(300);
+
+  if (error && isMissingProductInfoColumns(error)) {
+    const fallback = await supabase
+      .from("products")
+      .select(PRODUCT_SELECT_LEGACY)
+      .order("created_at", { ascending: false })
+      .limit(300);
+    data = fallback.data as any;
+    error = fallback.error;
+  }
 
   if (error) {
     throw new AppError("Unable to list products", 500);
   }
 
-  const rows = (data ?? []) as ProductRow[];
+  const rows = (data ?? []) as unknown as ProductRow[];
 
   return {
-    data: rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      description: row.description,
-      price: row.price,
-      isActive: row.is_active,
-      createdAt: row.created_at
-    }))
+    data: rows.map(mapProduct)
   };
 }
 
 export async function createProductForAdmin(body: CreateProductBody): Promise<Record<string, unknown>> {
-  const { data, error } = await supabase
+  let insertPayload: Record<string, unknown> = {
+    name: body.name,
+    description: body.description ?? null,
+    image_url: body.imageUrl ?? null,
+    product_info: body.productInfo ?? null,
+    price: body.price,
+    is_active: body.isActive
+  };
+
+  let { data, error } = await supabase
     .from("products")
-    .insert({
+    .insert(insertPayload)
+    .select("id, name, description, image_url, product_info, price, is_active, created_at")
+    .single();
+
+  if (error && isMissingProductInfoColumns(error)) {
+    insertPayload = {
       name: body.name,
       description: body.description ?? null,
       price: body.price,
       is_active: body.isActive
-    })
-    .select("id, name, description, price, is_active")
-    .single();
+    };
+    const fallback = await supabase
+      .from("products")
+      .insert(insertPayload)
+      .select("id, name, description, price, is_active, created_at")
+      .single();
+    data = fallback.data as any;
+    error = fallback.error;
+  }
 
   if (error || !data) {
     throw new AppError("Unable to create product", 500);
   }
 
-  return {
-    id: data.id,
-    name: data.name,
-    description: data.description,
-    price: data.price,
-    isActive: data.is_active
-  };
+  await syncProductAllergens(data.id, body.allergenIds);
+
+  return mapProduct(data as ProductRow);
 }
 
 export async function updateProductForAdmin(
@@ -238,6 +320,14 @@ export async function updateProductForAdmin(
     payload.description = body.description;
   }
 
+  if (body.imageUrl !== undefined) {
+    payload.image_url = body.imageUrl;
+  }
+
+  if (body.productInfo !== undefined) {
+    payload.product_info = body.productInfo;
+  }
+
   if (body.price !== undefined) {
     payload.price = body.price;
   }
@@ -246,26 +336,62 @@ export async function updateProductForAdmin(
     payload.is_active = body.isActive;
   }
 
-  if (Object.keys(payload).length === 0) {
+  if (Object.keys(payload).length === 0 && body.allergenIds === undefined) {
     throw new AppError("No product fields to update", 400);
   }
 
-  const { data, error } = await supabase
+  let updatedProduct: ProductRow | null = null;
+
+  if (Object.keys(payload).length > 0) {
+    let { data, error } = await supabase
     .from("products")
     .update(payload)
     .eq("id", productId)
-    .select("id, name, description, price, is_active")
+    .select("id, name, description, image_url, product_info, price, is_active, created_at")
     .single();
 
-  if (error || !data) {
+    if (error && isMissingProductInfoColumns(error)) {
+      delete payload.image_url;
+      delete payload.product_info;
+      const fallback = await supabase
+        .from("products")
+        .update(payload)
+        .eq("id", productId)
+        .select("id, name, description, price, is_active, created_at")
+        .single();
+      data = fallback.data as any;
+      error = fallback.error;
+    }
+
+    if (error || !data) {
+      throw new AppError("Unable to update product", 500);
+    }
+
+    updatedProduct = data as ProductRow;
+  }
+
+  await syncProductAllergens(productId, body.allergenIds);
+
+  let { data: fresh, error: freshError } = await supabase
+    .from("products")
+    .select(PRODUCT_SELECT_WITH_DETAILS)
+    .eq("id", productId)
+    .single();
+
+  if (freshError && isMissingProductInfoColumns(freshError)) {
+    const fallback = await supabase
+      .from("products")
+      .select(PRODUCT_SELECT_LEGACY)
+      .eq("id", productId)
+      .single();
+    fresh = fallback.data as any;
+    freshError = fallback.error;
+  }
+
+  if (freshError || !fresh) {
+    if (updatedProduct) return mapProduct(updatedProduct);
     throw new AppError("Unable to update product", 500);
   }
 
-  return {
-    id: data.id,
-    name: data.name,
-    description: data.description,
-    price: data.price,
-    isActive: data.is_active
-  };
+  return mapProduct(fresh as unknown as ProductRow);
 }

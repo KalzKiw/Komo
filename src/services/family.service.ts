@@ -3,6 +3,26 @@ import { AppError } from "../errors/app-error";
 import { AuthUser } from "../types/domain";
 import { roundMoney } from "../utils/money";
 
+const DEMO_PARENT_ID = "eeeeeeee-0000-0000-0000-000000000001";
+const DEMO_STUDENT_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+
+async function ensureDemoFamilyLink(userId: string): Promise<void> {
+  if (userId !== DEMO_STUDENT_ID && userId !== DEMO_PARENT_ID) return;
+
+  await supabase
+    .from("family_links")
+    .upsert(
+      {
+        id: "abababab-abab-abab-abab-abababababab",
+        parent_user_id: DEMO_PARENT_ID,
+        student_user_id: DEMO_STUDENT_ID,
+        relation: "PARENT",
+        status: "ACTIVE"
+      },
+      { onConflict: "id" }
+    );
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface FamilyLinkRow {
@@ -148,6 +168,8 @@ export async function getLinkedChildren(parent: AuthUser): Promise<Array<{
     throw new AppError("Acceso denegado", 403);
   }
 
+  await ensureDemoFamilyLink(parent.id);
+
   const { data, error } = await supabase
     .from("family_links")
     .select(`
@@ -184,6 +206,8 @@ export async function getMyParentLink(student: AuthUser): Promise<{
   parentName?: string;
   parentWalletBalance?: number;
 } > {
+  await ensureDemoFamilyLink(student.id);
+
   const { data, error } = await supabase
     .from("family_links")
     .select(`
@@ -316,6 +340,12 @@ export async function topUpChildWallet(
     throw new AppError("El saldo ha cambiado. Vuelve a intentarlo.", 409);
   }
 
+  await supabase.from("wallet_transactions").insert({
+    user_id: studentId,
+    amount: topUpAmount,
+    concept: "Ingreso familiar"
+  });
+
   return { newBalance };
 }
 
@@ -411,18 +441,26 @@ export async function getChildOrders(
     throw new AppError("No tienes un hijo vinculado con ese ID", 403);
   }
 
-  const { data, error } = await supabase
-    .from("orders")
-    .select("id, shift, scheduled_for, status, total, credited_to_wallet, created_at")
-    .eq("user_id", studentId)
-    .order("created_at", { ascending: false })
-    .limit(30);
+  const [ordersResult, transactionsResult] = await Promise.all([
+    supabase
+      .from("orders")
+      .select("id, shift, scheduled_for, status, total, credited_to_wallet, created_at")
+      .eq("user_id", studentId)
+      .order("created_at", { ascending: false })
+      .limit(30),
+    supabase
+      .from("wallet_transactions")
+      .select("id, amount, concept, created_at")
+      .eq("user_id", studentId)
+      .order("created_at", { ascending: false })
+      .limit(30)
+  ]);
 
-  if (error) {
+  if (ordersResult.error) {
     throw new AppError("Error al obtener los pedidos del alumno", 500);
   }
 
-  return (data ?? []).map((row: any) => ({
+  const orders = (ordersResult.data ?? []).map((row: any) => ({
     id: row.id,
     shift: row.shift,
     scheduledFor: row.scheduled_for,
@@ -431,6 +469,22 @@ export async function getChildOrders(
     creditedToWallet: Boolean(row.credited_to_wallet),
     createdAt: row.created_at,
   }));
+
+  const transactions = transactionsResult.error
+    ? []
+    : (transactionsResult.data ?? []).map((row: any) => ({
+        id: row.id,
+        shift: "TOPUP",
+        scheduledFor: row.created_at,
+        status: "TOPUP",
+        total: Number(row.amount),
+        creditedToWallet: true,
+        createdAt: row.created_at,
+      }));
+
+  return [...orders, ...transactions]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 30);
 }
 
 export async function getAllFamilyRelationships(): Promise<Array<{
