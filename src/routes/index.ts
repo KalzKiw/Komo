@@ -6,6 +6,7 @@ import { familyRouter } from "./family.routes";
 import { healthRouter } from "./health.routes";
 import { mainAppRouter } from "./main-app.routes";
 import { ordersRouter } from "./orders.routes";
+import { paymentRouter } from "./payment.routes";
 
 export const apiRouter = Router();
 
@@ -15,3 +16,4 @@ apiRouter.use(adminRouter);
 apiRouter.use(familyRouter);
 apiRouter.use(mainAppRouter);
 apiRouter.use(ordersRouter);
+apiRouter.use(paymentRouter);

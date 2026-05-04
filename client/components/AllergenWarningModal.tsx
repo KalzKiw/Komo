@@ -77,7 +77,7 @@ export default function AllergenWarningModal({
                 return (
                   <div
                     key={allergen.code}
-                    title={allergen.name}
+
                     className="flex items-center gap-2 rounded-full bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-900"
                   >
                     <span className="text-lg">{visual.icon}</span>

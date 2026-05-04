@@ -22,6 +22,8 @@ CREATE TABLE users (
   wallet_balance NUMERIC(10,2) NOT NULL DEFAULT 0.00 CHECK (wallet_balance >= 0),
   phone TEXT,
   payment_card_last4 TEXT,
+  stripe_customer_id TEXT,
+  stripe_payment_method_id TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

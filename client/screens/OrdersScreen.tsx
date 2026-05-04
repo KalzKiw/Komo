@@ -101,7 +101,8 @@ export default function OrdersScreen({ onShowOrderSummary }: { onShowOrderSummar
     setDetailLoading(true);
     try {
       const d = await apiFetch<OrderDetail>(`/api/orders/${orderId}`);
-      setDetail(d);
+      const summary = orders.find((o) => o.id === orderId);
+      setDetail({ ...d, studentName: d.studentName ?? summary?.studentName });
     } catch {
       const summary = orders.find((o) => o.id === orderId);
       if (summary) setDetail({ ...summary, items: [] });
@@ -193,6 +194,7 @@ export default function OrdersScreen({ onShowOrderSummary }: { onShowOrderSummar
 
   const filtered = applyFilter(orders, filter);
   const inProgress = orders.filter((o) => ["PENDING", "IN_PREPARATION"].includes(o.status)).length;
+  const isParent = authState.status === "authenticated" && authState.user.role === "PARENT";
 
   // ── Detail view ────────────────────────────────────────────────────────────
   if (detail) {
@@ -228,6 +230,11 @@ export default function OrdersScreen({ onShowOrderSummary }: { onShowOrderSummar
             <span className="text-6xl font-extrabold text-[#169486] tracking-widest mt-2 mb-2">{Number((detail as any).pickupNumber) || (100 + (parseInt(detail.id, 36) % 900))}</span>
             {/* Fecha y hora */}
             <span className="text-base text-slate-500 mb-1">{d.toLocaleDateString("es-ES", { day: "numeric", month: "short" })}, {timePart}</span>
+            {isParent && detail.studentName && (
+              <span className="mb-2 rounded-full bg-[#f0fbf8] px-3 py-1 text-xs font-bold text-[#169486]">
+                Pedido de {detail.studentName}
+              </span>
+            )}
             {/* Turno debajo de la fecha */}
             <span className="flex items-center gap-1 text-sm text-slate-500 mb-3">
               <svg width="16" height="16" fill="none" stroke="#64748b" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 7v5l3 2" /></svg> {formatShiftLabel(detail.shift)}
@@ -339,7 +346,9 @@ export default function OrdersScreen({ onShowOrderSummary }: { onShowOrderSummar
             </span>
           )}
         </div>
-        <p className="text-xs text-slate-400 mb-3">{orders.length} pedidos en total</p>
+        <p className="text-xs text-slate-400 mb-3">
+          {orders.length} pedidos en total{isParent ? " de tus hijos" : ""}
+        </p>
 
         {/* Filter pills */}
         <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none" }}>
@@ -448,6 +457,16 @@ export default function OrdersScreen({ onShowOrderSummary }: { onShowOrderSummar
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-slate-400">{date}</span>
                   </div>
+                  {isParent && order.studentName && (
+                    <div className="mt-1">
+                      <span className="inline-flex max-w-full rounded-full bg-[#f0fbf8] px-2.5 py-1 text-[11px] font-bold text-[#169486]">
+                        <span className="truncate">{order.studentName}</span>
+                      </span>
+                    </div>
+                  )}
+                  {order.productSummary && (
+                    <p className="mt-1 truncate text-xs text-slate-400">{order.productSummary}</p>
+                  )}
                 </div>
                 {/* Precio */}
                 <div className="flex flex-col items-end ml-2">

@@ -23,8 +23,10 @@ Variables principales:
 - `SUPABASE_URL`: URL del proyecto Supabase.
 - `SUPABASE_SERVICE_ROLE_KEY`: clave de servicio.
 - `SUPABASE_ANON_KEY`: clave pública anon para login con Supabase Auth.
+- `STRIPE_SECRET_KEY`: clave secreta de Stripe en modo test (`sk_test_...`) para pagos de recarga.
 - `BYPASS_ORDER_CUTOFF`: permite omitir el cierre horario durante pruebas.
 - `VITE_API_BASE_URL`: vacío si frontend y backend comparten dominio; URL absoluta si se separan.
+- `VITE_STRIPE_PUBLISHABLE_KEY`: clave pública de Stripe en modo test (`pk_test_...`) para el formulario de tarjeta.
 
 ## Ejecución en Desarrollo
 

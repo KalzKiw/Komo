@@ -22,6 +22,15 @@
 - [x] Deploy en Vercel con frontend funcionando.
 - [x] API accesible mediante `/api/health`.
 - [x] Correcciones visuales de colores, fuente y tarjetas.
+- [x] Persistencia de teléfono y tarjeta en perfil (2026-05-03).
+- [x] Recarga real del monedero con wallet_transactions (2026-05-03).
+- [x] Sistema de monedero completo con movimientos (2026-05-03).
+- [x] Gestión de productos con ficha alimentaria e imagen editable (2026-05-03).
+- [x] Switch para desactivar límites de reserva temporalmente (2026-05-03).
+- [x] Vinculación familiar completa con códigos (2026-05-01).
+- [x] Panel de administración y KDS (2026-05-01).
+- [x] Sistema de alérgenos basado en 14 alérgenos UE (2026-05-01).
+- [x] Build compila backend y frontend (2026-05-01).
 - [ ] Suite E2E automatizada.
 - [ ] Autenticación real de producción.
 - [ ] Pago real o integración bancaria segura.
@@ -31,20 +40,21 @@
 
 ### Corto plazo
 
-- Añadir capturas finales en anexos.
-- Revisar todos los flujos en móvil real.
-- Validar login, productos, pedidos y panel admin tras cada despliegue.
+- [x] Capturas finales en anexos (implementado con client-dist build).
+- [x] Revisar todos los flujos en móvil real (funcional en producción).
+- [x] Validar login, productos, pedidos y panel admin en despliegue.
+- [ ] Tests E2E con Playwright.
 
 ### Medio plazo
 
-- Implementar autenticación real con Supabase Auth o JWT.
-- Añadir tests E2E con Playwright.
-- Mejorar reporting de administración.
-- Añadir control de stock.
+- [ ] Implementar autenticación real con Supabase Auth o JWT.
+- [ ] Añadir tests E2E con Playwright.
+- [ ] Mejorar reporting de administración.
+- [ ] Añadir control de stock.
 
 ### Largo plazo
 
-- Pasarela de pago real.
-- Notificaciones push.
-- PWA offline estable.
-- Analítica de demanda y previsión avanzada.
+- [ ] Pasarela de pago real.
+- [ ] Notificaciones push.
+- [ ] PWA offline estable.
+- [ ] Analítica de demanda y previsión avanzada.

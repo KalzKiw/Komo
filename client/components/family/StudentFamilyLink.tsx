@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle, ArrowRight } from "lucide-react";
+import { CheckCircle, ArrowRight, MoreHorizontal, Link2Off } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
 import { money } from "../../lib/utils";
 
@@ -48,6 +48,10 @@ export default function StudentFamilyLink() {
   const [submitting, setSubmitting] = useState(false);
   const [studentBalance, setStudentBalance] = useState<number | null>(null);
   const [pendingUnlink, setPendingUnlink] = useState<null | {
+    linkId: string;
+    parentName: string;
+  }>(null);
+  const [actionsParent, setActionsParent] = useState<null | {
     linkId: string;
     parentName: string;
   }>(null);
@@ -104,6 +108,7 @@ export default function StudentFamilyLink() {
       const updated = await apiFetch<ParentLinkResponse>("/api/family/my-parent");
       setLinkState(updated);
       setPendingUnlink(null);
+      setActionsParent(null);
       setInput("");
       setTimeout(() => inputRef.current?.focus(), 0);
     } catch (err) {
@@ -115,7 +120,7 @@ export default function StudentFamilyLink() {
   if (loadingStatus) {
     return (
       <div className="flex h-full items-center justify-center">
-        <span className="h-8 w-8 animate-spin rounded-full border-4 border-[#92dbc8] border-t-#1C9690" />
+        <span className="h-8 w-8 animate-spin rounded-full border-4 border-[#92dbc8] border-t-[#1C9690]" />
       </div>
     );
   }
@@ -132,69 +137,101 @@ export default function StudentFamilyLink() {
         }];
 
     return (
-      <div className="bg-gray-50">
-        <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
-          <div className="space-y-3 px-5 py-4">
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#d9f4ee] text-[#169486]">
-                <CheckCircle className="h-5 w-5" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-slate-900">Cuenta familiar vinculada</p>
-                <p className="truncate text-xs text-slate-400">
-                  {parents.length} familiar{parents.length !== 1 ? "es" : ""} asociado{parents.length !== 1 ? "s" : ""}
-                </p>
-              </div>
-            </div>
+      <div className="space-y-4">
+        <div className="rounded-3xl bg-white p-5 shadow-sm border border-[#d9f4ee]">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#d9f4ee] text-[#169486]">
+              <CheckCircle className="h-5 w-5" />
+            </span>
+            <p className="text-sm font-bold text-slate-900">Familiar vinculado</p>
+          </div>
 
-            <div className="space-y-2">
-              {parents.map((parent) => (
-                <div key={parent.linkId} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-bold text-slate-700">{parent.parentName}</p>
-                    <p className="text-[11px] text-slate-400">Puede recargar y supervisar tu monedero.</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setPendingUnlink({
-                      linkId: parent.linkId,
-                      parentName: parent.parentName,
-                    })}
-                    className="shrink-0 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-400 hover:bg-white hover:text-red-500"
-                  >
-                    Quitar
-                  </button>
+          <div className="space-y-3">
+            {parents.map((parent) => (
+              <div key={parent.linkId} className="flex items-center gap-3 rounded-2xl border border-[#d9f4ee] bg-[#f8fffd] px-3 py-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-sm font-black text-[#169486] shadow-sm">
+                  {parent.parentName
+                    .split(" ")
+                    .slice(0, 2)
+                    .map((part) => part[0])
+                    .join("")
+                    .toUpperCase()}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold text-slate-800">{parent.parentName}</p>
+                  <p className="text-[11px] font-semibold text-[#169486]">Familiar autorizado</p>
+                  <p className="text-[11px] text-slate-400">Puede recargar y supervisar tu monedero.</p>
                 </div>
-              ))}
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setActionsParent({
+                    linkId: parent.linkId,
+                    parentName: parent.parentName,
+                  })}
+                  aria-label={`Opciones de ${parent.parentName}`}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm transition active:scale-95 hover:text-slate-600"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
 
-            {studentBalance !== null && (
-              <p className="rounded-xl bg-[#f0fbf8] px-3 py-2 text-xs font-semibold text-slate-500">
-                Saldo disponible: <span className="font-black tabular-nums text-[#169486]">{money(studentBalance)}</span>
-              </p>
-            )}
+        {studentBalance !== null && (
+          <div className="rounded-3xl bg-[#f0fbf8] border border-[#c6efe7] p-4 shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-[0.1em] text-[#169486]">Saldo disponible</p>
+            <p className="mt-2 font-mono text-2xl font-black tabular-nums text-[#169486]">{money(studentBalance)}</p>
+          </div>
+        )}
 
-            {error && <p className="text-center text-sm text-red-500">{error}</p>}
+        {error && <p className="text-center text-sm font-semibold text-red-500">{error}</p>}
 
-            <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => setLinkState({ linked: false })}
+          className="w-full flex items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-600 transition-all active:scale-[0.97] hover:bg-slate-200"
+        >
+          <ArrowRight className="h-4 w-4" />
+          Vincular otro familiar
+        </button>
+      </div>
+
+        {actionsParent && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 px-5 backdrop-blur-[2px]">
+            <div className="w-full max-w-sm rounded-3xl bg-white p-4 shadow-2xl">
+              <div className="mb-3">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Opciones</p>
+                <h2 className="mt-1 truncate text-base font-black text-slate-900">{actionsParent.parentName}</h2>
+              </div>
               <button
                 type="button"
-                onClick={() => setLinkState({ linked: false })}
-                className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500 transition-all active:scale-[0.97] hover:bg-slate-200"
+                onClick={() => {
+                  setPendingUnlink(actionsParent);
+                  setActionsParent(null);
+                }}
+                className="flex w-full items-center gap-3 rounded-2xl bg-red-50 px-4 py-3 text-left text-sm font-bold text-red-500 transition active:scale-[0.98]"
               >
-                <ArrowRight className="h-3.5 w-3.5" />
-                Añadir otro familiar
+                <Link2Off className="h-4 w-4" />
+                Desvincular familiar
+              </button>
+              <button
+                type="button"
+                onClick={() => setActionsParent(null)}
+                className="mt-2 w-full rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600 transition active:scale-[0.98]"
+              >
+                Cerrar
               </button>
             </div>
           </div>
-        </div>
+        )}
 
         {pendingUnlink && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 px-5 backdrop-blur-[2px]">
             <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl">
               <h2 className="text-lg font-black text-slate-900">Quitar familiar</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Vas a desvincular a <strong className="text-slate-700">{pendingUnlink.parentName}</strong>.
+                Vas a desvincular a <strong className="text-slate-700">{pendingUnlink?.parentName}</strong>.
                 Ya no podrá supervisar ni recargar tu monedero desde su panel.
               </p>
               <div className="mt-5 grid grid-cols-2 gap-2">
@@ -207,7 +244,7 @@ export default function StudentFamilyLink() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleUnlink(pendingUnlink.linkId)}
+                  onClick={() => pendingUnlink && handleUnlink(pendingUnlink.linkId)}
                   className="rounded-2xl bg-red-500 px-4 py-3 text-sm font-bold text-white transition active:scale-[0.98]"
                 >
                   Quitar
@@ -216,7 +253,6 @@ export default function StudentFamilyLink() {
             </div>
           </div>
         )}
-      </div>
     );
   }
 

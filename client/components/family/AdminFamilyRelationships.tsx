@@ -22,6 +22,7 @@ export default function AdminFamilyRelationships() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [unlinking, setUnlinking] = useState<string | null>(null);
+  const [pendingUnlink, setPendingUnlink] = useState<LinkRow | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function AdminFamilyRelationships() {
     try {
       await apiFetch(`/api/family/links/${linkId}`, { method: "DELETE" });
       setRows((prev) => prev.filter((r) => r.linkId !== linkId));
+      setPendingUnlink(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al desvincular");
     } finally {
@@ -98,7 +100,7 @@ export default function AdminFamilyRelationships() {
         {/* ── List ────────────────────────────────────────────────────── */}
         {loading ? (
           <div className="flex justify-center py-10">
-            <span className="h-7 w-7 animate-spin rounded-full border-4 border-[#92dbc8] border-t-#1C9690" />
+            <span className="h-7 w-7 animate-spin rounded-full border-4 border-[#92dbc8] border-t-[#1C9690]" />
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-12 text-center text-slate-400">
@@ -137,7 +139,7 @@ export default function AdminFamilyRelationships() {
                     <button
                       type="button"
                       disabled={unlinking === row.linkId}
-                      onClick={() => handleUnlink(row.linkId)}
+                      onClick={() => setPendingUnlink(row)}
                       className="flex items-center gap-1.5 rounded-xl border border-red-100 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-500 transition-all hover:bg-red-100 active:scale-95 disabled:opacity-50"
                     >
                       {unlinking === row.linkId ? (
@@ -163,6 +165,41 @@ export default function AdminFamilyRelationships() {
           </div>
         )}
       </div>
+
+      {pendingUnlink && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 px-5 backdrop-blur-[2px]">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-50 text-red-500">
+              <Unlink className="h-5 w-5" />
+            </div>
+            <h2 className="mt-4 text-lg font-black text-slate-900">Desvincular familiar</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Vas a eliminar el vínculo entre{" "}
+              <strong className="text-slate-700">{pendingUnlink.parentName}</strong> y{" "}
+              <strong className="text-slate-700">{pendingUnlink.studentName}</strong>.
+              Esta acción retirará el acceso familiar a pedidos, alérgenos y monedero.
+            </p>
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setPendingUnlink(null)}
+                disabled={unlinking === pendingUnlink.linkId}
+                className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600 transition active:scale-[0.98] disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => handleUnlink(pendingUnlink.linkId)}
+                disabled={unlinking === pendingUnlink.linkId}
+                className="rounded-2xl bg-red-500 px-4 py-3 text-sm font-bold text-white transition active:scale-[0.98] disabled:opacity-60"
+              >
+                {unlinking === pendingUnlink.linkId ? "Quitando..." : "Desvincular"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

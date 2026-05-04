@@ -1,14 +1,25 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
+import { useToast } from "../context/ToastContext";
 import AllergenPickerScreen from "./AllergenPickerScreen";
-import BankCardModal from "../components/BankCardModal";
+import StripeCardSetupModal from "../components/StripeCardSetupModal";
 import StudentFamilyLink from "../components/family/StudentFamilyLink";
 import { allergenVisual } from "../lib/allergens";
 
+type PaymentCard = {
+  id: string;
+  brand: string;
+  lastFourDigits: string;
+  expMonth: number;
+  expYear: number;
+  isDefault: boolean;
+};
+
 export default function ProfileScreenV2() {
-  const { logout, state } = useAuth();
+  const { logout } = useAuth();
   const { apiFetch } = useApi();
+  const { showToast } = useToast();
 
   const [profile, setProfile] = useState<null | {
     id: string;
@@ -27,11 +38,13 @@ export default function ProfileScreenV2() {
   const [phoneModalOpen, setPhoneModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [allergyModalOpen, setAllergyModalOpen] = useState(false);
-  const [bankCardModalOpen, setBankCardModalOpen] = useState(false);
+  const [paymentMethodsOpen, setPaymentMethodsOpen] = useState(false);
+  const [stripeCardModalOpen, setStripeCardModalOpen] = useState(false);
+  const [familyModalOpen, setFamilyModalOpen] = useState(false);
+  const [removingCard, setRemovingCard] = useState(false);
+  const [paymentCards, setPaymentCards] = useState<PaymentCard[]>([]);
+  const [loadingPaymentCards, setLoadingPaymentCards] = useState(false);
   const [savedCard, setSavedCard] = useState<{ lastFourDigits: string } | null>(null);
-  const userId = state.status === "authenticated" ? state.user.id : "anonymous";
-  const phoneStorageKey = `cafes-profile-phone:${userId}`;
-  const cardStorageKey = `cafes-payment-card-last4:${userId}`;
 
   useEffect(() => {
     Promise.all([
@@ -52,38 +65,53 @@ export default function ProfileScreenV2() {
     ])
       .then(([me, allergiesRes]) => {
         setProfile(me);
-        const localPhone = localStorage.getItem(phoneStorageKey);
-        const localCard = localStorage.getItem(cardStorageKey);
-        setPhone(me.phone ?? localPhone ?? null);
-        setSavedCard(me.paymentCardLast4 || localCard ? { lastFourDigits: me.paymentCardLast4 ?? localCard! } : null);
+        setPhone(me.phone ?? null);
+        setSavedCard(me.paymentCardLast4 ? { lastFourDigits: me.paymentCardLast4 } : null);
         const items = allergiesRes.data ?? [];
         setAllergies(items);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [apiFetch, cardStorageKey, phoneStorageKey]);
+  }, [apiFetch]);
 
-  async function handleSaveCard(cardData: {
-    cardNumber: string;
-    cardholderName: string;
-    expiryMonth: string;
-    expiryYear: string;
-    cvv: string;
-  }) {
+  function handleCardSaved(card: { lastFourDigits: string }) {
+    setSavedCard(card);
+    setStripeCardModalOpen(false);
+    loadPaymentCards();
+    window.dispatchEvent(new Event("profileChanged"));
+    showToast("Método de pago guardado", "success");
+  }
+
+  async function loadPaymentCards() {
+    setLoadingPaymentCards(true);
     try {
-      const lastFour = cardData.cardNumber.slice(-4);
-      try {
-        await apiFetch("/api/me", {
-          method: "PATCH",
-          body: JSON.stringify({ paymentCardLast4: lastFour }),
-        });
-      } catch {
-        localStorage.setItem(cardStorageKey, lastFour);
-      }
-      setSavedCard({ lastFourDigits: lastFour });
+      const result = await apiFetch<{ data: PaymentCard[] }>("/api/payments/profile/cards");
+      setPaymentCards(result.data);
+      const defaultCard = result.data.find((card) => card.isDefault) ?? result.data[0] ?? null;
+      setSavedCard(defaultCard ? { lastFourDigits: defaultCard.lastFourDigits } : null);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "No se pudieron cargar las tarjetas", "error");
+    } finally {
+      setLoadingPaymentCards(false);
+    }
+  }
+
+  async function openPaymentMethods() {
+    setPaymentMethodsOpen(true);
+    await loadPaymentCards();
+  }
+
+  async function handleRemoveCard(cardId: string) {
+    setRemovingCard(true);
+    try {
+      await apiFetch(`/api/payments/profile/cards/${encodeURIComponent(cardId)}`, { method: "DELETE" });
+      await loadPaymentCards();
       window.dispatchEvent(new Event("profileChanged"));
-    } catch (error) {
-      throw new Error("Error al guardar la tarjeta");
+      showToast("Tarjeta eliminada", "success");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "No se pudo eliminar la tarjeta", "error");
+    } finally {
+      setRemovingCard(false);
     }
   }
 
@@ -109,16 +137,12 @@ export default function ProfileScreenV2() {
         method: "PATCH",
         body: JSON.stringify({ phone: cleaned.length > 0 ? cleaned : null }),
       });
-      if (cleaned.length > 0) localStorage.setItem(phoneStorageKey, cleaned);
-      else localStorage.removeItem(phoneStorageKey);
       setPhone(cleaned.length > 0 ? cleaned : null);
       window.dispatchEvent(new Event("profileChanged"));
       setPhoneModalOpen(false);
-    } catch {
-      if (cleaned.length > 0) localStorage.setItem(phoneStorageKey, cleaned);
-      else localStorage.removeItem(phoneStorageKey);
-      setPhone(cleaned.length > 0 ? cleaned : null);
-      setPhoneModalOpen(false);
+      showToast("Teléfono guardado", "success");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "No se pudo guardar el teléfono", "error");
     }
   }
 
@@ -165,7 +189,9 @@ export default function ProfileScreenV2() {
               />
             </div>
             <h1 className="text-xl font-bold text-slate-900">{profile?.fullName ?? "Usuario"}</h1>
-            <p className="mt-2 text-sm text-slate-500">{profile?.courseName ?? "Curso no asignado"}</p>
+            {profile?.courseName ? (
+              <p className="mt-2 text-sm text-slate-500">{profile.courseName}</p>
+            ) : null}
           </div>
         </section>
 
@@ -186,21 +212,23 @@ export default function ProfileScreenV2() {
                 </div>
                 <span className="text-slate-400 text-sm">Editar</span>
               </button>
-              <button
-                type="button"
-                onClick={() => setBankCardModalOpen(true)}
-                className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-slate-50"
-              >
-                <div>
-                  <p className="text-sm font-medium text-slate-900">Métodos de pago</p>
-                  <p className="text-xs text-slate-500">
-                    {savedCard ? `Tarjeta ****${savedCard.lastFourDigits}` : "Agregar tarjeta"}
-                  </p>
-                </div>
-                <span className="text-slate-400 text-sm">
-                  {savedCard ? "Cambiar" : "Agregar"}
-                </span>
-              </button>
+              {isParent && (
+                <button
+                  type="button"
+                  onClick={openPaymentMethods}
+                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-slate-50"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">Métodos de pago</p>
+                    <p className="text-xs text-slate-500">
+                      {savedCard ? `Tarjeta ****${savedCard.lastFourDigits}` : "Agregar tarjeta con Stripe"}
+                    </p>
+                  </div>
+                  <span className="text-slate-400 text-sm">
+                    {savedCard ? "Cambiar" : "Agregar"}
+                  </span>
+                </button>
+              )}
             </>
           )}
           {!isParent && (
@@ -220,7 +248,6 @@ export default function ProfileScreenV2() {
                       return (
                         <span
                           key={allergen.code}
-                          title={allergen.name}
                           className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-lg"
                         >
                           {visual.icon}
@@ -239,17 +266,16 @@ export default function ProfileScreenV2() {
             </button>
           )}
           {isStudent && (
-            <div className="px-5 py-4 text-sm text-slate-500">
-              Tu cuenta de alumno usa solo monedero escolar. No necesita teléfono ni tarjeta bancaria.
-            </div>
+            <button
+              type="button"
+              onClick={() => setFamilyModalOpen(true)}
+              className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-slate-50"
+            >
+              <p className="text-sm font-medium text-slate-900">Familiares</p>
+              <span className="text-slate-400 text-sm">Abrir</span>
+            </button>
           )}
         </section>
-
-        {profile?.role === "STUDENT" && (
-          <section className="mb-6">
-            <StudentFamilyLink />
-          </section>
-        )}
 
       </main>
 
@@ -305,10 +331,105 @@ export default function ProfileScreenV2() {
         }}
       />
 
-      <BankCardModal
-        open={bankCardModalOpen}
-        onClose={() => setBankCardModalOpen(false)}
-        onSave={handleSaveCard}
+      {familyModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4 py-6">
+          <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#169486]">Familiares</p>
+                <h2 className="mt-1 text-xl font-black text-slate-900">Gestión familiar</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFamilyModalOpen(false)}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm transition hover:bg-slate-100 active:scale-95"
+                aria-label="Cerrar modal familiares"
+              >
+                ×
+              </button>
+            </div>
+            <div className="max-h-[calc(100vh-18rem)] overflow-y-auto bg-white p-4">
+              <StudentFamilyLink />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {paymentMethodsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
+          <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#169486]">Stripe test</p>
+                <h2 className="mt-1 text-lg font-black text-slate-900">Métodos de pago</h2>
+                <p className="mt-1 text-sm text-slate-500">Gestiona la tarjeta usada para recargar monederos.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPaymentMethodsOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition active:scale-95"
+                aria-label="Cerrar"
+              >
+                ×
+              </button>
+            </div>
+
+            {loadingPaymentCards ? (
+              <div className="rounded-3xl bg-slate-50 p-6 text-center">
+                <span className="mx-auto block h-7 w-7 animate-spin rounded-full border-4 border-[#92dbc8] border-t-[#1C9690]" />
+                <p className="mt-3 text-sm font-semibold text-slate-500">Cargando tarjetas...</p>
+              </div>
+            ) : paymentCards.length > 0 ? (
+              <div className="space-y-3">
+                {paymentCards.map((card) => (
+                  <div key={card.id} className="rounded-3xl bg-slate-900 p-5 text-white shadow-inner">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-bold uppercase tracking-[0.18em] text-white/55">
+                        {card.brand} {card.isDefault ? "principal" : "guardada"}
+                      </span>
+                      <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold text-white/80">TEST</span>
+                    </div>
+                    <p className="mt-7 font-mono text-2xl font-black tracking-[0.18em]">•••• •••• •••• {card.lastFourDigits}</p>
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <p className="text-xs font-semibold text-white/55">
+                        Caduca {String(card.expMonth).padStart(2, "0")}/{card.expYear}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveCard(card.id)}
+                        disabled={removingCard}
+                        className="rounded-full bg-red-500/15 px-3 py-1.5 text-xs font-bold text-red-100 transition active:scale-95 disabled:opacity-60"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-5 text-center">
+                <p className="text-sm font-bold text-slate-800">No hay tarjeta guardada</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">Añade una tarjeta de prueba de Stripe para recargar más rápido.</p>
+              </div>
+            )}
+
+            <div className="mt-4 grid gap-2">
+              <button
+                type="button"
+                onClick={() => setStripeCardModalOpen(true)}
+                className="rounded-2xl bg-[#1C9690] px-4 py-3 text-sm font-bold text-white transition active:scale-[0.98]"
+              >
+                {paymentCards.length > 0 ? "Añadir otra tarjeta" : "Añadir tarjeta"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <StripeCardSetupModal
+        open={stripeCardModalOpen}
+        onClose={() => setStripeCardModalOpen(false)}
+        onSaved={handleCardSaved}
       />
     </div>
   );

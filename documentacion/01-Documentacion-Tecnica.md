@@ -30,29 +30,68 @@ La aplicación puede ejecutarse como un servicio Node único que sirve tanto la 
 
 ## API Endpoints Principales
 
+### Autenticación
 - `POST /api/auth/login`: login demo por email.
 - `POST /api/auth/register`: registro de alumno o familiar.
-- `GET /api/health`: comprobación de estado.
+
+### Perfil y alérgenos
 - `GET /api/me`: perfil del usuario autenticado.
-- `PATCH /api/me`: actualización de datos persistentes de perfil, como teléfono y tarjeta guardada.
+- `PATCH /api/me`: actualización de datos persistentes (teléfono, tarjeta resumida, etc.).
+- `GET /api/me/allergies`: alérgenos del usuario.
+- `PUT /api/me/allergies`: actualizar alérgenos declarados.
+- `GET /api/allergens`: listado completo de alérgenos del catálogo.
+
+### Monedero
 - `GET /api/me/wallet-movements`: movimientos del monedero del alumno.
 - `POST /api/me/wallet/topup`: recarga del monedero propio del alumno.
-- `GET /api/products`: catálogo activo.
+
+### Productos
+- `GET /api/products`: catálogo activo con filtros opcionales.
+
+### Pedidos
 - `GET /api/me/orders`: pedidos del usuario.
 - `POST /api/orders`: creación de pedido.
-- `GET /api/orders`: listado operativo para administración.
+- `GET /api/orders`: listado operativo para administración (con filtros).
 - `GET /api/orders/:orderId`: detalle de pedido.
 - `PATCH /api/orders/:orderId/status`: cambio de estado por administración.
 - `PATCH /api/orders/:orderId/cancel`: cancelación de pedido.
+
+### Sistema familiar
+- `GET /api/family/children`: hijos vinculados a una cuenta familiar.
+- `POST /api/family/token`: generar código temporal de vinculación.
+- `POST /api/family/link`: canjear código de vinculación.
+- `DELETE /api/family/links/:linkId`: desvinculación familiar.
+- `GET /api/family/children/:studentId/orders`: pedidos del hijo.
+- `GET /api/family/children/:studentId/profile`: perfil completo del hijo.
+- `POST /api/family/topup`: recarga de saldo del hijo (transferencia directa).
+
+### Pagos con Stripe (integración en progreso)
+- `GET /api/payments/config`: obtener configuración de Stripe (clave pública).
+- `POST /api/payments/profile/card-setup-intent`: crear SetupIntent para guardar tarjeta.
+- `GET /api/payments/profile/cards`: listar tarjetas guardadas del usuario.
+- `POST /api/payments/profile/card-setup-confirm`: confirmar tarjeta guardada.
+- `DELETE /api/payments/profile/cards/:paymentMethodId`: eliminar tarjeta guardada.
+- `POST /api/payments/family/topup-intent`: crear PaymentIntent para recarga de hijo.
+- `POST /api/payments/family/topup-confirm`: confirmar recarga (procesa webhook de Stripe).
+- `POST /api/payments/family/topup-saved-card`: recarga de hijo con tarjeta guardada (one-click).
+
+### Administración
+- `GET /api/admin/students`: listado de alumnos.
+- `PATCH /api/admin/students/:studentId/delegate`: asignar delegado.
 - `GET /api/admin/kds`: cola de cocina.
 - `GET /api/admin/products`: gestión de productos.
-- `GET /api/family/children`: hijos vinculados a una cuenta familiar.
+- `POST /api/admin/products`: crear producto.
+- `PATCH /api/admin/products/:productId`: actualizar producto.
 
-Los endpoints protegidos usan cabeceras de autenticación mock:
+### Utilidades
+- `GET /api/health`: comprobación de estado.
+- `GET /api-docs`: documentación Swagger UI.
 
-- `x-user-id`
-- `x-user-role`
-- `x-user-beneficiary`
+Los endpoints protegidos usan cabeceras de autenticación mock inyectadas por `mockAuthMiddleware`:
+
+- `x-user-id`: UUID del usuario autenticado.
+- `x-user-role`: rol del usuario (STUDENT, PARENT, ADMIN, STAFF, DELEGATE).
+- `x-user-beneficiary`: (opcional) indica si el usuario es beneficiario de comida subvencionada.
 
 ## Esquema de Base de Datos
 
@@ -68,8 +107,9 @@ El modelo se basa en las siguientes entidades:
 - `order_items`: líneas de pedido.
 - `family_links`: relación familiar entre padre/madre y alumno.
 - `linking_tokens`: códigos temporales de vinculación familiar.
-- `wallet_transactions`: movimientos de recarga del monedero.
-- `settings`: configuración global, especialmente horarios de corte.
+- `wallet_transactions`: movimientos de recarga del monedero (id, user_id, amount, concept, created_at).
+- `settings`: configuración global (horarios de corte MORNING 09:00, AFTERNOON 15:00, NIGHT 18:00).
+- `stripe_payment_methods`: tarjetas guardadas de usuarios (integración con Stripe).
 
 El diagrama se mantiene en `db/erd.mmd`.
 
@@ -83,5 +123,7 @@ El diagrama se mantiene en `db/erd.mmd`.
 - La aplicación advierte cuando un producto contiene alérgenos declarados por el usuario.
 - La cancelación puede generar devolución al monedero si cumple la ventana de cancelación.
 - Las recargas de monedero actualizan el saldo en backend y se registran como movimientos.
-- Teléfono y tarjeta se guardan en el perfil del usuario; por seguridad solo se conserva el último bloque visible de la tarjeta.
+- Teléfono y tarjeta se guardan en el perfil del usuario; por seguridad solo se conserva el último bloque visible de la tarjeta (ej: `****1234`).
 - Administración y cocina pueden consultar la cola KDS y actualizar estados.
+- Los pagos con Stripe usan SetupIntent para guardar tarjetas (sin cobro inicial) y PaymentIntent para recargas de monedero.
+- Las recargas de monedero pueden realizarse de forma manual (transferencia directa) o con Stripe (tarjeta on-file o nuevo pago).

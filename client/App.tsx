@@ -29,6 +29,12 @@ function ConsumerApp({ role }: { role: UserRole }) {
   const [tab, setTab] = useState<Tab>("home");
   const [cartOpen, setCartOpen] = useState(false);
   const { itemCount } = useCart();
+  const leftNav = LEFT_NAV.map((item) =>
+    role === "PARENT" && item.id === "wallet" ? { ...item, label: "Hijos" } : item
+  );
+  const rightNav = RIGHT_NAV.map((item) =>
+    role === "PARENT" && item.id === "orders" ? { ...item, label: "Estadísticas" } : item
+  );
 
   // Estado global para el resumen de pedido
   const [orderSummary, setOrderSummary] = useState<null | {
@@ -44,9 +50,9 @@ function ConsumerApp({ role }: { role: UserRole }) {
       setShowOrderSummary(false);
       setOrderSummary(null);
       setCartOpen(false);
-      setTab("orders");
+      setTab(role === "PARENT" ? "wallet" : "orders");
       // Forzar navegación en la URL si no se usa react-router
-      if (window.location.pathname !== "/orders") {
+      if (role !== "PARENT" && window.location.pathname !== "/orders") {
         window.history.pushState({}, "", "/orders");
       }
       return;
@@ -65,7 +71,7 @@ function ConsumerApp({ role }: { role: UserRole }) {
     setShowOrderSummary(false);
     setOrderSummary(null);
     setCartOpen(false);
-    setTab("orders");
+    setTab(role === "PARENT" ? "wallet" : "orders");
   }
 
   return (
@@ -73,15 +79,19 @@ function ConsumerApp({ role }: { role: UserRole }) {
       {/* ── Screen area ──────────────────────────────────────────── */}
       <div className="h-full w-full overflow-hidden pb-16">
         {tab === "home" && <HomeScreen />}
-        {tab === "wallet" && <WalletScreen role={role} />}
-        {tab === "orders" && <OrdersScreen onShowOrderSummary={handleShowOrderSummary} />}
+        {tab === "wallet" && <WalletScreen role={role} parentView="children" />}
+        {tab === "orders" && (
+          role === "PARENT"
+            ? <WalletScreen role={role} parentView="stats" />
+            : <OrdersScreen onShowOrderSummary={handleShowOrderSummary} />
+        )}
         {tab === "profile" && <ProfileScreenWrapper />}
       </div>
 
       {/* ── Bottom Nav ───────────────────────────────────────────── */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-end justify-around border-t border-gray-100 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur-sm">
         {/* Left tabs */}
-        {LEFT_NAV.map(({ id, label, Icon }) => {
+        {leftNav.map(({ id, label, Icon }) => {
           const active = tab === id;
           return (
             <button
@@ -115,7 +125,7 @@ function ConsumerApp({ role }: { role: UserRole }) {
         </div>
 
         {/* Right tabs */}
-        {RIGHT_NAV.map(({ id, label, Icon }) => {
+        {rightNav.map(({ id, label, Icon }) => {
           const active = tab === id;
           return (
             <button

@@ -136,7 +136,7 @@ export default function AllergenPickerScreen({
 
           {loading ? (
             <div className="flex justify-center py-12">
-              <span className="h-8 w-8 animate-spin rounded-full border-4 border-[#92dbc8] border-t-#1C9690" />
+              <span className="h-8 w-8 animate-spin rounded-full border-4 border-[#92dbc8] border-t-[#1C9690]" />
             </div>
           ) : (
             <>

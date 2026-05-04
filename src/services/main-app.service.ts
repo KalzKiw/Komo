@@ -4,6 +4,7 @@ import { AuthUser, UserRole, OrderShift, OrderStatus } from "../types/domain";
 import { ListMyOrdersQuery, ListProductsQuery, UpdateMyProfileBody } from "../validators/main-app.validator";
 import { roundMoney } from "../utils/money";
 import { ALLERGENS } from "../data/allergens";
+import { listOrders } from "./order.service";
 
 interface UserProfileRow {
   id: string;
@@ -168,11 +169,22 @@ export async function topUpMyWallet(user: AuthUser, amount: number): Promise<Rec
     throw new AppError("El saldo ha cambiado. Revisa el monedero e inténtalo de nuevo.", 409);
   }
 
-  await supabase.from("wallet_transactions").insert({
+  const { error: transactionError } = await supabase.from("wallet_transactions").insert({
     user_id: user.id,
     amount: topUpAmount,
     concept: "Ingreso de saldo"
   });
+
+  if (transactionError) {
+    await supabase
+      .from("users")
+      .update({ wallet_balance: currentBalance })
+      .eq("id", user.id);
+    throw new AppError(
+      "No se pudo registrar el movimiento del monedero. Aplica la migración wallet_profile_persistence.",
+      500
+    );
+  }
 
   return {
     walletBalance: Number((updated as { wallet_balance: number }).wallet_balance),
@@ -333,6 +345,10 @@ export async function listProductsForMainApp(
 }
 
 export async function listMyOrders(user: AuthUser, query: ListMyOrdersQuery): Promise<Record<string, unknown>> {
+  if (user.role === "PARENT") {
+    return listOrders(user, query);
+  }
+
   let statement = supabase
     .from("orders")
     .select("id, user_id, shift, scheduled_for, status, total, credited_to_wallet, created_at")

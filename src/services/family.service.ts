@@ -277,7 +277,7 @@ export async function topUpChildWallet(
   parent: AuthUser,
   studentId: string,
   amount: number
-): Promise<{ newBalance: number; movementPersisted: boolean }> {
+): Promise<{ newBalance: number; movementPersisted: true }> {
   if (parent.role !== "PARENT") {
     throw new AppError("Solo los padres pueden recargar el saldo de sus hijos", 403);
   }
@@ -346,8 +346,15 @@ export async function topUpChildWallet(
     });
 
   if (transactionError) {
-    console.warn("wallet_transactions insert failed; wallet top-up kept without backend movement", transactionError);
-    return { newBalance, movementPersisted: false };
+    await supabase
+      .from("users")
+      .update({ wallet_balance: currentBalance })
+      .eq("id", studentId);
+    console.error("wallet_transactions insert failed; rolled back family top-up", transactionError);
+    throw new AppError(
+      "No se pudo registrar el movimiento del monedero. Aplica la migración wallet_profile_persistence.",
+      500
+    );
   }
 
   return { newBalance, movementPersisted: true };

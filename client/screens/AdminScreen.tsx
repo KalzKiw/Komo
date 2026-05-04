@@ -140,7 +140,7 @@ export default function AdminScreen() {
     if (loading) {
       return (
         <div className="flex h-40 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#92dbc8] border-t-#1C9690" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#92dbc8] border-t-[#1C9690]" />
         </div>
       );
     }
@@ -898,7 +898,7 @@ function ProductFormModal({
             <p className="text-xs text-slate-400 mb-2">Alérgenos del producto ({selectedAllergens.size})</p>
             {loadingAllergens ? (
               <div className="flex justify-center py-4">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#92dbc8] border-t-#1C9690" />
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#92dbc8] border-t-[#1C9690]" />
               </div>
             ) : allergens.length === 0 ? (
               <p className="text-xs text-slate-400 py-2">No hay alérgenos disponibles</p>
@@ -1098,7 +1098,7 @@ function SettingsTab({
   }
 
   if (!loaded) {
-    return <div className="flex h-40 items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-4 border-[#92dbc8] border-t-#1C9690" /></div>;
+    return <div className="flex h-40 items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-4 border-[#92dbc8] border-t-[#1C9690]" /></div>;
   }
 
   return (

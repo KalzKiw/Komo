@@ -249,7 +249,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
 
         {loadingAllergens ? (
           <div className="flex justify-center py-8">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#92dbc8] border-t-#1C9690" />
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#92dbc8] border-t-[#1C9690]" />
           </div>
         ) : (
           <div className="rounded-3xl bg-slate-50 p-1 space-y-1">
@@ -530,7 +530,7 @@ export default function RegisterScreen({ onBackToLogin }: { onBackToLogin: () =>
             <div className="mb-4 max-h-64 overflow-y-auto rounded-2xl bg-slate-50 p-1">
               {loadingAllergens ? (
                 <div className="flex justify-center py-8">
-                  <span className="h-6 w-6 animate-spin rounded-full border-4 border-[#92dbc8] border-t-#1C9690" />
+                  <span className="h-6 w-6 animate-spin rounded-full border-4 border-[#92dbc8] border-t-[#1C9690]" />
                 </div>
               ) : allAllergens.length === 0 ? (
                 <p className="py-4 text-center text-xs text-slate-500">
