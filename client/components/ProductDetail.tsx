@@ -178,7 +178,7 @@ function getImageSrc(product: ProductDetailProduct): string {
 function AllergenRow({ chips }: { chips: AllergenChip[] }) {
   if (chips.length === 0) return null;
   return (
-    <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-0.5 [&::-webkit-scrollbar]:hidden">
+    <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       <span className="shrink-0 text-xs text-slate-400 font-medium">⚠️ Contiene:</span>
       {chips.map((chip) => (
         <span

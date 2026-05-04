@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowDownCircle, RefreshCw, Eye, ShoppingBag, Coffee, UtensilsCrossed, Copy, Check, Plus, BarChart3, WalletCards } from "lucide-react";
+import { ArrowDownCircle, RefreshCw, Settings, ShoppingBag, Coffee, UtensilsCrossed, Copy, Check, Plus, BarChart3, WalletCards } from "lucide-react";
 import { type UserRole } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
 import { useToast } from "../context/ToastContext";
@@ -183,39 +183,36 @@ function StatsOverview({
   const averageExpense = childrenCount > 0 ? stats.expenses / childrenCount : 0;
 
   return (
-    <div className="overflow-hidden rounded-3xl bg-white shadow-sm">
-      <div className="bg-slate-900 px-5 py-4 text-white">
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#92dbc8]">Resumen seleccionado</p>
-        <div className="mt-2 flex items-end justify-between gap-4">
-          <div className="min-w-0">
-            <h2 className="truncate text-lg font-black">{title}</h2>
-            <p className="mt-1 text-xs font-medium text-slate-300">{stats.count} movimientos registrados</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Neto</p>
-            <p className={`font-mono text-2xl font-black tabular-nums ${stats.net >= 0 ? "text-[#92dbc8]" : "text-red-300"}`}>
-              {stats.net >= 0 ? "+" : "-"}{money(Math.abs(stats.net))}
-            </p>
-          </div>
+    <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="truncate text-sm font-black text-slate-900">{title}</h2>
+          <p className="text-xs text-slate-400">{stats.count} movimientos</p>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Neto</p>
+          <p className={`font-mono text-base font-black tabular-nums ${stats.net >= 0 ? "text-[#169486]" : "text-red-500"}`}>
+            {stats.net >= 0 ? "+" : "-"}{money(Math.abs(stats.net))}
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 p-3">
-        <div className="rounded-2xl bg-[#f0fbf8] p-3">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-xl bg-[#f0fbf8] p-3">
           <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#169486]">Ingresos</p>
-          <p className="mt-1 font-mono text-lg font-black tabular-nums text-[#169486]">+{money(stats.income)}</p>
+          <p className="mt-1 font-mono text-sm font-black tabular-nums text-[#169486]">+{money(stats.income)}</p>
         </div>
-        <div className="rounded-2xl bg-red-50 p-3">
+        <div className="rounded-xl bg-red-50 p-3">
           <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-red-500">Gastos</p>
-          <p className="mt-1 font-mono text-lg font-black tabular-nums text-red-500">-{money(stats.expenses)}</p>
+          <p className="mt-1 font-mono text-sm font-black tabular-nums text-red-500">-{money(stats.expenses)}</p>
         </div>
-        <div className="rounded-2xl bg-slate-50 p-3">
+        <div className="rounded-xl bg-slate-50 p-3">
           <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Promedio</p>
-          <p className="mt-1 font-mono text-lg font-black tabular-nums text-slate-800">{money(averageExpense)}</p>
+          <p className="mt-1 font-mono text-sm font-black tabular-nums text-slate-800">{money(averageExpense)}</p>
         </div>
-        <div className="rounded-2xl bg-slate-50 p-3">
+        <div className="rounded-xl bg-slate-50 p-3">
           <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Hijos</p>
-          <p className="mt-1 font-mono text-lg font-black tabular-nums text-slate-800">{childrenCount}</p>
+          <p className="mt-1 font-mono text-sm font-black tabular-nums text-slate-800">{childrenCount}</p>
         </div>
       </div>
     </div>
@@ -422,12 +419,6 @@ function StudentWallet() {
         <p className="mt-1.5 text-right text-[10px] text-slate-400">de 20.00€ máximos sugeridos</p>
       </div>
 
-      <div className="mt-6 px-4 pb-6">
-        <div className="rounded-3xl border border-[#c6efe7] bg-[#f0fbf8] p-4 shadow-sm">
-          <h2 className="text-sm font-bold text-slate-800">Monedero escolar</h2>
-        </div>
-      </div>
-
       <div className="space-y-4 px-4 pb-6">
         <AnalyticsPanel title="Resumen" orders={orders} />
         <MovementChart orders={orders} />
@@ -450,8 +441,9 @@ function ParentWallet({ view }: { view: ParentWalletView }) {
   const [loading, setLoading] = useState(true);
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
   const [analyticsChildId, setAnalyticsChildId] = useState<string>("ALL");
-  const [rechargeAmount, setRechargeAmount] = useState("10");
-  const [paymentChild, setPaymentChild] = useState<Child | null>(null);
+  const [paymentTopUp, setPaymentTopUp] = useState<{ child: Child; amount: number } | null>(null);
+  const [confirmTopUp, setConfirmTopUp] = useState<{ child: Child; amount: number } | null>(null);
+  const [customTopUp, setCustomTopUp] = useState<{ child: Child; value: string; error: string | null } | null>(null);
   const [savedCardLast4, setSavedCardLast4] = useState<string | null>(null);
   const [chargingSavedCard, setChargingSavedCard] = useState<string | null>(null);
   const [token, setToken] = useState<TokenResponse | null>(null);
@@ -492,15 +484,18 @@ function ParentWallet({ view }: { view: ParentWalletView }) {
     loadFamilyWallet();
   }, [apiFetch]);
 
-  async function handleRecharge(child: Child) {
-    const amount = Number(rechargeAmount.replace(",", "."));
+  function requestRecharge(child: Child, amount: number) {
     if (!Number.isFinite(amount) || amount <= 0 || amount > 200) {
       showToast("Introduce un importe entre 0.01€ y 200€", "error");
       return;
     }
 
+    setConfirmTopUp({ child, amount });
+  }
+
+  async function handleRecharge(child: Child, amount: number) {
     if (savedCardLast4) {
-      setChargingSavedCard(child.studentId);
+      setChargingSavedCard(`${child.studentId}:${amount}`);
       try {
         const result = await apiFetch<{ newBalance: number; amount: number; lastFourDigits: string }>(
           "/api/payments/family/topup-saved-card",
@@ -525,13 +520,29 @@ function ParentWallet({ view }: { view: ParentWalletView }) {
       return;
     }
 
-    setPaymentChild(child);
+    setPaymentTopUp({ child, amount });
+  }
+
+  async function handleCustomRecharge() {
+    if (!customTopUp) return;
+
+    const amount = Number(customTopUp.value.replace(",", "."));
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 200) {
+      setCustomTopUp((prev) =>
+        prev ? { ...prev, error: "Introduce un importe entre 0.01€ y 200€" } : prev
+      );
+      return;
+    }
+
+    const child = customTopUp.child;
+    setCustomTopUp(null);
+    requestRecharge(child, amount);
   }
 
   async function handleStripePaid(result: { newBalance: number; amount: number }) {
-    const child = paymentChild;
+    const child = paymentTopUp?.child;
     if (!child) return;
-    setPaymentChild(null);
+    setPaymentTopUp(null);
     setChildren((prev) =>
       prev.map((c) =>
         c.studentId === child.studentId ? { ...c, walletBalance: result.newBalance } : c
@@ -589,7 +600,6 @@ function ParentWallet({ view }: { view: ParentWalletView }) {
       ? "Resumen conjunto"
       : `Resumen de ${children.find((child) => child.studentId === analyticsChildId)?.studentName ?? "alumno"}`;
   const hasLinkedChildren = children.length > 0;
-  const parsedRechargeAmount = Number(rechargeAmount.replace(",", ".")) || 0;
 
   return (
     <div
@@ -605,82 +615,46 @@ function ParentWallet({ view }: { view: ParentWalletView }) {
         </div>
       </header>
 
-      <div className="bg-gradient-to-b from-[#169486] to-[#44b6a1] px-4 pb-20 pt-6">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-lg font-bold text-white">
-              {view === "stats" ? "Estadísticas familiares" : "Hijos"}
-            </h1>
-            <p className="mt-0.5 text-xs font-medium text-[#d9f4ee]">
-              {view === "stats"
-                ? "Gastos, ingresos y saldo de todos tus hijos"
-                : "Recargas, pedidos y gestión de tus hijos"}
-            </p>
+      <div className="px-4 pt-4">
+        <div className="rounded-2xl border border-[#d9f4ee] bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Saldo familiar</p>
+              {loading ? (
+                <div className="mt-2 h-6 w-24 animate-pulse rounded-lg bg-gray-100" />
+              ) : (
+                <p className="mt-1 font-mono text-xl font-black tabular-nums text-slate-900">{money(totalBalance)}</p>
+              )}
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="rounded-xl bg-[#f0fbf8] px-3 py-2 text-xs font-black text-[#169486]">
+                {children.length} {children.length === 1 ? "hijo" : "hijos"}
+              </span>
+              {view === "children" && (
+                <button
+                  type="button"
+                  onClick={openTokenModal}
+                  disabled={generatingToken}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1C9690] text-white shadow-sm transition active:scale-[0.97] hover:bg-[#169486] disabled:opacity-60"
+                  aria-label="Añadir hijo"
+                >
+                  {generatingToken ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> : <Plus className="h-4 w-4" />}
+                </button>
+              )}
+            </div>
           </div>
-          {view === "children" && (
-            <button
-              type="button"
-              onClick={openTokenModal}
-              disabled={generatingToken}
-              className="flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-white/15 px-3 py-2 text-xs font-bold text-white ring-1 ring-white/20 transition active:scale-[0.97] hover:bg-white/20 disabled:opacity-60"
-            >
-              {generatingToken ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" /> : <Plus className="h-3.5 w-3.5" />}
-              Añadir hijo
-            </button>
-          )}
         </div>
       </div>
 
-      <div className={`relative z-10 -mt-12 mx-4 bg-white shadow-md ${view === "children" ? "rounded-3xl p-4" : "rounded-3xl p-6"}`}>
-        {view === "children" ? (
-          <div className="grid grid-cols-[1fr_auto] gap-3">
-            <div className="min-w-0 rounded-2xl bg-slate-50 p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Saldo familiar</p>
-              {loading ? (
-                <div className="mt-2 h-9 w-28 animate-pulse rounded-xl bg-gray-100" />
-              ) : (
-                <p className="mt-1 font-mono text-3xl font-black tabular-nums text-slate-900">{money(totalBalance)}</p>
-              )}
-            </div>
-            <div className="flex min-w-[88px] flex-col justify-center rounded-2xl bg-[#f0fbf8] p-4 text-center">
-              <p className="text-3xl font-black tabular-nums text-[#169486]">{children.length}</p>
-              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#169486]">
-                {children.length === 1 ? "Hijo" : "Hijos"}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <>
-            <p className="text-center text-xs font-semibold uppercase tracking-widest text-slate-400">
-              Saldo total hijos
-            </p>
-            {loading ? (
-              <div className="mx-auto mt-3 h-12 w-28 animate-pulse rounded-xl bg-gray-100" />
-            ) : (
-              <p className="mt-2 text-center font-mono text-5xl font-bold tabular-nums text-slate-900">
-                {money(totalBalance)}
-              </p>
-            )}
-          </>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-4 px-4 py-5">
+      <div className="flex flex-col gap-4 px-4 py-4">
         {view === "stats" && (
-          <div className="order-1 space-y-4">
-            <div className="rounded-3xl bg-white p-3 shadow-sm">
-              <div className="mb-3 flex items-center justify-between gap-3 px-1">
-                <div>
-                  <h2 className="text-sm font-black text-slate-900">Vista de estadísticas</h2>
-                  <p className="text-xs text-slate-400">Filtra por conjunto o por hijo.</p>
-                </div>
-                <BarChart3 className="h-5 w-5 text-[#1C9690]" />
-              </div>
+          <div className="order-1 space-y-3">
+            <div className="rounded-2xl border border-slate-100 bg-white p-2 shadow-sm">
               <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none" }}>
                 <button
                   type="button"
                   onClick={() => setAnalyticsChildId("ALL")}
-                  className={`shrink-0 rounded-2xl px-4 py-2.5 text-xs font-black transition ${
+                  className={`shrink-0 rounded-xl px-3.5 py-2 text-xs font-black transition ${
                     analyticsChildId === "ALL" ? "bg-[#1C9690] text-white shadow-sm" : "bg-slate-100 text-slate-500"
                   }`}
                 >
@@ -691,7 +665,7 @@ function ParentWallet({ view }: { view: ParentWalletView }) {
                     key={child.studentId}
                     type="button"
                     onClick={() => setAnalyticsChildId(child.studentId)}
-                    className={`shrink-0 rounded-2xl px-4 py-2.5 text-xs font-black transition ${
+                    className={`shrink-0 rounded-xl px-3.5 py-2 text-xs font-black transition ${
                       analyticsChildId === child.studentId ? "bg-[#1C9690] text-white shadow-sm" : "bg-slate-100 text-slate-500"
                     }`}
                   >
@@ -708,7 +682,7 @@ function ParentWallet({ view }: { view: ParentWalletView }) {
             />
 
             {selectedAnalyticsOrders.length === 0 ? (
-              <div className="rounded-3xl bg-white p-6 text-center shadow-sm">
+                  <div className="rounded-2xl bg-white p-6 text-center shadow-sm">
                 <BarChart3 className="mx-auto h-8 w-8 text-slate-300" />
                 <p className="mt-3 text-sm font-bold text-slate-700">Sin datos todavía</p>
                 <p className="mt-1 text-xs leading-relaxed text-slate-400">
@@ -719,13 +693,13 @@ function ParentWallet({ view }: { view: ParentWalletView }) {
               <>
                 <MovementChart orders={selectedAnalyticsOrders} />
                 {analyticsChildId === "ALL" && (
-                  <div className="grid gap-4">
+                  <div className="grid gap-3">
                     <ChildBreakdownChart children={children} childMovements={childMovements} />
                     <BalanceChart children={children} />
                   </div>
                 )}
                 <div>
-                  <h2 className="mb-3 px-1 text-sm font-black text-slate-800">Últimos movimientos</h2>
+                  <h2 className="mb-2 px-1 text-sm font-black text-slate-800">Últimos movimientos</h2>
                   <MovementList orders={selectedAnalyticsOrders.slice(0, 8)} loading={loading} />
                 </div>
               </>
@@ -743,57 +717,7 @@ function ParentWallet({ view }: { view: ParentWalletView }) {
         )}
 
         {view === "children" && (
-        <div className="order-3 space-y-4">
-          <div className="flex items-end justify-between gap-3 px-1">
-            <div>
-              <h2 className="text-sm font-bold text-slate-700">Hijos vinculados</h2>
-              <p className="mt-0.5 text-xs text-slate-400">
-                {savedCardLast4 ? `Pagos con tarjeta ****${savedCardLast4}` : "Añade una tarjeta en tu perfil para recargar más rápido."}
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-3xl bg-white p-4 shadow-sm">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-black text-slate-900">Recarga rápida</h3>
-                <p className="text-xs text-slate-400">Elige un importe y aplícalo al hijo que quieras.</p>
-              </div>
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f0fbf8] text-[#169486]">
-                <WalletCards className="h-5 w-5" />
-              </span>
-            </div>
-            <label className="block">
-              <span className="sr-only">Importe de recarga</span>
-              <div className="flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 focus-within:border-[#1C9690]">
-                <input
-                  inputMode="decimal"
-                  value={rechargeAmount}
-                  onChange={(event) => setRechargeAmount(event.target.value.replace(/[^\d.,]/g, ""))}
-                  className="min-w-0 flex-1 bg-transparent py-3 text-2xl font-black tabular-nums text-slate-900 outline-none"
-                  aria-label="Importe de recarga"
-                />
-                <span className="text-lg font-black text-slate-400">€</span>
-              </div>
-            </label>
-            <div className="mt-3 grid grid-cols-4 gap-2">
-              {[5, 10, 20, 50].map((amount) => (
-                <button
-                  key={amount}
-                  type="button"
-                  onClick={() => setRechargeAmount(String(amount))}
-                  className={`rounded-2xl px-3 py-2.5 text-sm font-black tabular-nums transition active:scale-95 ${
-                    Number(rechargeAmount.replace(",", ".")) === amount
-                      ? "bg-[#1C9690] text-white"
-                      : "bg-slate-100 text-slate-500 hover:bg-[#d9f4ee] hover:text-[#169486]"
-                  }`}
-                >
-                  {amount}€
-                </button>
-              ))}
-            </div>
-          </div>
-
+        <div className="order-3 space-y-3">
           {loading ? (
             <div className="flex justify-center py-8">
               <span className="h-7 w-7 animate-spin rounded-full border-4 border-[#92dbc8] border-t-[#1C9690]" />
@@ -804,51 +728,52 @@ function ParentWallet({ view }: { view: ParentWalletView }) {
               <p className="text-sm">Sin hijos vinculados</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {children.map((child) => (
-                <div key={child.studentId} className="overflow-hidden rounded-3xl bg-white shadow-sm">
-                  <div className="flex items-center gap-3 p-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#d9f4ee] text-sm font-black text-[#169486]">
+                <div key={child.studentId} className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#d9f4ee] text-xs font-black text-[#169486]">
                       {initials(child.studentName)}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold text-slate-900">{child.studentName}</p>
-                      <p className="text-xs text-slate-400">Pedidos, alérgenos y monedero</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 border-y border-slate-50 px-4 py-3">
-                    <div className="rounded-2xl bg-slate-50 p-3">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Saldo</p>
-                      <p className="mt-1 font-mono text-xl font-black tabular-nums text-slate-900">{money(child.walletBalance)}</p>
+                      <p className="font-mono text-sm font-black tabular-nums text-[#169486]">{money(child.walletBalance)}</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => setSelectedChild(child)}
-                      className="flex flex-col justify-center rounded-2xl border border-slate-200 p-3 text-left transition-all hover:bg-slate-50 active:scale-[0.98]"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]"
                       aria-label={`Ver pedidos y gestionar a ${child.studentName}`}
                     >
-                      <span className="flex items-center gap-1.5 text-xs font-black text-slate-700">
-                        <Eye className="h-3.5 w-3.5" />
-                        Pedidos
-                      </span>
-                      <span className="mt-1 text-[11px] font-semibold text-slate-400">Ver y administrar</span>
+                      <Settings className="h-4 w-4" />
                     </button>
                   </div>
 
-                  <div className="p-4">
+                  <div className="mt-3 grid grid-cols-5 gap-2">
+                    {[5, 10, 20, 50].map((amount) => (
+                      <button
+                        key={amount}
+                        type="button"
+                        disabled={chargingSavedCard?.startsWith(`${child.studentId}:`)}
+                        onClick={() => requestRecharge(child, amount)}
+                        className="flex items-center justify-center gap-1 rounded-xl bg-[#1C9690] px-2 py-2.5 text-sm font-black tabular-nums text-white transition-all hover:bg-[#169486] active:scale-[0.97] disabled:opacity-60"
+                        aria-label={`Recargar ${money(amount)} a ${child.studentName}`}
+                      >
+                        {chargingSavedCard === `${child.studentId}:${amount}` ? (
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                        ) : (
+                          `${amount}€`
+                        )}
+                      </button>
+                    ))}
                     <button
                       type="button"
-                      disabled={chargingSavedCard === child.studentId}
-                      onClick={() => handleRecharge(child)}
-                      className="flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#1C9690] py-3 text-sm font-bold text-white transition-all hover:bg-[#169486] active:scale-[0.97] disabled:opacity-60"
+                      disabled={chargingSavedCard?.startsWith(`${child.studentId}:`)}
+                      onClick={() => setCustomTopUp({ child, value: "", error: null })}
+                      className="rounded-xl bg-slate-100 px-2 py-2.5 text-sm font-black text-slate-600 transition-all hover:bg-[#d9f4ee] hover:text-[#169486] active:scale-[0.97] disabled:opacity-60"
+                      aria-label={`Recargar una cantidad personalizada a ${child.studentName}`}
                     >
-                      {chargingSavedCard === child.studentId ? (
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                      ) : (
-                        <RefreshCw className="h-4 w-4" />
-                      )}
-                      {savedCardLast4 ? `Recargar ${money(parsedRechargeAmount)} con ****${savedCardLast4}` : `Recargar ${money(parsedRechargeAmount)}`}
+                      Otro
                     </button>
                   </div>
                 </div>
@@ -919,13 +844,107 @@ function ParentWallet({ view }: { view: ParentWalletView }) {
         </div>
       )}
 
-      {paymentChild && (
+      {view === "children" && customTopUp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 px-5 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#1C9690]">Recarga</p>
+                <h2 className="mt-1 text-lg font-black text-slate-900">{customTopUp.child.studentName}</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCustomTopUp(null)}
+                className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-500 transition hover:bg-slate-200"
+              >
+                Cerrar
+              </button>
+            </div>
+
+            <label className="mt-5 block">
+              <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Importe exacto</span>
+              <div className="mt-2 flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 focus-within:border-[#1C9690]">
+                <input
+                  autoFocus
+                  inputMode="decimal"
+                  value={customTopUp.value}
+                  onChange={(event) =>
+                    setCustomTopUp((prev) =>
+                      prev
+                        ? { ...prev, value: event.target.value.replace(/[^\d.,]/g, ""), error: null }
+                        : prev
+                    )
+                  }
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") void handleCustomRecharge();
+                  }}
+                  placeholder="3,75"
+                  className="min-w-0 flex-1 bg-transparent py-3 text-2xl font-black tabular-nums text-slate-900 outline-none placeholder:text-slate-300"
+                  aria-label="Importe personalizado"
+                />
+                <span className="text-lg font-black text-slate-400">€</span>
+              </div>
+            </label>
+
+            {customTopUp.error && (
+              <p className="mt-3 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-500">
+                {customTopUp.error}
+              </p>
+            )}
+
+            <button
+              type="button"
+              onClick={() => void handleCustomRecharge()}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1C9690] py-3 text-sm font-bold text-white transition active:scale-[0.98]"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Recargar importe exacto
+            </button>
+          </div>
+        </div>
+      )}
+
+      {view === "children" && confirmTopUp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 px-5 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl">
+            <h2 className="text-lg font-black text-slate-900">Confirmar recarga</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Vas a ingresar <strong className="text-slate-800">{money(confirmTopUp.amount)}</strong> en el monedero de{" "}
+              <strong className="text-slate-800">{confirmTopUp.child.studentName}</strong>.
+              {savedCardLast4 ? ` Se cargará a la tarjeta ****${savedCardLast4}.` : " Se abrirá el pago con tarjeta."}
+            </p>
+
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmTopUp(null)}
+                className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600 transition active:scale-[0.98]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = confirmTopUp;
+                  setConfirmTopUp(null);
+                  void handleRecharge(next.child, next.amount);
+                }}
+                className="rounded-2xl bg-[#1C9690] px-4 py-3 text-sm font-bold text-white transition active:scale-[0.98]"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {paymentTopUp && (
         <StripeTopUpModal
-          open={Boolean(paymentChild)}
-          studentId={paymentChild.studentId}
-          studentName={paymentChild.studentName}
-          amount={Number(rechargeAmount.replace(",", "."))}
-          onClose={() => setPaymentChild(null)}
+          open={Boolean(paymentTopUp)}
+          studentId={paymentTopUp.child.studentId}
+          studentName={paymentTopUp.child.studentName}
+          amount={paymentTopUp.amount}
+          onClose={() => setPaymentTopUp(null)}
           onPaid={handleStripePaid}
         />
       )}

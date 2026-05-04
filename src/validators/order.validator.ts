@@ -14,6 +14,7 @@ export const createOrderSchema = z.object({
       })
     )
     .min(1),
+  paymentMethod: z.enum(["WALLET", "CARD"]).optional().default("WALLET"),
   acknowledgedAllergenWarning: z.boolean().optional().default(false)
 });
 
@@ -36,7 +37,7 @@ export const updateOrderStatusParamsSchema = z.object({
 });
 
 export const updateOrderStatusBodySchema = z.object({
-  status: z.enum(["IN_PREPARATION", "DELIVERED", "CANCELLED"])
+  status: z.enum(["IN_PREPARATION", "READY", "DELIVERED", "CANCELLED"])
 });
 
 export type UpdateOrderStatusParams = z.infer<typeof updateOrderStatusParamsSchema>;

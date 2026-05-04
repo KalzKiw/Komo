@@ -21,3 +21,11 @@ createRoot(container).render(
     </AuthProvider>
   </StrictMode>
 );
+
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      // Installation remains available through the manifest when SW registration fails.
+    });
+  });
+}

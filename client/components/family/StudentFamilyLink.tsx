@@ -37,7 +37,7 @@ function rawFromFormatted(formatted: string): string {
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export default function StudentFamilyLink() {
+export default function StudentFamilyLink({ readonly = false }: { readonly?: boolean }) {
   const { apiFetch } = useApi();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -137,6 +137,7 @@ export default function StudentFamilyLink() {
         }];
 
     return (
+    <>
       <div className="space-y-4">
         <div className="rounded-3xl bg-white p-5 shadow-sm border border-[#d9f4ee]">
           <div className="flex items-center gap-3 mb-4">
@@ -162,17 +163,19 @@ export default function StudentFamilyLink() {
                   <p className="text-[11px] font-semibold text-[#169486]">Familiar autorizado</p>
                   <p className="text-[11px] text-slate-400">Puede recargar y supervisar tu monedero.</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setActionsParent({
-                    linkId: parent.linkId,
-                    parentName: parent.parentName,
-                  })}
-                  aria-label={`Opciones de ${parent.parentName}`}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm transition active:scale-95 hover:text-slate-600"
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </button>
+                {!readonly && (
+                  <button
+                    type="button"
+                    onClick={() => setActionsParent({
+                      linkId: parent.linkId,
+                      parentName: parent.parentName,
+                    })}
+                    aria-label={`Opciones de ${parent.parentName}`}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm transition active:scale-95 hover:text-slate-600"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -187,73 +190,76 @@ export default function StudentFamilyLink() {
 
         {error && <p className="text-center text-sm font-semibold text-red-500">{error}</p>}
 
-        <button
-          type="button"
-          onClick={() => setLinkState({ linked: false })}
-          className="w-full flex items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-600 transition-all active:scale-[0.97] hover:bg-slate-200"
-        >
-          <ArrowRight className="h-4 w-4" />
-          Vincular otro familiar
-        </button>
+        {!readonly && (
+          <button
+            type="button"
+            onClick={() => setLinkState({ linked: false })}
+            className="w-full flex items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-600 transition-all active:scale-[0.97] hover:bg-slate-200"
+          >
+            <ArrowRight className="h-4 w-4" />
+            Vincular otro familiar
+          </button>
+        )}
       </div>
 
-        {actionsParent && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 px-5 backdrop-blur-[2px]">
-            <div className="w-full max-w-sm rounded-3xl bg-white p-4 shadow-2xl">
-              <div className="mb-3">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Opciones</p>
-                <h2 className="mt-1 truncate text-base font-black text-slate-900">{actionsParent.parentName}</h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setPendingUnlink(actionsParent);
-                  setActionsParent(null);
-                }}
-                className="flex w-full items-center gap-3 rounded-2xl bg-red-50 px-4 py-3 text-left text-sm font-bold text-red-500 transition active:scale-[0.98]"
-              >
-                <Link2Off className="h-4 w-4" />
-                Desvincular familiar
-              </button>
-              <button
-                type="button"
-                onClick={() => setActionsParent(null)}
-                className="mt-2 w-full rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600 transition active:scale-[0.98]"
-              >
-                Cerrar
-              </button>
+      {!readonly && actionsParent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 px-5 backdrop-blur-[2px]">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-4 shadow-2xl">
+            <div className="mb-3">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Opciones</p>
+              <h2 className="mt-1 truncate text-base font-black text-slate-900">{actionsParent.parentName}</h2>
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                setPendingUnlink(actionsParent);
+                setActionsParent(null);
+              }}
+              className="flex w-full items-center gap-3 rounded-2xl bg-red-50 px-4 py-3 text-left text-sm font-bold text-red-500 transition active:scale-[0.98]"
+            >
+              <Link2Off className="h-4 w-4" />
+              Desvincular familiar
+            </button>
+            <button
+              type="button"
+              onClick={() => setActionsParent(null)}
+              className="mt-2 w-full rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600 transition active:scale-[0.98]"
+            >
+              Cerrar
+            </button>
           </div>
-        )}
+        </div>
+      )}
 
-        {pendingUnlink && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 px-5 backdrop-blur-[2px]">
-            <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl">
-              <h2 className="text-lg font-black text-slate-900">Quitar familiar</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Vas a desvincular a <strong className="text-slate-700">{pendingUnlink?.parentName}</strong>.
-                Ya no podrá supervisar ni recargar tu monedero desde su panel.
-              </p>
-              <div className="mt-5 grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPendingUnlink(null)}
-                  className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600 transition active:scale-[0.98]"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => pendingUnlink && handleUnlink(pendingUnlink.linkId)}
-                  className="rounded-2xl bg-red-500 px-4 py-3 text-sm font-bold text-white transition active:scale-[0.98]"
-                >
-                  Quitar
-                </button>
-              </div>
+      {!readonly && pendingUnlink && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 px-5 backdrop-blur-[2px]">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl">
+            <h2 className="text-lg font-black text-slate-900">Quitar familiar</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Vas a desvincular a <strong className="text-slate-700">{pendingUnlink?.parentName}</strong>.
+              Ya no podrá supervisar ni recargar tu monedero desde su panel.
+            </p>
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setPendingUnlink(null)}
+                className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600 transition active:scale-[0.98]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => pendingUnlink && handleUnlink(pendingUnlink.linkId)}
+                className="rounded-2xl bg-red-500 px-4 py-3 text-sm font-bold text-white transition active:scale-[0.98]"
+              >
+                Quitar
+              </button>
             </div>
           </div>
-        )}
-    );
+        </div>
+      )}
+    </>
+  );
   }
 
   // ── Unlinked state — PIN entry ────────────────────────────────────────────

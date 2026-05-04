@@ -41,3 +41,15 @@ body {
 .border-komo {
   border-color: var(--komo-mint);
 }
+
+@media (orientation: portrait) {
+  .kds-force-landscape {
+    position: fixed;
+    inset: 0;
+    width: 100vh;
+    height: 100vw;
+    transform: rotate(90deg) translateY(-100%);
+    transform-origin: top left;
+    overflow: hidden;
+  }
+}

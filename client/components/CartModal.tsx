@@ -77,6 +77,8 @@ export default function CartModal({ onClose, onOrderPlaced, onShowOrderSummary }
   // Load products and user allergies on mount
   const role = state.status === "authenticated" ? state.user.role : "";
   const isParent = role === "PARENT";
+  const selectedChild = children.find((child) => child.studentId === selectedStudentId) ?? null;
+  const parentNeedsCardPayment = Boolean(isParent && selectedChild && selectedChild.walletBalance < total);
 
   useEffect(() => {
     apiFetch<{ data: ApiProduct[] }>("/api/products")
@@ -193,6 +195,7 @@ export default function CartModal({ onClose, onOrderPlaced, onShowOrderSummary }
     try {
       const payload = {
         ...(isParent ? { studentId: selectedStudentId } : {}),
+        ...(parentNeedsCardPayment ? { paymentMethod: "CARD" } : {}),
         shift: "MORNING",
         scheduledFor: new Date().toISOString().slice(0, 10),
         items: cart.map((line) => ({
@@ -213,7 +216,9 @@ export default function CartModal({ onClose, onOrderPlaced, onShowOrderSummary }
           kitchenNote: line.note,
         })),
         total,
-        feedback: "✓ Pedido creado correctamente",
+        feedback: parentNeedsCardPayment
+          ? "✓ Pedido pagado con tarjeta y creado correctamente"
+          : "✓ Pedido creado correctamente",
       };
       clear();
       setLastOrder(summary);
@@ -359,6 +364,11 @@ export default function CartModal({ onClose, onOrderPlaced, onShowOrderSummary }
                 <span className="text-slate-500 text-sm">Total</span>
                 <span className="text-xl font-bold text-slate-900">{money(total)}</span>
               </div>
+              {parentNeedsCardPayment && (
+                <p className="rounded-2xl bg-[#f0fbf8] px-4 py-3 text-xs font-semibold leading-5 text-[#169486]">
+                  El saldo de {selectedChild?.studentName} no alcanza. Se cobrará este pedido directamente a la tarjeta familiar.
+                </p>
+              )}
               {feedback && !showSummary && (
                 <p className={`text-sm text-center ${feedback.startsWith("✓") ? "text-[#1C9690]" : "text-red-500"}`}>
                   {feedback}
@@ -371,7 +381,11 @@ export default function CartModal({ onClose, onOrderPlaced, onShowOrderSummary }
                   onClick={handleCheckoutClick}
                   className="w-full rounded-2xl bg-[#1C9690] py-3.5 text-center font-bold text-white shadow-lg shadow-[#92dbc8] hover:bg-[#169486] active:scale-95 transition-all disabled:opacity-60"
                 >
-                  {loading ? "Procesando..." : `Confirmar pedido · ${money(total)}`}
+                  {loading
+                    ? "Procesando..."
+                    : parentNeedsCardPayment
+                      ? `Pagar con tarjeta · ${money(total)}`
+                      : `Confirmar pedido · ${money(total)}`}
                 </button>
               )}
             </div>

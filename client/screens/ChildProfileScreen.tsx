@@ -246,7 +246,7 @@ export default function ChildProfileScreen({ studentId, studentName, linkId, onB
               <button
                 type="button"
                 onClick={() => setAllergyModalOpen(true)}
-                className="ml-auto rounded-xl bg-[#d9f4ee] px-3 py-1.5 text-xs font-bold text-[#169486] transition active:scale-95"
+                className="ml-auto inline-flex items-center justify-center rounded-xl border border-[#14877b] bg-[#1C9690] px-3.5 py-2 text-xs font-black text-white shadow-sm transition hover:bg-[#169486] active:scale-95"
               >
                 Ajustar
               </button>

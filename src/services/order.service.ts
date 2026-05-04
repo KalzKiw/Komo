@@ -1,5 +1,7 @@
 // Reexportar addItemToOrder para mantener consistencia de imports
 export { addItemToOrder } from "./add-item.service";
+import Stripe from "stripe";
+import { env } from "../config";
 import { supabase } from "../config/supabase";
 import { AppError } from "../errors/app-error";
 import { AuthUser, OrderShift, OrderStatus } from "../types/domain";
@@ -8,6 +10,17 @@ import { ListOrdersQuery } from "../validators/order.validator";
 import { getOrderSchedule } from "./settings.service";
 import { roundMoney } from "../utils/money";
 import { buildCancellationDeadline } from "../utils/schedule";
+
+const stripe = env.STRIPE_SECRET_KEY
+  ? new Stripe(env.STRIPE_SECRET_KEY)
+  : null;
+
+function ensureStripe() {
+  if (!stripe) {
+    throw new AppError("Stripe no está configurado. Añade STRIPE_SECRET_KEY en modo test.", 500);
+  }
+  return stripe;
+}
 
 interface ProductRow {
   id: string;
@@ -24,6 +37,12 @@ interface ProductRow {
 
 interface WalletRow {
   wallet_balance: number;
+}
+
+interface ParentPaymentProfileRow {
+  stripe_customer_id?: string | null;
+  stripe_payment_method_id?: string | null;
+  payment_card_last4?: string | null;
 }
 
 interface UserAllergyCheckRow {
@@ -53,7 +72,53 @@ interface OrderRow {
   credited_to_wallet: boolean;
 }
 
-type ManageTargetStatus = Extract<OrderStatus, "IN_PREPARATION" | "DELIVERED" | "CANCELLED">;
+type ManageTargetStatus = Extract<OrderStatus, "IN_PREPARATION" | "READY" | "DELIVERED" | "CANCELLED">;
+
+async function chargeParentSavedCardForOrder(parent: AuthUser, studentId: string, amount: number): Promise<void> {
+  if (parent.role !== "PARENT") {
+    throw new AppError("Solo los padres pueden pagar pedidos con tarjeta", 403);
+  }
+
+  const chargeAmount = roundMoney(amount);
+  if (chargeAmount <= 0 || chargeAmount > 200) {
+    throw new AppError("El importe debe estar entre 0.01€ y 200€", 400);
+  }
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("stripe_customer_id, stripe_payment_method_id, payment_card_last4")
+    .eq("id", parent.id)
+    .single();
+
+  if (error || !data) {
+    throw new AppError("No se pudo consultar tu método de pago", 500);
+  }
+
+  const profile = data as ParentPaymentProfileRow;
+  if (!profile.stripe_customer_id || !profile.stripe_payment_method_id || !profile.payment_card_last4) {
+    throw new AppError("Guarda primero una tarjeta en tu perfil para pagar pedidos directamente", 409);
+  }
+
+  const paymentIntent = await ensureStripe().paymentIntents.create({
+    amount: Math.round(chargeAmount * 100),
+    currency: "eur",
+    customer: profile.stripe_customer_id,
+    payment_method: profile.stripe_payment_method_id,
+    payment_method_types: ["card"],
+    confirm: true,
+    off_session: true,
+    metadata: {
+      kind: "family_order_payment_saved_card",
+      parentId: parent.id,
+      studentId,
+      amount: String(chargeAmount),
+    },
+  });
+
+  if (paymentIntent.status !== "succeeded") {
+    throw new AppError("Stripe no pudo confirmar el pago con la tarjeta guardada", 409);
+  }
+}
 
 interface ListOrderRow {
   id: string;
@@ -247,42 +312,50 @@ export async function createOrder(user: AuthUser, payload: unknown): Promise<Rec
   const total = subtotal;
 
   let debitedWallet = false;
+  const payWithCard = data.paymentMethod === "CARD";
 
   if (total > 0) {
-    const { data: wallet, error: walletError } = await supabase
-      .from("users")
-      .select("wallet_balance")
-      .eq("id", orderUserId)
-      .single();
+    if (payWithCard) {
+      if (user.role !== "PARENT" || !data.studentId) {
+        throw new AppError("Solo un padre puede pagar un pedido familiar con tarjeta", 403);
+      }
+      await chargeParentSavedCardForOrder(user, data.studentId, total);
+    } else {
+      const { data: wallet, error: walletError } = await supabase
+        .from("users")
+        .select("wallet_balance")
+        .eq("id", orderUserId)
+        .single();
 
-    if (walletError || !wallet) {
-      throw new AppError("Unable to load wallet balance", 500);
+      if (walletError || !wallet) {
+        throw new AppError("Unable to load wallet balance", 500);
+      }
+
+      const currentBalance = roundMoney(Number((wallet as WalletRow).wallet_balance ?? 0));
+
+      if (currentBalance < total) {
+        throw new AppError("Saldo insuficiente en el monedero", 409);
+      }
+
+      const nextBalance = roundMoney(currentBalance - total);
+      const { data: updatedWallet, error: debitError } = await supabase
+        .from("users")
+        .update({ wallet_balance: nextBalance })
+        .eq("id", orderUserId)
+        .eq("wallet_balance", currentBalance)
+        .select("id")
+        .maybeSingle();
+
+      if (debitError) {
+        throw new AppError("Unable to debit wallet", 500);
+      }
+
+      if (!updatedWallet) {
+        throw new AppError("El saldo ha cambiado. Revisa el monedero e inténtalo de nuevo.", 409);
+      }
+
+      debitedWallet = true;
     }
-
-    const currentBalance = roundMoney(Number((wallet as WalletRow).wallet_balance ?? 0));
-
-    if (currentBalance < total) {
-      throw new AppError("Saldo insuficiente en el monedero", 409);
-    }
-
-    const nextBalance = roundMoney(currentBalance - total);
-    const { data: updatedWallet, error: debitError } = await supabase
-      .from("users")
-      .update({ wallet_balance: nextBalance })
-      .eq("id", orderUserId)
-      .eq("wallet_balance", currentBalance)
-      .select("id")
-      .maybeSingle();
-
-    if (debitError) {
-      throw new AppError("Unable to debit wallet", 500);
-    }
-
-    if (!updatedWallet) {
-      throw new AppError("El saldo ha cambiado. Revisa el monedero e inténtalo de nuevo.", 409);
-    }
-
-    debitedWallet = true;
   }
 
   const schedule = await getOrderSchedule();
@@ -611,7 +684,7 @@ export async function updateOrderStatus(
   const currentStatus = order.status as OrderStatus;
   const allowedTransitions: Record<OrderStatus, ManageTargetStatus[]> = {
     PENDING: ["IN_PREPARATION", "CANCELLED"],
-    IN_PREPARATION: ["DELIVERED", "CANCELLED"],
+    IN_PREPARATION: ["READY", "CANCELLED"],
     READY: ["DELIVERED", "CANCELLED"],
     DELIVERED: [],
     CANCELLED: []

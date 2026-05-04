@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LogOut, RefreshCw, ChevronRight, X, Check, ArrowRight, ArrowLeft } from "lucide-react";
+import { LogOut, RefreshCw, ChevronRight, X, Check, ArrowRight, ArrowLeft, Search, UserCheck, Maximize2, Minimize2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
 import { useToast } from "../context/ToastContext";
@@ -52,6 +52,24 @@ type KdsItem = {
   kitchenNote?: string;
 };
 
+function splitKdsCustomizations(customizations: string[] = []) {
+  return customizations.reduce(
+    (acc, raw) => {
+      const value = raw.trim();
+      if (!value) return acc;
+      if (/^sin\s+/i.test(value)) {
+        acc.removed.push(value.replace(/^sin\s+/i, ""));
+      } else if (/^\+\s*/.test(value)) {
+        acc.extras.push(value.replace(/^\+\s*/, ""));
+      } else {
+        acc.choices.push(value);
+      }
+      return acc;
+    },
+    { removed: [] as string[], extras: [] as string[], choices: [] as string[] }
+  );
+}
+
 type KdsOrder = {
   id: string;
   status: string;
@@ -94,7 +112,9 @@ export default function AdminScreen() {
   const [tab, setTab] = useState<AdminTab>("FORECAST");
   const [data, setData] = useState<AdminData>({ students: [], kds: [], products: [], adminOrders: [] });
   const [loading, setLoading] = useState(true);
+  const [kdsFullscreen, setKdsFullscreen] = useState(false);
   const refreshing = useRef(false);
+  const shellRef = useRef<HTMLDivElement>(null);
 
   const loadData = useCallback(async () => {
     if (refreshing.current) return;
@@ -124,6 +144,31 @@ export default function AdminScreen() {
     return () => clearInterval(interval);
   }, [loadData]);
 
+  useEffect(() => {
+    const onFullscreenChange = () => setKdsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
+  async function enterKdsMode() {
+    setTab("KDS");
+    setKdsFullscreen(true);
+    try {
+      await shellRef.current?.requestFullscreen?.();
+      await screen.orientation?.lock?.("landscape").catch(() => undefined);
+    } catch {
+      // Browsers can deny fullscreen/orientation; the KDS layout still adapts.
+    }
+  }
+
+  async function exitKdsMode() {
+    setKdsFullscreen(false);
+    await screen.orientation?.unlock?.();
+    if (document.fullscreenElement) {
+      await document.exitFullscreen().catch(() => undefined);
+    }
+  }
+
   async function updateOrderStatus(orderId: string, nextStatus: string) {
     try {
       await apiFetch(`/api/orders/${orderId}/status`, {
@@ -151,7 +196,7 @@ export default function AdminScreen() {
       case "PRODUCTS":
         return <ProductsTab products={data.products} apiFetch={apiFetch} onRefresh={loadData} showToast={showToast} />;
       case "KDS":
-        return <KdsTab orders={data.kds} onStatusChange={updateOrderStatus} />;
+        return <KdsTab orders={data.kds} onStatusChange={updateOrderStatus} fullscreen={kdsFullscreen} onExitFullscreen={exitKdsMode} />;
       case "ORDERS":
         return <OrdersTab orders={data.adminOrders} onStatusChange={updateOrderStatus} apiFetch={apiFetch} showToast={showToast} />;
       case "DELEGATES":
@@ -166,13 +211,16 @@ export default function AdminScreen() {
   };
 
   return (
-    <div className="flex h-full flex-col bg-slate-50">
+    <div ref={shellRef} className={`flex h-full flex-col bg-slate-50 ${tab === "KDS" && kdsFullscreen ? "kds-force-landscape" : ""}`}>
       {/* Admin topbar */}
-      <div className="shrink-0 bg-[#2D3748] px-4 pt-safe-top pb-3">
+      {!(tab === "KDS" && kdsFullscreen) && <div className="shrink-0 bg-[#2D3748] px-4 pt-safe-top pb-3">
         <div className="flex items-center justify-between pt-3">
-          <div>
-            <h1 className="text-base font-bold text-white">Panel de Administración</h1>
-            <p className="text-xs text-[#d9f4ee]">KOMO · Control y Previsión</p>
+          <div className="flex items-center gap-3">
+            <img src="/logotipo-transparente.png" alt="KOMO" className="h-10 w-auto" />
+            <div>
+              <h1 className="text-base font-black text-white">Admin Dashboard</h1>
+              <p className="text-xs text-[#d9f4ee]">KOMO · Control y Previsión</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -193,15 +241,18 @@ export default function AdminScreen() {
             </button>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* Tab bar */}
-      <div className="shrink-0 flex overflow-x-auto bg-white border-b border-slate-200 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none" }}>
+      {!(tab === "KDS" && kdsFullscreen) && <div className="shrink-0 flex overflow-x-auto bg-white border-b border-slate-200 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none" }}>
         {TABS.map((t) => (
           <button
             key={t.id}
             type="button"
-            onClick={() => setTab(t.id)}
+            onClick={() => {
+              if (t.id === "KDS") void enterKdsMode();
+              else setTab(t.id);
+            }}
             className={`shrink-0 px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${
               tab === t.id
                 ? "border-[#1C9690] text-[#169486]"
@@ -211,7 +262,7 @@ export default function AdminScreen() {
             {t.label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {/* Tab content */}
       <div className="flex-1 overflow-y-auto">{tabContent()}</div>
@@ -304,26 +355,90 @@ function buildProductionSnapshot(kds: KdsOrder[]) {
 function KdsTab({
   orders,
   onStatusChange,
+  fullscreen,
+  onExitFullscreen,
 }: {
   orders: KdsOrder[];
   onStatusChange: (id: string, status: string) => void;
+  fullscreen: boolean;
+  onExitFullscreen: () => void;
 }) {
   const active = orders.filter((o) => !["DELIVERED", "COMPLETED", "CANCELLED"].includes(o.status));
+  const columns = [
+    { id: "PENDING", title: "Entrada", subtitle: "Pedidos nuevos", tone: "amber" },
+    { id: "IN_PREPARATION", title: "Preparando", subtitle: "En cocina", tone: "blue" },
+    { id: "READY", title: "Listos", subtitle: "Para entregar", tone: "mint" },
+  ];
 
   if (active.length === 0) {
     return (
-      <div className="flex h-40 flex-col items-center justify-center gap-2 text-slate-400">
-        <span className="text-4xl">👨‍🍳</span>
-        <p className="text-sm">Sin pedidos en cocina</p>
+      <div className="flex h-full min-h-[420px] flex-col items-center justify-center gap-3 bg-[#20242c] text-slate-300">
+        <Check className="h-10 w-10 text-[#92dbc8]" />
+        <p className="text-sm font-bold">Sin pedidos en cocina</p>
+        {fullscreen && (
+          <button type="button" onClick={onExitFullscreen} className="rounded-xl bg-white/10 px-4 py-2 text-xs font-black text-white">
+            Salir de KDS
+          </button>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="px-4 py-4 grid gap-3 sm:grid-cols-2">
-      {active.map((order) => (
-        <KdsCard key={order.id} order={order} onStatusChange={onStatusChange} />
-      ))}
+    <div className={`${fullscreen ? "h-full" : "min-h-full"} bg-[#20242c] p-2 text-white md:overflow-hidden`}>
+      <div className="mb-2 flex items-center justify-between gap-3 rounded-lg bg-[#2b3039] px-3 py-1.5 shadow-sm">
+        <div className="flex items-center gap-3">
+          <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-slate-200" aria-label="Menú KDS">
+            <span className="block h-0.5 w-4 bg-current shadow-[0_5px_0_current,0_-5px_0_current]" />
+          </button>
+          <div>
+            <h2 className="text-base font-black leading-tight">KDS Cocina</h2>
+            <p className="text-[11px] text-slate-400">Preparar pedidos, no gestionar entregas</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-[#92dbc8]">
+            {active.length} activos
+          </span>
+          <button
+            type="button"
+            onClick={fullscreen ? onExitFullscreen : () => document.documentElement.requestFullscreen?.()}
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-slate-200 transition hover:bg-white/15"
+            aria-label={fullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+          >
+            {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
+      <div className={`${fullscreen ? "h-[calc(100%-3.25rem)] grid-cols-3 overflow-hidden" : "md:h-[calc(100vh-12rem)] md:grid-cols-3 md:overflow-hidden"} grid gap-2`}>
+        {columns.map((column) => {
+          const columnOrders = active.filter((order) => order.status === column.id || (column.id === "PENDING" && !["IN_PREPARATION", "READY"].includes(order.status)));
+          return (
+            <section key={column.id} className="flex min-h-[220px] flex-col overflow-hidden rounded-xl bg-slate-100 text-slate-900 shadow-sm md:min-h-0">
+              <div className={`flex items-center justify-between px-3 py-2 text-white ${
+                column.id === "PENDING" ? "bg-amber-500" : column.id === "IN_PREPARATION" ? "bg-blue-600" : "bg-[#1C9690]"
+              }`}>
+                <div>
+                  <h3 className="text-sm font-black">{column.title}</h3>
+                  <p className="text-[11px] font-semibold text-white/75">{column.subtitle}</p>
+                </div>
+                <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs font-black text-white">{columnOrders.length}</span>
+              </div>
+              <div className="flex-1 space-y-2 overflow-y-auto p-2 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none" }}>
+                {columnOrders.length === 0 ? (
+                  <div className="flex h-28 items-center justify-center rounded-2xl border border-dashed border-slate-200 text-xs font-semibold text-slate-300">
+                    Vacío
+                  </div>
+                ) : (
+                  columnOrders.map((order) => (
+                    <KdsCard key={order.id} order={order} onStatusChange={onStatusChange} />
+                  ))
+                )}
+              </div>
+            </section>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -337,81 +452,108 @@ function KdsCard({
 }) {
   const ticketColor =
     order.status === "READY"
-      ? "border-[#44b6a1] bg-[#d9f4ee]"
+      ? "border-[#44b6a1] bg-white"
       : order.status === "IN_PREPARATION"
-      ? "border-blue-400 bg-blue-50"
-      : "border-amber-300 bg-amber-50";
+      ? "border-blue-400 bg-white"
+      : "border-amber-300 bg-white";
 
   return (
-    <div className={`rounded-2xl border-2 p-3 ${ticketColor}`}>
-      <div className="flex items-start justify-between mb-2">
+    <div className={`overflow-hidden rounded-lg border-2 shadow-sm ${ticketColor}`}>
+      <div className={`flex items-start justify-between px-2.5 py-1.5 ${
+        order.status === "READY" ? "bg-[#1C9690] text-white" : order.status === "IN_PREPARATION" ? "bg-blue-600 text-white" : "bg-amber-400 text-slate-900"
+      }`}>
         <div>
-          <p className="font-bold text-sm text-slate-900">ORD-{order.id.slice(0, 5).toUpperCase()}</p>
-          <p className="text-xs text-slate-500">{formatShiftLabel(order.shift)}</p>
+          <p className="font-black text-sm">#{order.id.slice(0, 5).toUpperCase()}</p>
+          <p className={`text-xs font-semibold ${order.status === "PENDING" ? "text-slate-800/70" : "text-white/75"}`}>{order.studentName ?? "Alumno"} · {formatShiftLabel(order.shift)}</p>
         </div>
         <div className="text-right">
-          <p className="text-xs font-mono text-slate-500">{elapsedFrom(order.createdAt)}</p>
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${statusColor(order.status)}`}>
+          <p className={`text-xs font-mono ${order.status === "PENDING" ? "text-slate-800/70" : "text-white/75"}`}>{elapsedFrom(order.createdAt)}</p>
+          <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">
             {formatOrderStatus(order.status)}
           </span>
         </div>
       </div>
 
-      <ul className="space-y-1 mb-3">
-        {(order.items ?? []).map((item, i) => (
-          <li key={i} className="flex items-start gap-2">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-[10px] font-bold text-slate-700 shadow-sm">
-              {item.quantity}
-            </span>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-slate-800">{item.name}</p>
-              {(item.customizations ?? []).length > 0 && (
-                <p className="text-[10px] text-slate-400">{item.customizations!.join(", ")}</p>
-              )}
-              {item.kitchenNote && (
-                <p className="text-[10px] text-amber-700">Nota: {item.kitchenNote}</p>
-              )}
-            </div>
-          </li>
-        ))}
+      <ul className="space-y-1.5 p-2.5">
+        {(order.items ?? []).map((item, i) => {
+          const mods = splitKdsCustomizations(item.customizations);
+          return (
+            <li key={i} className="flex items-start gap-2">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-black text-slate-700">
+                {item.quantity}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-black text-slate-800">{item.name}</p>
+                {(mods.removed.length > 0 || mods.extras.length > 0 || mods.choices.length > 0) && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {mods.removed.map((value) => (
+                      <span key={`sin-${value}`} className="rounded-md bg-red-50 px-1.5 py-0.5 text-[10px] font-black uppercase text-red-600">
+                        Sin {value}
+                      </span>
+                    ))}
+                    {mods.extras.map((value) => (
+                      <span key={`extra-${value}`} className="rounded-md bg-[#d9f4ee] px-1.5 py-0.5 text-[10px] font-black uppercase text-[#169486]">
+                        + {value}
+                      </span>
+                    ))}
+                    {mods.choices.map((value) => (
+                      <span key={`choice-${value}`} className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">
+                        {value}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {item.kitchenNote && (
+                  <p className="mt-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-black text-amber-700">Nota: {item.kitchenNote}</p>
+                )}
+              </div>
+            </li>
+          );
+        })}
       </ul>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 px-2.5 pb-2.5">
         {order.status === "PENDING" && (
           <>
             <button
               type="button"
               onClick={() => onStatusChange(order.id, "IN_PREPARATION")}
-              className="flex-1 rounded-xl bg-blue-600 py-1.5 text-xs font-bold text-white active:scale-95 transition-transform"
+              className="flex-1 rounded-lg bg-blue-600 py-2 text-sm font-black text-white active:scale-95 transition-transform"
             >
               Preparar
             </button>
             <button
               type="button"
               onClick={() => onStatusChange(order.id, "CANCELLED")}
-              className="rounded-xl bg-red-100 px-3 py-1.5 text-xs font-bold text-red-600 active:scale-95 transition-transform"
+              className="rounded-lg bg-red-100 px-3 py-2 text-xs font-bold text-red-600 active:scale-95 transition-transform"
             >
               <X className="h-3.5 w-3.5" />
             </button>
           </>
         )}
-        {(order.status === "IN_PREPARATION" || order.status === "READY") && (
+        {order.status === "IN_PREPARATION" && (
           <>
             <button
               type="button"
-              onClick={() => onStatusChange(order.id, "DELIVERED")}
-              className="flex-1 rounded-xl bg-[#1C9690] py-1.5 text-xs font-bold text-white active:scale-95 transition-transform"
+              onClick={() => onStatusChange(order.id, "READY")}
+              className="flex-1 rounded-lg bg-[#1C9690] py-2 text-sm font-black text-white active:scale-95 transition-transform"
             >
-              Entregar
+              Listo
             </button>
             <button
               type="button"
               onClick={() => onStatusChange(order.id, "CANCELLED")}
-              className="rounded-xl bg-red-100 px-3 py-1.5 text-xs font-bold text-red-600 active:scale-95 transition-transform"
+              className="rounded-lg bg-red-100 px-3 py-2 text-xs font-bold text-red-600 active:scale-95 transition-transform"
             >
               <X className="h-3.5 w-3.5" />
             </button>
           </>
+        )}
+        {order.status === "READY" && (
+          <div className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#d9f4ee] py-2 text-sm font-black text-[#169486]">
+            <Check className="h-4 w-4" />
+            Listo para recoger
+          </div>
         )}
       </div>
     </div>
@@ -430,19 +572,26 @@ type OrdersTabProps = {
 function OrdersTab({ orders, onStatusChange, apiFetch, showToast }: OrdersTabProps) {
   const [search, setSearch] = useState("");
   const [shiftFilter, setShiftFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ACTIVE");
   const [selectedOrder, setSelectedOrder] = useState<KdsOrder | null>(null);
 
   const pending = orders.filter((o) => o.status === "PENDING").length;
   const inPrep = orders.filter((o) => o.status === "IN_PREPARATION").length;
+  const ready = orders.filter((o) => o.status === "READY").length;
+  const done = orders.filter((o) => ["DELIVERED", "COMPLETED"].includes(o.status)).length;
 
   const filtered = orders.filter((order) => {
     const byShift = shiftFilter === "ALL" || order.shift === shiftFilter;
-    if (!search.trim()) return byShift;
+    const byStatus =
+      statusFilter === "ALL" ||
+      (statusFilter === "ACTIVE" && !["DELIVERED", "COMPLETED", "CANCELLED"].includes(order.status)) ||
+      order.status === statusFilter;
+    if (!search.trim()) return byShift && byStatus;
     const hay = [order.studentName, order.productSummary, order.id, order.shift]
       .filter(Boolean)
       .join(" ")
       .toLowerCase();
-    return byShift && hay.includes(search.toLowerCase());
+    return byShift && byStatus && hay.includes(search.toLowerCase());
   });
 
   if (selectedOrder) {
@@ -459,37 +608,67 @@ function OrdersTab({ orders, onStatusChange, apiFetch, showToast }: OrdersTabPro
   }
 
   return (
-    <div className="px-4 py-4 space-y-3">
+    <div className="px-4 py-4 space-y-4">
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-amber-50 p-3 text-center">
-          <p className="text-2xl font-bold text-amber-700">{pending}</p>
-          <p className="text-xs text-amber-500">Pendientes</p>
-        </div>
-        <div className="rounded-2xl bg-blue-50 p-3 text-center">
-          <p className="text-2xl font-bold text-blue-700">{inPrep}</p>
-          <p className="text-xs text-blue-500">En preparación</p>
-        </div>
+      <div className="grid grid-cols-4 gap-2">
+        {[
+          { label: "Pendientes", value: pending, cls: "bg-amber-50 text-amber-700" },
+          { label: "Cocina", value: inPrep, cls: "bg-blue-50 text-blue-700" },
+          { label: "Listos", value: ready, cls: "bg-[#f0fbf8] text-[#169486]" },
+          { label: "Servidos", value: done, cls: "bg-slate-100 text-slate-600" },
+        ].map((item) => (
+          <div key={item.label} className={`rounded-2xl p-3 text-center ${item.cls}`}>
+            <p className="text-xl font-black">{item.value}</p>
+            <p className="text-[10px] font-bold">{item.label}</p>
+          </div>
+        ))}
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2">
-        <input
-          type="text"
-          placeholder="Buscar alumno, producto…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#44b6a1]"
-        />
-        <select
-          value={shiftFilter}
-          onChange={(e) => setShiftFilter(e.target.value)}
-          className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
-        >
-          <option value="ALL">Todos los turnos</option>
-          <option value="MORNING">Mañana</option>
-          <option value="AFTERNOON">Tarde</option>
-        </select>
+      <div className="rounded-2xl bg-white p-3 shadow-sm">
+        <div className="flex gap-2">
+          <div className="flex flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3">
+            <Search className="h-4 w-4 text-slate-300" />
+            <input
+              type="text"
+              placeholder="Buscar alumno, producto…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="min-w-0 flex-1 bg-transparent py-2 text-sm outline-none placeholder:text-slate-300"
+            />
+          </div>
+          <select
+            value={shiftFilter}
+            onChange={(e) => setShiftFilter(e.target.value)}
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+          >
+            <option value="ALL">Turnos</option>
+            <option value="MORNING">Mañana</option>
+            <option value="AFTERNOON">Tarde</option>
+          </select>
+        </div>
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none" }}>
+          {[
+            ["ACTIVE", "Activos"],
+            ["PENDING", "Pendientes"],
+            ["IN_PREPARATION", "Cocina"],
+            ["READY", "Listos"],
+            ["DELIVERED", "Servidos"],
+            ["CANCELLED", "Cancelados"],
+            ["ALL", "Todos"],
+          ].map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setStatusFilter(id)}
+              className={`shrink-0 rounded-xl px-3 py-2 text-xs font-black transition ${
+                statusFilter === id ? "bg-[#1C9690] text-white" : "bg-slate-100 text-slate-500"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Orders list */}
@@ -501,20 +680,18 @@ function OrdersTab({ orders, onStatusChange, apiFetch, showToast }: OrdersTabPro
             const hour = order.createdAt
               ? formatNonFutureDateTime(order.createdAt, { hour: "2-digit", minute: "2-digit" })
               : "--:--";
+            const activeActions = order.status === "PENDING" || order.status === "READY";
             return (
-              <div
-                key={order.id}
-                className="rounded-2xl bg-white p-3 shadow-sm"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-bold text-sm text-slate-900">{hour} · {formatShiftLabel(order.shift)}</p>
-                    <p className="text-xs text-slate-400">{order.studentName ?? "Alumno"}</p>
+              <div key={order.id} className="rounded-2xl bg-white p-3 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <button type="button" onClick={() => setSelectedOrder(order)} className="min-w-0 flex-1 text-left">
+                    <p className="font-black text-sm text-slate-900">{hour} · {order.studentName ?? "Alumno"}</p>
+                    <p className="text-xs font-semibold text-slate-400">{formatShiftLabel(order.shift)} · ORD-{order.id.slice(0, 6).toUpperCase()}</p>
                     {order.productSummary && (
                       <p className="text-xs text-slate-500 mt-0.5">{order.productSummary}</p>
                     )}
-                  </div>
-                  <div className="flex items-center gap-2">
+                  </button>
+                  <div className="flex shrink-0 items-center gap-2">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusColor(order.status)}`}>
                       {formatOrderStatus(order.status)}
                     </span>
@@ -527,46 +704,46 @@ function OrdersTab({ orders, onStatusChange, apiFetch, showToast }: OrdersTabPro
                     </button>
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="mt-3 flex items-center justify-between border-t border-slate-50 pt-3">
                   <strong className="text-sm text-slate-700">{money(order.total ?? 0)}</strong>
-                  <div className="flex gap-1.5">
+                  {activeActions && <div className="flex gap-1.5">
                     {order.status === "PENDING" && (
                       <>
                         <button
                           type="button"
                           onClick={() => onStatusChange(order.id, "IN_PREPARATION")}
-                          className="rounded-lg bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700"
+                          className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white"
                         >
-                          <ArrowRight className="h-3.5 w-3.5" />
+                          Preparar
                         </button>
                         <button
                           type="button"
                           onClick={() => onStatusChange(order.id, "CANCELLED")}
-                          className="rounded-lg bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-600"
+                          className="rounded-lg bg-red-100 px-3 py-1.5 text-xs font-bold text-red-600"
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>
                       </>
                     )}
-                    {(order.status === "IN_PREPARATION" || order.status === "READY") && (
+                    {order.status === "READY" && (
                       <>
                         <button
                           type="button"
                           onClick={() => onStatusChange(order.id, "DELIVERED")}
-                          className="rounded-lg bg-[#c6efe7] px-2.5 py-1 text-xs font-semibold text-[#169486]"
+                          className="rounded-lg bg-[#1C9690] px-3 py-1.5 text-xs font-bold text-white"
                         >
-                          <Check className="h-3.5 w-3.5" />
+                          Entregar
                         </button>
                         <button
                           type="button"
                           onClick={() => onStatusChange(order.id, "CANCELLED")}
-                          className="rounded-lg bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-600"
+                          className="rounded-lg bg-red-100 px-3 py-1.5 text-xs font-bold text-red-600"
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>
                       </>
                     )}
-                  </div>
+                  </div>}
                 </div>
               </div>
             );
@@ -607,16 +784,31 @@ function OrderDetailPanel({
       {order.items?.length > 0 && (
         <div className="rounded-2xl bg-white p-4 shadow-sm space-y-2">
           <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide">Productos</h4>
-          {order.items.map((item, i) => (
-            <div key={i} className="flex gap-2">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#c6efe7] text-xs font-bold text-[#169486]">{item.quantity}</span>
-              <div>
-                <p className="text-sm font-semibold text-slate-800">{item.name}</p>
-                {(item.customizations ?? []).length > 0 && <p className="text-xs text-slate-400">{item.customizations!.join(", ")}</p>}
-                {item.kitchenNote && <p className="text-xs text-amber-600">Nota: {item.kitchenNote}</p>}
+          {order.items.map((item, i) => {
+            const mods = splitKdsCustomizations(item.customizations);
+            return (
+              <div key={i} className="flex gap-2">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#c6efe7] text-xs font-bold text-[#169486]">{item.quantity}</span>
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">{item.name}</p>
+                  {(mods.removed.length > 0 || mods.extras.length > 0 || mods.choices.length > 0) && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {mods.removed.map((value) => (
+                        <span key={`sin-${value}`} className="rounded-md bg-red-50 px-1.5 py-0.5 text-[10px] font-black uppercase text-red-600">Sin {value}</span>
+                      ))}
+                      {mods.extras.map((value) => (
+                        <span key={`extra-${value}`} className="rounded-md bg-[#d9f4ee] px-1.5 py-0.5 text-[10px] font-black uppercase text-[#169486]">+ {value}</span>
+                      ))}
+                      {mods.choices.map((value) => (
+                        <span key={`choice-${value}`} className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">{value}</span>
+                      ))}
+                    </div>
+                  )}
+                  {item.kitchenNote && <p className="mt-1 text-xs text-amber-600">Nota: {item.kitchenNote}</p>}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
       <div className="space-y-2">
@@ -626,7 +818,7 @@ function OrderDetailPanel({
             <button type="button" onClick={() => onStatusChange(order.id, "CANCELLED")} className="w-full rounded-2xl border border-red-200 py-3 font-semibold text-red-500 active:scale-[0.97]">Cancelar pedido</button>
           </>
         )}
-        {(order.status === "IN_PREPARATION" || order.status === "READY") && (
+        {order.status === "READY" && (
           <>
             <button type="button" onClick={() => onStatusChange(order.id, "DELIVERED")} className="w-full rounded-2xl bg-[#1C9690] py-3 font-bold text-white active:scale-[0.97]">Marcar como entregado</button>
             <button type="button" onClick={() => onStatusChange(order.id, "CANCELLED")} className="w-full rounded-2xl border border-red-200 py-3 font-semibold text-red-500 active:scale-[0.97]">Cancelar pedido</button>
@@ -1006,6 +1198,9 @@ function DelegatesTab({
   onRefresh: () => void;
   showToast: (msg: string, type?: "success" | "error" | "info") => void;
 }) {
+  const delegates = students.filter((student) => student.isDelegate);
+  const regular = students.filter((student) => !student.isDelegate);
+
   async function toggleDelegate(student: Student) {
     try {
       await apiFetch(`/api/admin/students/${student.id}/delegate`, {
@@ -1019,29 +1214,58 @@ function DelegatesTab({
   }
 
   return (
-    <div className="px-4 py-4 space-y-3">
-      <h3 className="font-bold text-slate-700">Gestión de Delegados</h3>
+    <div className="px-4 py-4 space-y-4">
+      <div className="rounded-3xl bg-white p-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#f0fbf8] text-[#169486]">
+            <UserCheck className="h-5 w-5" />
+          </span>
+          <div>
+            <h3 className="font-black text-slate-900">Delegados de aula</h3>
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              Activa alumnos de confianza para que puedan ayudar con recogidas o gestión operativa cuando el centro lo permita.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="rounded-2xl bg-[#f0fbf8] p-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#169486]">Activos</p>
+            <p className="mt-1 font-mono text-2xl font-black text-[#169486]">{delegates.length}</p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 p-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Disponibles</p>
+            <p className="mt-1 font-mono text-2xl font-black text-slate-900">{regular.length}</p>
+          </div>
+        </div>
+      </div>
       {students.length === 0 && (
         <p className="text-center text-sm text-slate-400 py-6">No hay estudiantes cargados.</p>
       )}
       {students.map((s) => (
-        <div key={s.id} className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-800 truncate">{s.fullName}</p>
-            <p className="text-xs text-slate-400 truncate">{s.email}</p>
-          </div>
-          <div className="flex items-center gap-2 ml-2 shrink-0">
-            {s.isDelegate && (
-              <span className="rounded-full bg-[#c6efe7] px-2.5 py-1 text-[10px] font-bold text-[#169486]">Delegado</span>
+        <div key={s.id} className="rounded-2xl bg-white px-4 py-3 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-black text-slate-800 truncate">{s.fullName}</p>
+              <p className="text-xs text-slate-400 truncate">{s.email}</p>
+            </div>
+            {s.isDelegate ? (
+              <span className="shrink-0 rounded-full bg-[#c6efe7] px-2.5 py-1 text-[10px] font-bold text-[#169486]">Delegado</span>
+            ) : (
+              <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-400">Alumno</span>
             )}
+          </div>
+          <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-50 pt-3">
+            <p className="text-xs text-slate-400">
+              {s.isDelegate ? "Puede actuar como delegado operativo." : "Sin permisos de delegado."}
+            </p>
             <button
               type="button"
               onClick={() => toggleDelegate(s)}
-              className={`rounded-xl px-3 py-1.5 text-xs font-semibold active:scale-95 ${
-                s.isDelegate ? "bg-red-100 text-red-600" : "bg-[#c6efe7] text-[#169486]"
+              className={`rounded-xl px-3 py-2 text-xs font-black active:scale-95 ${
+                s.isDelegate ? "bg-red-100 text-red-600" : "bg-[#1C9690] text-white"
               }`}
             >
-              {s.isDelegate ? "Revocar" : "Activar"}
+              {s.isDelegate ? "Revocar permisos" : "Hacer delegado"}
             </button>
           </div>
         </div>

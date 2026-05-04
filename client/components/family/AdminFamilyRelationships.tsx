@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Unlink, Users, Wallet, Search } from "lucide-react";
+import { ChevronRight, Unlink, Users, Wallet, Search } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
 import { money } from "../../lib/utils";
 
@@ -23,6 +23,7 @@ export default function AdminFamilyRelationships() {
   const [search, setSearch] = useState("");
   const [unlinking, setUnlinking] = useState<string | null>(null);
   const [pendingUnlink, setPendingUnlink] = useState<LinkRow | null>(null);
+  const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -32,15 +33,29 @@ export default function AdminFamilyRelationships() {
       .finally(() => setLoading(false));
   }, [apiFetch]);
 
+  const familyGroups = rows.reduce((map, row) => {
+    const current = map.get(row.parentId) ?? {
+      parentId: row.parentId,
+      parentName: row.parentName,
+      parentWallet: row.parentWallet,
+      links: [] as LinkRow[],
+    };
+    current.links.push(row);
+    map.set(row.parentId, current);
+    return map;
+  }, new Map<string, { parentId: string; parentName: string; parentWallet: number; links: LinkRow[] }>());
+
+  const families = Array.from(familyGroups.values()).sort((a, b) => a.parentName.localeCompare(b.parentName));
   const filtered = search.trim()
-    ? rows.filter((r) => {
+    ? families.filter((family) => {
         const q = search.toLowerCase();
         return (
-          r.parentName.toLowerCase().includes(q) ||
-          r.studentName.toLowerCase().includes(q)
+          family.parentName.toLowerCase().includes(q) ||
+          family.links.some((link) => link.studentName.toLowerCase().includes(q))
         );
       })
-    : rows;
+    : families;
+  const selectedFamily = selectedParentId ? families.find((family) => family.parentId === selectedParentId) ?? null : null;
 
   async function handleUnlink(linkId: string) {
     setUnlinking(linkId);
@@ -109,38 +124,75 @@ export default function AdminFamilyRelationships() {
           </div>
         ) : (
           <div className="space-y-2">
-            {filtered.map((row) => (
-              <div
-                key={row.linkId}
-                className="overflow-hidden rounded-2xl bg-white shadow-sm"
+            {filtered.map((family) => {
+              const totalStudentBalance = family.links.reduce((sum, link) => sum + link.studentWallet, 0);
+              const activeLinks = family.links.filter((link) => link.status === "ACTIVE").length;
+              return (
+              <button
+                key={family.parentId}
+                type="button"
+                onClick={() => setSelectedParentId(family.parentId)}
+                className="w-full overflow-hidden rounded-2xl bg-white text-left shadow-sm transition active:scale-[0.99] hover:bg-slate-50"
               >
                 <div className="flex items-start justify-between gap-3 px-4 py-4">
-                  {/* Parent + Student */}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100 text-sm font-bold text-violet-700">
-                        {row.parentName[0]}
+                        {family.parentName[0]}
                       </div>
-                      <p className="truncate text-sm font-bold text-slate-900">{row.parentName}</p>
+                      <p className="truncate text-sm font-bold text-slate-900">{family.parentName}</p>
                     </div>
-                    <div className="mt-2 flex items-center gap-2 pl-10">
+                    <div className="mt-2 flex flex-wrap items-center gap-2 pl-10">
                       <span className="inline-flex items-center rounded-full bg-[#d9f4ee] px-2.5 py-1 text-xs font-semibold text-[#169486]">
-                        {row.studentName}
+                        {activeLinks} {activeLinks === 1 ? "hijo" : "hijos"}
                       </span>
                       <span className="flex items-center gap-0.5 text-xs text-slate-400">
                         <Wallet className="h-3 w-3" />
-                        {money(row.studentWallet)}
+                        {money(totalStudentBalance)}
                       </span>
                     </div>
                   </div>
+                  <ChevronRight className="mt-2 h-5 w-5 shrink-0 text-slate-300" />
+                </div>
 
-                  {/* Action */}
-                  <div className="flex shrink-0 flex-col items-end gap-2">
+                <div className="h-1 w-full bg-[#44b6a1]" />
+              </button>
+            );})}
+          </div>
+        )}
+      </div>
+
+      {selectedFamily && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 px-5 backdrop-blur-[2px]">
+          <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#169486]">Familia</p>
+                <h2 className="mt-1 text-lg font-black text-slate-900">{selectedFamily.parentName}</h2>
+                <p className="mt-1 text-xs text-slate-400">{selectedFamily.links.length} vínculos familiares</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedParentId(null)}
+                className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-500 transition hover:bg-slate-200"
+              >
+                Cerrar
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {selectedFamily.links.map((row) => (
+                <div key={row.linkId} className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-black text-slate-900">{row.studentName}</p>
+                      <p className="font-mono text-sm font-black tabular-nums text-[#169486]">{money(row.studentWallet)}</p>
+                    </div>
                     <button
                       type="button"
                       disabled={unlinking === row.linkId}
                       onClick={() => setPendingUnlink(row)}
-                      className="flex items-center gap-1.5 rounded-xl border border-red-100 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-500 transition-all hover:bg-red-100 active:scale-95 disabled:opacity-50"
+                      className="flex items-center gap-1.5 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs font-bold text-red-500 transition-all hover:bg-red-100 active:scale-95 disabled:opacity-50"
                     >
                       {unlinking === row.linkId ? (
                         <span className="h-3 w-3 animate-spin rounded-full border-2 border-red-300 border-t-red-500" />
@@ -151,20 +203,11 @@ export default function AdminFamilyRelationships() {
                     </button>
                   </div>
                 </div>
-
-                {/* Status stripe */}
-                <div
-                  className={`h-1 w-full ${
-                    row.status === "ACTIVE"
-                      ? "bg-[#44b6a1]"
-                      : "bg-red-300"
-                  }`}
-                />
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {pendingUnlink && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 px-5 backdrop-blur-[2px]">

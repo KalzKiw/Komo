@@ -6,6 +6,8 @@ import AllergenPickerScreen from "./AllergenPickerScreen";
 import StripeCardSetupModal from "../components/StripeCardSetupModal";
 import StudentFamilyLink from "../components/family/StudentFamilyLink";
 import { allergenVisual } from "../lib/allergens";
+import ChildProfileScreen from "./ChildProfileScreen";
+import { Bell, CheckCircle, CreditCard, Link2, Phone, Settings, ShieldCheck, Users, Wallet } from "lucide-react";
 
 type PaymentCard = {
   id: string;
@@ -14,6 +16,21 @@ type PaymentCard = {
   expMonth: number;
   expYear: number;
   isDefault: boolean;
+};
+
+type FamilyChild = {
+  studentId: string;
+  studentName: string;
+  walletBalance: number;
+};
+
+type WalletMovement = {
+  id: string;
+  shift: string;
+  status: string;
+  total: number;
+  creditedToWallet: boolean;
+  createdAt: string;
 };
 
 export default function ProfileScreenV2() {
@@ -45,6 +62,10 @@ export default function ProfileScreenV2() {
   const [paymentCards, setPaymentCards] = useState<PaymentCard[]>([]);
   const [loadingPaymentCards, setLoadingPaymentCards] = useState(false);
   const [savedCard, setSavedCard] = useState<{ lastFourDigits: string } | null>(null);
+  const [familyChildren, setFamilyChildren] = useState<FamilyChild[]>([]);
+  const [selectedFamilyChild, setSelectedFamilyChild] = useState<FamilyChild | null>(null);
+  const [lastMovement, setLastMovement] = useState<WalletMovement | null>(null);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   useEffect(() => {
     Promise.all([
@@ -73,6 +94,20 @@ export default function ProfileScreenV2() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [apiFetch]);
+
+  useEffect(() => {
+    if (profile?.role !== "PARENT") return;
+    apiFetch<{ data: FamilyChild[] }>("/api/family/children")
+      .then((res) => setFamilyChildren(res.data ?? []))
+      .catch(() => setFamilyChildren([]));
+  }, [apiFetch, profile?.role]);
+
+  useEffect(() => {
+    if (profile?.role !== "STUDENT") return;
+    apiFetch<{ data: WalletMovement[] }>("/api/me/wallet-movements?limit=1")
+      .then((res) => setLastMovement((res.data ?? [])[0] ?? null))
+      .catch(() => setLastMovement(null));
+  }, [apiFetch, profile?.role]);
 
   function handleCardSaved(card: { lastFourDigits: string }) {
     setSavedCard(card);
@@ -156,6 +191,29 @@ export default function ProfileScreenV2() {
 
   const isStudent = profile?.role === "STUDENT";
   const isParent = profile?.role === "PARENT";
+  const familyBalance = familyChildren.reduce((sum, child) => sum + child.walletBalance, 0);
+  const lowestBalanceChild = familyChildren.reduce<FamilyChild | null>(
+    (lowest, child) => !lowest || child.walletBalance < lowest.walletBalance ? child : lowest,
+    null
+  );
+
+  if (selectedFamilyChild) {
+    return (
+      <ChildProfileScreen
+        studentId={selectedFamilyChild.studentId}
+        studentName={selectedFamilyChild.studentName}
+        linkId=""
+        onBack={() => setSelectedFamilyChild(null)}
+        onUnlinked={() => {
+          setSelectedFamilyChild(null);
+          setFamilyModalOpen(false);
+          apiFetch<{ data: FamilyChild[] }>("/api/family/children")
+            .then((res) => setFamilyChildren(res.data ?? []))
+            .catch(() => setFamilyChildren([]));
+        }}
+      />
+    );
+  }
 
   return (
     <div className="bg-surface text-on-surface antialiased h-[100dvh] overflow-hidden flex flex-col">
@@ -195,50 +253,129 @@ export default function ProfileScreenV2() {
           </div>
         </section>
 
-        <section className="bg-white rounded-3xl shadow-sm overflow-hidden border border-slate-100 mb-6">
-          <div className="px-5 py-4 border-b border-slate-100">
-            <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-slate-400">Cuenta</h2>
-          </div>
-          {!isStudent && (
-            <>
-              <button
-                type="button"
-                onClick={handleOpenPhoneModal}
-                className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-slate-50"
-              >
-                <div>
-                  <p className="text-sm font-medium text-slate-900">Teléfono</p>
-                  <p className="text-xs text-slate-500">{phone ?? "Sin añadir"}</p>
+        {isParent && (
+          <section className="mb-6 space-y-3">
+            <button
+              type="button"
+              onClick={handleOpenPhoneModal}
+              className="flex w-full items-center gap-3 rounded-3xl border border-slate-100 bg-white p-4 text-left shadow-sm transition hover:bg-slate-50 active:scale-[0.99]"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f0fbf8] text-[#169486]">
+                <Phone className="h-5 w-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-black text-slate-900">Teléfono</p>
+                <p className="text-xs text-slate-500">{phone ?? "Sin añadir"}</p>
+              </div>
+              <span className="text-sm font-bold text-[#169486]">Editar</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={openPaymentMethods}
+              className="flex w-full items-center gap-3 rounded-3xl border border-[#d9f4ee] bg-white p-4 text-left shadow-sm transition hover:bg-[#f8fffd] active:scale-[0.99]"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f0fbf8] text-[#169486]">
+                <CreditCard className="h-5 w-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-black text-slate-900">Pago familiar</p>
+                <p className="text-xs text-slate-500">
+                  {savedCard ? `Tarjeta ****${savedCard.lastFourDigits} lista para recargas y pedidos` : "Añade una tarjeta para pagos directos"}
+                </p>
+              </div>
+              <span className="rounded-xl bg-[#1C9690] px-3 py-2 text-xs font-black text-white">
+                {savedCard ? "Cambiar" : "Añadir"}
+              </span>
+            </button>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-3xl bg-white p-4 shadow-sm">
+                <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#f0fbf8] text-[#169486]">
+                  <Users className="h-4 w-4" />
+                </span>
+                <p className="mt-3 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Hijos</p>
+                <p className="mt-1 font-mono text-2xl font-black text-slate-900">{familyChildren.length}</p>
+              </div>
+              <div className="rounded-3xl bg-white p-4 shadow-sm">
+                <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#f0fbf8] text-[#169486]">
+                  <Wallet className="h-4 w-4" />
+                </span>
+                <p className="mt-3 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Saldo total</p>
+                <p className="mt-1 font-mono text-xl font-black tabular-nums text-slate-900">
+                  {familyBalance.toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-3xl bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+                  <Bell className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-black text-slate-900">Avisos familiares</p>
+                  <p className="text-xs text-slate-500">
+                    {lowestBalanceChild
+                      ? `Menor saldo: ${lowestBalanceChild.studentName}`
+                      : "Recibe avisos de saldo, pedidos y alérgenos"}
+                  </p>
                 </div>
-                <span className="text-slate-400 text-sm">Editar</span>
-              </button>
-              {isParent && (
                 <button
                   type="button"
-                  onClick={openPaymentMethods}
-                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-slate-50"
+                  onClick={() => setNotificationsEnabled((value) => !value)}
+                  className={`h-7 w-12 rounded-full p-1 transition ${notificationsEnabled ? "bg-[#1C9690]" : "bg-slate-200"}`}
+                  aria-label="Activar avisos familiares"
                 >
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">Métodos de pago</p>
-                    <p className="text-xs text-slate-500">
-                      {savedCard ? `Tarjeta ****${savedCard.lastFourDigits}` : "Agregar tarjeta con Stripe"}
-                    </p>
-                  </div>
-                  <span className="text-slate-400 text-sm">
-                    {savedCard ? "Cambiar" : "Agregar"}
-                  </span>
+                  <span className={`block h-5 w-5 rounded-full bg-white transition ${notificationsEnabled ? "translate-x-5" : ""}`} />
                 </button>
-              )}
-            </>
-          )}
-          {!isParent && (
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setFamilyModalOpen(true)}
+              className="flex w-full items-center gap-3 rounded-3xl bg-white p-4 text-left shadow-sm transition hover:bg-slate-50 active:scale-[0.99]"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f0fbf8] text-[#169486]">
+                <Link2 className="h-5 w-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-black text-slate-900">Vínculos familiares</p>
+                <p className="text-xs text-slate-500">Consulta hijos asociados y saldos actuales</p>
+              </div>
+              <span className="text-sm font-bold text-[#169486]">Abrir</span>
+            </button>
+          </section>
+        )}
+
+        {isStudent && (
+          <section className="mb-6 space-y-3">
+            <div className="rounded-3xl bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f0fbf8] text-[#169486]">
+                  <Wallet className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-black text-slate-900">Saldo disponible</p>
+                  <p className="font-mono text-xl font-black tabular-nums text-[#169486]">
+                    {(profile?.walletBalance ?? 0).toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    {lastMovement ? `Último movimiento: ${lastMovement.creditedToWallet ? "+" : "-"}${lastMovement.total.toLocaleString("es-ES", { style: "currency", currency: "EUR" })}` : "Sin movimientos recientes"}
+                  </p>
+                </div>
+                <CheckCircle className="h-5 w-5 text-[#1C9690]" />
+              </div>
+            </div>
+
             <button
               type="button"
               onClick={() => setAllergyModalOpen(true)}
-              className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-slate-50"
+              className="flex w-full items-center justify-between gap-4 rounded-3xl bg-white p-4 text-left shadow-sm transition hover:bg-slate-50 active:scale-[0.99]"
             >
               <div>
-                <p className="text-sm font-medium text-slate-900">{isStudent ? "Alérgenos registrados" : "Mis alérgenos"}</p>
+                <p className="text-sm font-black text-slate-900">Alérgenos registrados</p>
                 {allergies.length === 0 ? (
                   <p className="text-xs text-slate-500">Sin configurar</p>
                 ) : (
@@ -248,34 +385,51 @@ export default function ProfileScreenV2() {
                       return (
                         <span
                           key={allergen.code}
-                          className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-lg"
+                          className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800"
                         >
-                          {visual.icon}
+                          <span>{visual.icon}</span>
+                          {visual.label}
                         </span>
                       );
                     })}
                   </div>
                 )}
-                {isStudent && (
-                  <p className="mt-2 text-xs leading-relaxed text-slate-400">
-                    Esta información se usa para avisarte antes de pedir productos con riesgo.
-                  </p>
-                )}
               </div>
-              <span className="text-slate-400 text-sm">Editar</span>
+              <span className="text-sm font-bold text-[#169486]">Editar</span>
             </button>
-          )}
-          {isStudent && (
+
             <button
               type="button"
               onClick={() => setFamilyModalOpen(true)}
-              className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-slate-50"
+              className="flex w-full items-center gap-3 rounded-3xl bg-white p-4 text-left shadow-sm transition hover:bg-slate-50 active:scale-[0.99]"
             >
-              <p className="text-sm font-medium text-slate-900">Familiares</p>
-              <span className="text-slate-400 text-sm">Abrir</span>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f0fbf8] text-[#169486]">
+                <Users className="h-5 w-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-black text-slate-900">Familiares</p>
+                <p className="text-xs text-slate-500">Quién puede supervisar tu monedero</p>
+              </div>
+              <span className="text-sm font-bold text-[#169486]">Ver</span>
             </button>
-          )}
-        </section>
+          </section>
+        )}
+
+        {isStudent && (
+          <section className="mb-6 rounded-3xl bg-white p-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">
+                <ShieldCheck className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-sm font-black text-slate-900">Privacidad familiar</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Tus familiares autorizados pueden ver pedidos, alérgenos y monedero para ayudarte con recargas y avisos.
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
 
       </main>
 
@@ -349,7 +503,44 @@ export default function ProfileScreenV2() {
               </button>
             </div>
             <div className="max-h-[calc(100vh-18rem)] overflow-y-auto bg-white p-4">
-              <StudentFamilyLink />
+              {isParent ? (
+                familyChildren.length === 0 ? (
+                  <div className="rounded-3xl bg-slate-50 p-6 text-center">
+                    <Users className="mx-auto h-8 w-8 text-slate-300" />
+                    <p className="mt-3 text-sm font-bold text-slate-700">Sin hijos vinculados</p>
+                    <p className="mt-1 text-xs text-slate-400">Genera un código desde la pestaña Hijos para vincular un alumno.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {familyChildren.map((child) => (
+                      <div key={child.studentId} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#d9f4ee] text-xs font-black text-[#169486]">
+                          {child.studentName.split(" ").slice(0, 2).map((part) => part[0]).join("").toUpperCase()}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-slate-900">{child.studentName}</p>
+                          <p className="font-mono text-sm font-black tabular-nums text-[#169486]">
+                            {child.walletBalance.toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFamilyModalOpen(false);
+                            setSelectedFamilyChild(child);
+                          }}
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]"
+                          aria-label={`Abrir ajustes de ${child.studentName}`}
+                        >
+                          <Settings className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )
+              ) : (
+                <StudentFamilyLink readonly />
+              )}
             </div>
           </div>
         </div>
