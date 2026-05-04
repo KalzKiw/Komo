@@ -392,14 +392,17 @@ El resultado es una aplicación funcional que cubre el flujo principal de cafete
 - Los alumnos pueden consultar productos y crear pedidos.
 - La administración puede gestionar la operativa.
 - El sistema contempla alérgenos, familias, monedero y datos persistentes de perfil.
+- La aplicación puede instalarse como PWA desde navegador compatible.
+- Los pedidos generan ticket operativo para cocina/mostrador y disponen de previsualización PDF de prueba.
 - La API está estructurada y validada.
 - La aplicación se puede desplegar.
 
 ### 9.2 Limitaciones detectadas
 
 - La autenticación ya acepta tokens de Supabase Auth, aunque se conserva compatibilidad temporal con usuarios demo por cabeceras.
-- No existe todavía integración de pago real; se guarda únicamente una referencia visual de tarjeta con los últimos cuatro dígitos.
-- La PWA/offline se ha desactivado temporalmente para evitar problemas de caché.
+- La integración de pagos cubre tarjetas guardadas y recargas, pero requiere validación final con credenciales y webhooks de producción.
+- La PWA permite instalación, aunque el modo offline completo sigue limitado porque login, pedidos, perfil y pagos dependen de la API.
+- La impresión de tickets está implementada como envío best-effort a la AVP-TC300, pendiente de validación física con la impresora real.
 - No hay suite E2E completa.
 - El panel administrador puede seguir mejorándose en usabilidad y permisos.
 - La cancelación de pedidos tiene reglas que deben revisarse para producción real.
@@ -407,12 +410,13 @@ El resultado es una aplicación funcional que cubre el flujo principal de cafete
 ### 9.3 Propuestas de mejora y trabajo futuro
 
 - Implementar autenticación real con JWT o Supabase Auth.
-- Añadir pasarela de pago real o recarga segura de monedero.
+- Completar validación de pagos reales y conciliación de recargas.
 - Crear pruebas E2E con Playwright.
 - Añadir métricas de producción y reportes para cocina.
 - Mejorar control de stock.
 - Añadir notificaciones push.
-- Restaurar PWA con estrategia correcta de caché versionada.
+- Ampliar PWA con estrategia offline versionada para catálogo y pantalla KDS.
+- Validar impresión real en AVP-TC300 y ajustar protocolo si el modelo requiere un modo distinto a HTTP/ESC-POS.
 - Añadir roles y permisos más granulares.
 - Crear panel de informes para ventas, productos más pedidos y horas punta.
 

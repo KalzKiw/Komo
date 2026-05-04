@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-05-04
+
+### Añadido
+
+- PWA instalable con `manifest.json`, iconos de 192/512 px con fondo blanco y service worker propio.
+- KDS rediseñado para uso en tablet horizontal:
+  - Modo pantalla completa.
+  - Columnas de entrada, preparación y pedidos listos.
+  - Visualización de extras, ingredientes retirados y notas de cocina.
+- Estado `READY` para separar pedidos preparados de pedidos entregados.
+- Impresión automática best-effort de ticket por pedido en impresora AVP-TC300 (`192.168.30.10:80`).
+- Botón de depuración en Administración > Ajustes para imprimir un ticket de prueba.
+- Botón de previsualización PDF del ticket de prueba.
+- Pago familiar directo con tarjeta guardada para pedidos concretos sin recargar primero el monedero.
+- Confirmación antes de ingresar dinero en el monedero para evitar recargas involuntarias.
+
+### Cambiado
+
+- Panel de pedidos de administración simplificado con filtros operativos: activos, listos, servidos y todos.
+- Perfil de padre reorganizado: tarjeta de teléfono, tarjeta de pago y vínculos familiares con acceso a hijos.
+- Perfil de alumno simplificado: se retiran notas frecuentes y el mensaje de privacidad queda al final.
+- Familias en administración agrupadas por padre/madre para evitar duplicar pantalla con padres e hijos.
+
+### Corregido
+
+- La app vuelve a ser instalable desde navegador gracias a iconos válidos, manifest completo y service worker.
+- El logo usado en headers e iconos mantiene fondo blanco para conservar legibilidad.
+
 ## 2026-05-03
 
 ### Añadido

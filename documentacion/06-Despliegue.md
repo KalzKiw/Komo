@@ -45,5 +45,6 @@ En este modo:
 - [x] Build backend verificado.
 - [x] Tests automatizados pasados.
 - [x] Endpoint `/api/health` validado.
-- [x] Service worker desactivado para evitar caché obsoleta.
+- [x] PWA validada con manifest, iconos y service worker versionable.
+- [ ] Prueba física de impresión en AVP-TC300 dentro de la red local.
 - [ ] Pruebas E2E automatizadas.

@@ -15,6 +15,7 @@ import {
   updateProductBodySchema,
   updateProductParamsSchema
 } from "../validators/admin.validator";
+import { buildTicketPdf, createTestTicketOrder, printOrderTicket } from "../services/ticket-printer.service";
 
 export async function listStudentsAdminController(
   _req: Request,
@@ -90,6 +91,39 @@ export async function updateProductAdminController(
     const body = updateProductBodySchema.parse(req.body);
     const result = await updateProductForAdmin(productId, body);
     res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function printTestTicketController(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    await printOrderTicket(createTestTicketOrder());
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function previewTestTicketController(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const pdf = buildTicketPdf(createTestTicketOrder());
+    res
+      .status(200)
+      .set({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "inline; filename=\"ticket-prueba.pdf\"",
+        "Content-Length": String(pdf.length)
+      })
+      .send(pdf);
   } catch (error) {
     next(error);
   }

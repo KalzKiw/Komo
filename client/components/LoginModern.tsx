@@ -29,6 +29,7 @@ const LoginModern: React.FC = () => {
   const [selectedAllergens, setSelectedAllergens] = useState<Set<string>>(new Set());
   const [loadingAllergens, setLoadingAllergens] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [devAccessOpen, setDevAccessOpen] = useState(false);
   const isLoading = state.status === "loading";
   const errorMsg = localError ?? (state.status === "unauthenticated" ? state.error : undefined);
 
@@ -123,7 +124,14 @@ const LoginModern: React.FC = () => {
   return (
     <div className="bg-surface text-on-surface min-h-screen flex items-start justify-center p-6 pt-10 font-body relative">
       <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 items-end">
-        {QUICK_USERS.map((u) => (
+        <button
+          type="button"
+          onClick={() => setDevAccessOpen((open) => !open)}
+          className="rounded-full bg-white px-3 py-2 text-xs font-black text-slate-500 shadow"
+        >
+          Ajustes
+        </button>
+        {devAccessOpen && QUICK_USERS.map((u) => (
           <button
             key={u.email}
             type="button"

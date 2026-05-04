@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LogOut, RefreshCw, ChevronRight, X, Check, ArrowRight, ArrowLeft, Search, UserCheck, Maximize2, Minimize2 } from "lucide-react";
+import { LogOut, RefreshCw, ChevronRight, X, Check, ArrowRight, ArrowLeft, Search, UserCheck, Maximize2, Minimize2, Printer, FileText } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
 import { useToast } from "../context/ToastContext";
+import { apiUrl } from "../lib/api";
 import { money, formatOrderStatus, formatShiftLabel, elapsedFrom, adminProductCategory, statusColor, formatNonFutureDateTime } from "../lib/utils";
 import AdminFamilyRelationships from "../components/family/AdminFamilyRelationships";
 
@@ -216,7 +217,9 @@ export default function AdminScreen() {
       {!(tab === "KDS" && kdsFullscreen) && <div className="shrink-0 bg-[#2D3748] px-4 pt-safe-top pb-3">
         <div className="flex items-center justify-between pt-3">
           <div className="flex items-center gap-3">
-            <img src="/logotipo-transparente.png" alt="KOMO" className="h-10 w-auto" />
+            <span className="flex h-11 items-center rounded-2xl bg-white px-2.5 shadow-sm">
+              <img src="/logotipo-transparente.png" alt="KOMO" className="h-8 w-auto" />
+            </span>
             <div>
               <h1 className="text-base font-black text-white">Admin Dashboard</h1>
               <p className="text-xs text-[#d9f4ee]">KOMO · Control y Previsión</p>
@@ -650,11 +653,8 @@ function OrdersTab({ orders, onStatusChange, apiFetch, showToast }: OrdersTabPro
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none" }}>
           {[
             ["ACTIVE", "Activos"],
-            ["PENDING", "Pendientes"],
-            ["IN_PREPARATION", "Cocina"],
             ["READY", "Listos"],
             ["DELIVERED", "Servidos"],
-            ["CANCELLED", "Cancelados"],
             ["ALL", "Todos"],
           ].map(([id, label]) => (
             <button
@@ -1283,6 +1283,7 @@ function SettingsTab({
   apiFetch: ReturnType<typeof useApi>["apiFetch"];
   showToast: (msg: string, type?: "success" | "error" | "info") => void;
 }) {
+  const { authHeaders } = useAuth();
   const [morning, setMorning] = useState("09:00");
   const [afternoon, setAfternoon] = useState("15:00");
   const [night, setNight] = useState("18:00");
@@ -1290,6 +1291,8 @@ function SettingsTab({
   const [cutoffDisabled, setCutoffDisabled] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [printingTest, setPrintingTest] = useState(false);
+  const [openingPreview, setOpeningPreview] = useState(false);
 
   useEffect(() => {
     apiFetch<{ morning: { hour: number; minute: number }; afternoon: { hour: number; minute: number }; night: { hour: number; minute: number }; graceMinutes: number; disabled: boolean }>("/api/admin/settings/schedule")
@@ -1318,6 +1321,36 @@ function SettingsTab({
       showToast(err instanceof Error ? err.message : "Error al guardar", "error");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function printTestTicket() {
+    setPrintingTest(true);
+    try {
+      await apiFetch("/api/admin/print-test-ticket", { method: "POST" });
+      showToast("Ticket de prueba enviado");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "No se pudo imprimir el ticket", "error");
+    } finally {
+      setPrintingTest(false);
+    }
+  }
+
+  async function openTicketPreview() {
+    setOpeningPreview(true);
+    try {
+      const res = await fetch(apiUrl("/api/admin/print-test-ticket/preview"), {
+        headers: authHeaders,
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener,noreferrer");
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "No se pudo abrir el PDF", "error");
+    } finally {
+      setOpeningPreview(false);
     }
   }
 
@@ -1379,6 +1412,48 @@ function SettingsTab({
             {saving ? "Guardando…" : "Guardar horarios"}
           </button>
         </form>
+      </div>
+
+      <div className="rounded-2xl bg-white p-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">
+            <Printer className="h-5 w-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h3 className="font-bold text-slate-900">Depuración de impresora</h3>
+            <p className="mt-1 text-xs leading-5 text-slate-400">
+              Envía un ticket de prueba a la AVP-TC300 configurada en 192.168.30.10:80.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={openTicketPreview}
+            disabled={openingPreview}
+            className="flex items-center justify-center gap-2 rounded-2xl border border-[#c6efe7] bg-[#f0fbf8] py-3 text-sm font-black text-[#169486] transition active:scale-[0.97] disabled:opacity-60"
+          >
+            {openingPreview ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#92dbc8] border-t-[#1C9690]" />
+            ) : (
+              <FileText className="h-4 w-4" />
+            )}
+            Ver PDF
+          </button>
+          <button
+            type="button"
+            onClick={printTestTicket}
+            disabled={printingTest}
+            className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 py-3 text-sm font-black text-slate-700 transition active:scale-[0.97] disabled:opacity-60"
+          >
+            {printingTest ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-[#1C9690]" />
+            ) : (
+              <Printer className="h-4 w-4" />
+            )}
+            Imprimir prueba
+          </button>
+        </div>
       </div>
     </div>
   );

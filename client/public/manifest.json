@@ -21,6 +21,6 @@
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#1C9690",
-  "background_color": "#f8fafc",
+  "background_color": "#ffffff",
   "description": "Pedidos, monedero y gestión familiar para cafetería escolar."
 }

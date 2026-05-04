@@ -1,7 +1,9 @@
 node_modules/
+.android-sdk/
 dist/
 client-dist/
 .env
+.env.android
 .env.local
 .env.*.local
 *.log

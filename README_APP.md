@@ -7,6 +7,9 @@ Incluye:
 - **Frontend Web Móvil**: React 19 + Vite 8 + Tailwind v4 (puerto 5173, incluida en build de producción).
 - **Documentación OpenAPI**: Swagger UI en `/api-docs`.
 - **Pagos**: integración Stripe para recargas de monedero familiar y gestión de tarjetas.
+- **PWA**: instalable desde navegador con manifest, iconos y service worker.
+- **Android APK**: empaquetado con Capacitor/Ionic a partir de la build Vite.
+- **Tickets**: impresión de pedidos en AVP-TC300 y previsualización PDF de prueba.
 
 ## 2. Módulos principales
 
@@ -21,18 +24,20 @@ Incluye:
 - **Carrito**: creación de pedidos en turnos (MORNING/AFTERNOON/NIGHT).
 - **Pedidos**: historial, detalle, cancelación con devolución de saldo.
 - **Monedero**: saldo de alumno, movimientos de transacciones.
-- **Sistema familiar**: vinculación mediante códigos temporales, recarga de saldo de hijos.
+- **Sistema familiar**: vinculación mediante códigos temporales, recarga confirmada de saldo de hijos y pago directo con tarjeta para pedidos concretos.
 - **Alérgenos**: edición completa con picker visual, aviso al confirmar pedidos.
 
 ### Panel de administración
 - **Estudiantes**: listado, asignación de delegados, gestión de beneficiarios.
 - **Productos**: CRUD con alérgenos, información sanitaria, imágenes.
-- **Pedidos**: listado con filtros, cambio de estado, vista KDS.
+- **Pedidos**: listado con filtros simplificados, cambio de estado, vista KDS.
+- **KDS**: pantalla completa para tablet horizontal con extras, ingredientes retirados y notas de cocina.
 - **Familias**: relaciones padre-hijo, códigos de vinculación.
-- **Configuración**: horarios de corte, bypass para pruebas.
+- **Configuración**: horarios de corte, bypass para pruebas, preview PDF e impresión de ticket de prueba.
 
 ## 3. Stack técnico
 - **Frontend**: React 19, Vite 8, Tailwind CSS v4, lucide-react, Context API.
+- **Android**: Capacitor 8 con proyecto nativo en `/android`.
 - **Backend**: Node.js, Express 4, TypeScript, Zod.
 - **Base de datos**: Supabase/PostgreSQL.
 - **Pagos**: Stripe API (SetupIntent para tarjetas, PaymentIntent para recargas).
@@ -68,7 +73,8 @@ src/                       ← Backend Express
   controllers/             ← Handlers finos
   services/                ← Lógica de negocio
     main-app.service.ts, auth.service.ts, order.service.ts, 
-    family.service.ts, payment.service.ts, admin.service.ts, settings.service.ts
+    family.service.ts, payment.service.ts, admin.service.ts, settings.service.ts,
+    ticket-printer.service.ts
   middlewares/             ← auth, error, require-role, order-time-window
   validators/              ← Schemas Zod
   config/                  ← env, supabase, swagger
@@ -132,7 +138,7 @@ npm run start            # Producción: backend en puerto 3001
 - `GET /api/products` — catálogo activo con filtros.
 
 ### Pedidos
-- `POST /api/orders` — crear pedido.
+- `POST /api/orders` — crear pedido. Puede usar monedero o tarjeta guardada (`paymentMethod`).
 - `GET /api/orders` — listado para admin (con filtros).
 - `GET /api/orders/:orderId` — detalle de pedido.
 - `PATCH /api/orders/:orderId/status` — cambiar estado (admin).
@@ -165,6 +171,8 @@ npm run start            # Producción: backend en puerto 3001
 - `GET /api/admin/products` — gestión de productos.
 - `POST /api/admin/products` — crear producto.
 - `PATCH /api/admin/products/:productId` — actualizar producto.
+- `GET /api/admin/print-test-ticket/preview` — ver ticket de prueba en PDF.
+- `POST /api/admin/print-test-ticket` — imprimir ticket de prueba.
 
 ### Utilidades
 - `GET /api/health` — estado del servidor.

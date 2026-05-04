@@ -65,7 +65,8 @@ La cuenta familiar permite:
 - Generar códigos de vinculación.
 - Vincularse con alumnos.
 - Consultar hijos vinculados.
-- Recargar saldo del monedero del alumno.
+- Recargar saldo del monedero del alumno con confirmación previa.
+- Pagar un pedido concreto con tarjeta guardada cuando no se quiere recargar primero el monedero.
 - Revisar movimientos y pedidos recientes.
 - En la cuenta de alumno, recargar su propio monedero desde la pestaña Monedero.
 - Guardar teléfono y método de pago desde Perfil. La app muestra solo los últimos cuatro dígitos de la tarjeta.
@@ -76,12 +77,23 @@ La cuenta familiar permite:
 El panel de administración permite:
 
 - Consultar previsión de producción.
-- Ver cola KDS.
+- Ver cola KDS en una interfaz pensada para tablet horizontal.
 - Gestionar productos.
-- Consultar y actualizar pedidos.
+- Consultar y actualizar pedidos con vistas simplificadas: activos, listos, servidos y todos.
 - Activar o revocar rol de delegado.
-- Consultar vínculos familiares.
+- Consultar vínculos familiares agrupados por familia.
 - Configurar horarios de corte.
+- Previsualizar un ticket de prueba en PDF desde Ajustes.
+- Imprimir un ticket de prueba desde Ajustes en la impresora configurada.
+
+### Tickets de cocina
+
+Al crear un pedido, el sistema intenta imprimir automáticamente un ticket para cocina/mostrador. El ticket contiene el número visible de recogida, fecha y hora, alumno, turno, productos, extras, ingredientes retirados, notas y total.
+
+En **Administración > Ajustes > Depuración de impresora** hay dos acciones:
+
+- **Ver PDF**: abre una previsualización del ticket de prueba.
+- **Imprimir prueba**: envía el ticket a la impresora AVP-TC300 configurada.
 
 ## Preguntas Frecuentes
 
@@ -92,4 +104,4 @@ No. El frontend necesita la API para login, productos, pedidos y perfil.
 Sí, pero la aplicación muestra una advertencia si detecta un alérgeno declarado por el usuario.
 
 **¿Puedo usarla como PWA offline?**  
-Actualmente se prioriza el uso online. El service worker se ha desactivado para evitar cachés obsoletas durante el despliegue.
+La aplicación ya incluye manifest, iconos y service worker para permitir instalación desde el navegador. El uso principal sigue siendo online porque login, pedidos, pagos y perfil dependen de la API.

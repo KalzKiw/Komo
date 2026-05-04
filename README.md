@@ -1,11 +1,12 @@
 # CafeteriaSolo
 
-Aplicación web para gestión de pedidos anticipados en cafeterías escolares. Incluye frontend React móvil, API Express backend, base de datos PostgreSQL (Supabase) e integración Stripe para pagos.
+Aplicación web para gestión de pedidos anticipados en cafeterías escolares. Incluye frontend React móvil instalable como PWA, API Express backend, base de datos PostgreSQL (Supabase), integración Stripe para pagos y ticketing de cocina.
 
 **Documentación ampliada:**
 - **Guía funcional y técnica**: [README_APP.md](README_APP.md)
 - **Memoria del proyecto**: [README_MEMORIA_PROYECTO.md](README_MEMORIA_PROYECTO.md)
 - **Documentación técnica**: [documentacion/01-Documentacion-Tecnica.md](documentacion/01-Documentacion-Tecnica.md)
+- **Empaquetado Android APK**: [documentacion/08-Android-APK.md](documentacion/08-Android-APK.md)
 - **Changelog completo**: [documentacion/07-Changelog.md](documentacion/07-Changelog.md)
 
 ## Stack tecnológico
@@ -14,6 +15,9 @@ Aplicación web para gestión de pedidos anticipados en cafeterías escolares. I
 - **Backend**: Node.js + Express + TypeScript (puerto 3001)
 - **Base de datos**: Supabase/PostgreSQL
 - **Pagos**: Stripe API (SetupIntent + PaymentIntent)
+- **PWA**: manifest, iconos instalables y service worker
+- **Android**: Capacitor/Ionic wrapper para generar APK
+- **Tickets**: impresión AVP-TC300 y preview PDF de prueba
 - **Documentación API**: Swagger UI + swagger-jsdoc
 
 ## Estructura de carpetas
@@ -78,6 +82,14 @@ npm run build       # Compila backend + frontend
 npm run start       # Inicia server en puerto 3001 (sirve frontend compilado)
 ```
 
+### Android APK
+
+```bash
+npm run android:apk:debug
+```
+
+El APK debug se genera en `android/app/build/outputs/apk/debug/app-debug.apk`. Antes de usarlo en móvil real, configura `VITE_API_BASE_URL` en `.env.android` con una API accesible desde el dispositivo.
+
 ### Variables de entorno
 
 ```
@@ -127,7 +139,7 @@ Las migraciones se aplican automáticamente al crear la base de datos. Si necesi
 
 ## API completa
 
-Consulta [documentacion/01-Documentacion-Tecnica.md](documentacion/01-Documentacion-Tecnica.md) para la lista completa de endpoints (autenticación, perfil, alérgenos, productos, pedidos, sistema familiar, pagos Stripe, admin).
+Consulta [documentacion/01-Documentacion-Tecnica.md](documentacion/01-Documentacion-Tecnica.md) para la lista completa de endpoints (autenticación, perfil, alérgenos, productos, pedidos, sistema familiar, pagos Stripe, tickets, PWA y admin).
 
 ## Despliegue
 

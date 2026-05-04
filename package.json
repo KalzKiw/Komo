@@ -8,11 +8,18 @@
     "dev:client": "vite",
     "build": "tsc -p tsconfig.json && vite build",
     "build:client": "vite build",
+    "build:android": "vite build --mode android",
+    "cap:sync": "npm run build:android && cap sync android",
+    "android:open": "npm run cap:sync && cap open android",
+    "android:apk:debug": "npm run cap:sync && cd android && ./gradlew assembleDebug",
     "start": "node dist/server.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.1",
+    "@capacitor/cli": "^8.3.1",
+    "@capacitor/core": "^8.3.1",
     "@playwright/test": "^1.59.1",
     "@stripe/react-stripe-js": "^6.3.0",
     "@stripe/stripe-js": "^9.4.0",

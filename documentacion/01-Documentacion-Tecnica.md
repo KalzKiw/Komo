@@ -24,6 +24,7 @@ La aplicación puede ejecutarse como un servicio Node único que sirve tanto la 
 - **Frontend**: React, Vite, Tailwind CSS, lucide-react.
 - **Backend**: Node.js, Express, TypeScript, Zod.
 - **Base de datos**: Supabase/PostgreSQL.
+- **PWA**: manifest, iconos instalables y service worker propio.
 - **Documentación API**: Swagger UI y swagger-jsdoc.
 - **Pruebas**: Vitest.
 - **Despliegue**: Vercel para frontend/API serverless y opción Node con `npm start`.
@@ -50,7 +51,7 @@ La aplicación puede ejecutarse como un servicio Node único que sirve tanto la 
 
 ### Pedidos
 - `GET /api/me/orders`: pedidos del usuario.
-- `POST /api/orders`: creación de pedido.
+- `POST /api/orders`: creación de pedido. Acepta `paymentMethod: "WALLET"` o `"CARD"` para permitir pago directo con tarjeta guardada en pedidos familiares.
 - `GET /api/orders`: listado operativo para administración (con filtros).
 - `GET /api/orders/:orderId`: detalle de pedido.
 - `PATCH /api/orders/:orderId/status`: cambio de estado por administración.
@@ -82,6 +83,8 @@ La aplicación puede ejecutarse como un servicio Node único que sirve tanto la 
 - `GET /api/admin/products`: gestión de productos.
 - `POST /api/admin/products`: crear producto.
 - `PATCH /api/admin/products/:productId`: actualizar producto.
+- `GET /api/admin/print-test-ticket/preview`: previsualización PDF de ticket de prueba.
+- `POST /api/admin/print-test-ticket`: impresión de ticket de prueba en la impresora configurada.
 
 ### Utilidades
 - `GET /api/health`: comprobación de estado.
@@ -119,11 +122,19 @@ El diagrama se mantiene en `db/erd.mmd`.
 - Los límites de reserva por turno son configurables: mañana 09:00, tarde 15:00 y noche 18:00 por defecto.
 - Administración puede desactivar temporalmente los límites de reserva para pruebas.
 - Los estados de pedido son: `PENDING`, `IN_PREPARATION`, `READY`, `DELIVERED` y `CANCELLED`.
+- La interfaz de administración agrupa los filtros de pedidos en vistas operativas: activos, listos, servidos y todos.
 - El backend valida productos activos, cantidades, personalizaciones y alérgenos.
 - La aplicación advierte cuando un producto contiene alérgenos declarados por el usuario.
 - La cancelación puede generar devolución al monedero si cumple la ventana de cancelación.
 - Las recargas de monedero actualizan el saldo en backend y se registran como movimientos.
 - Teléfono y tarjeta se guardan en el perfil del usuario; por seguridad solo se conserva el último bloque visible de la tarjeta (ej: `****1234`).
-- Administración y cocina pueden consultar la cola KDS y actualizar estados.
+- Administración y cocina pueden consultar la cola KDS. El KDS está pensado para tablet en horizontal y separa entrada, preparación y pedidos listos.
+- Cada pedido intenta imprimir un ticket operativo en la impresora AVP-TC300 configurada en `192.168.30.10:80`. La impresión es best-effort y no bloquea la creación del pedido si falla.
+- El ticket incluye logo textual, número de recogida, fecha/hora, alumno, turno, líneas, extras, ingredientes retirados, notas de cocina y total.
 - Los pagos con Stripe usan SetupIntent para guardar tarjetas (sin cobro inicial) y PaymentIntent para recargas de monedero.
 - Las recargas de monedero pueden realizarse de forma manual (transferencia directa) o con Stripe (tarjeta on-file o nuevo pago).
+- En pedidos familiares se puede cobrar el importe exacto de una comida con tarjeta guardada, sin obligar a recargar primero el monedero.
+
+## PWA
+
+La app incluye manifest en `client/public/manifest.json`, iconos `icon-192.png` y `icon-512.png` con fondo blanco para asegurar legibilidad, y service worker en `client/public/sw.js`. En producción, `client/main.tsx` registra el service worker para permitir instalación desde navegador móvil/desktop.
