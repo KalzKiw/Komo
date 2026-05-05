@@ -401,6 +401,7 @@ export default function ProductDetail({
   return (
     <div
       ref={scrollRef}
+      data-gesture-lock="true"
       className="relative h-screen overflow-y-scroll bg-gray-50 pb-44 [&::-webkit-scrollbar]:hidden"
       style={{ scrollbarWidth: "none" }}
     >

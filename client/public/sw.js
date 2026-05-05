@@ -1,4 +1,4 @@
-const CACHE_NAME = "komo-pwa-v1";
+const CACHE_NAME = "komo-pwa-v2";
 const APP_SHELL = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {

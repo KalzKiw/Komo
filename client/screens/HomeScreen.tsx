@@ -99,12 +99,72 @@ export default function HomeScreen() {
   useEffect(() => {
     setLoading(true);
     apiFetch<ApiProductsResponse>("/api/products")
-      .then((res) => setProducts(res.data))
+      .then((res) => setProducts(res.data.filter((product) => product.isActive !== false)))
       .catch((err: unknown) =>
         setError(err instanceof Error ? err.message : "Error al cargar productos")
       )
       .finally(() => setLoading(false));
   }, [apiFetch]);
+
+  useEffect(() => {
+    function handlePopState(event: PopStateEvent) {
+      if (!event.state?.komoCutoffInfo) setShowCutoffInfo(false);
+      if (!event.state?.komoProductInfo) setShowProductInfo(false);
+      if (!event.state?.komoProductId) setDetailProduct(null);
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  function pushMenuState(extraState: Record<string, unknown>) {
+    window.history.pushState(
+      { ...(window.history.state ?? {}), komoTab: "home", ...extraState },
+      "",
+      window.location.pathname
+    );
+  }
+
+  function openProduct(product: ApiProduct) {
+    setShowProductInfo(false);
+    setDetailProduct(product);
+    pushMenuState({ komoProductId: product.id });
+  }
+
+  function closeProduct() {
+    setShowProductInfo(false);
+    if (window.history.state?.komoProductId) {
+      window.history.back();
+      return;
+    }
+    setDetailProduct(null);
+  }
+
+  function openProductInfo() {
+    setShowProductInfo(true);
+    pushMenuState({ komoProductId: detailProduct?.id, komoProductInfo: true });
+  }
+
+  function closeProductInfo() {
+    if (window.history.state?.komoProductInfo) {
+      window.history.back();
+      return;
+    }
+    setShowProductInfo(false);
+  }
+
+  function openCutoffInfo() {
+    setShowCutoffInfo(true);
+    pushMenuState({ komoCutoffInfo: true });
+  }
+
+  function closeCutoffInfo() {
+    if (window.history.state?.komoCutoffInfo) {
+      window.history.back();
+      return;
+    }
+    setShowCutoffInfo(false);
+  }
 
   const filtered =
     category === "ALL"
@@ -130,7 +190,7 @@ export default function HomeScreen() {
       note: payload.kitchenNote,
       allergens: product.allergens?.length ? product.allergens : fallbackAllergens,
     });
-    setDetailProduct(null);
+    closeProduct();
   }
 
   // ── Product detail ────────────────────────────────────────────────────────
@@ -162,16 +222,13 @@ export default function HomeScreen() {
             description: detailProduct.description ?? "",
             price: detailProduct.price,
           })}
-          onBack={() => {
-            setShowProductInfo(false);
-            setDetailProduct(null);
-          }}
-          onInfo={() => setShowProductInfo(true)}
+          onBack={closeProduct}
+          onInfo={openProductInfo}
           onAdd={(payload) => handleAdd(payload, detailProduct)}
         />
 
         {showProductInfo && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6" data-gesture-lock="true">
             <div className="max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
               <div className="flex items-start justify-between gap-4 mb-4">
                 <div>
@@ -180,7 +237,7 @@ export default function HomeScreen() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowProductInfo(false)}
+                  onClick={closeProductInfo}
                   className="rounded-full bg-slate-100 p-2 text-slate-600 transition hover:bg-slate-200"
                   aria-label="Cerrar información"
                 >
@@ -300,7 +357,7 @@ export default function HomeScreen() {
           </div>
           <button
             type="button"
-            onClick={() => setShowCutoffInfo(true)}
+            onClick={openCutoffInfo}
             className="shrink-0 rounded-2xl bg-[#d9f4ee] px-3 py-2 text-right transition active:scale-[0.98]"
             aria-label="Ver explicación del cierre de pedidos"
           >
@@ -314,7 +371,11 @@ export default function HomeScreen() {
         </div>
 
         {/* Category pills */}
-        <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none" }}>
+        <div
+          className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden"
+          style={{ scrollbarWidth: "none" }}
+          data-gesture-lock="true"
+        >
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
@@ -359,7 +420,7 @@ export default function HomeScreen() {
               <button
                 key={product.id}
                 type="button"
-                onClick={() => setDetailProduct(product)}
+                onClick={() => openProduct(product)}
                 className="flex h-full min-h-[206px] flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white text-left shadow-sm transition-transform active:scale-[0.97]"
               >
                 <div className="relative h-28 shrink-0 overflow-hidden bg-gradient-to-br from-[#d9f4ee] to-[#c6efe7]">
@@ -393,7 +454,7 @@ export default function HomeScreen() {
       </div>
 
       {showCutoffInfo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" data-gesture-lock="true">
           <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
@@ -402,7 +463,7 @@ export default function HomeScreen() {
               </div>
               <button
                 type="button"
-                onClick={() => setShowCutoffInfo(false)}
+                onClick={closeCutoffInfo}
                 className="rounded-full bg-slate-100 px-3 py-1.5 text-lg leading-none text-slate-600 transition hover:bg-slate-200"
                 aria-label="Cerrar explicación"
               >

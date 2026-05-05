@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState, type TouchEvent } from "react";
 import { Home, Wallet, UserCircle, Clock, ShoppingCart } from "lucide-react";
 
 import { useAuth } from "./context/AuthContext";
@@ -15,6 +15,8 @@ import type { UserRole } from "./context/AuthContext";
 
 type Tab = "home" | "wallet" | "orders" | "profile";
 
+const TAB_ORDER: Tab[] = ["home", "wallet", "orders", "profile"];
+
 const LEFT_NAV: Array<{ id: Tab; label: string; Icon: typeof Home }> = [
   { id: "home", label: "Inicio", Icon: Home },
   { id: "wallet", label: "Monedero", Icon: Wallet },
@@ -28,6 +30,7 @@ const RIGHT_NAV: Array<{ id: Tab; label: string; Icon: typeof Home }> = [
 function ConsumerApp({ role }: { role: UserRole }) {
   const [tab, setTab] = useState<Tab>("home");
   const [cartOpen, setCartOpen] = useState(false);
+  const touchStartRef = useRef<{ x: number; y: number; at: number } | null>(null);
   const { itemCount } = useCart();
   const leftNav = LEFT_NAV.map((item) =>
     role === "PARENT" && item.id === "wallet" ? { ...item, label: "Hijos" } : item
@@ -44,17 +47,99 @@ function ConsumerApp({ role }: { role: UserRole }) {
   }>(null);
   const [showOrderSummary, setShowOrderSummary] = useState(false);
 
+  const navigateToTab = useCallback((nextTab: Tab, pushHistory = true) => {
+    setCartOpen(false);
+    setShowOrderSummary(false);
+    setOrderSummary(null);
+    setTab(nextTab);
+    if (pushHistory && window.history.state?.komoTab !== nextTab) {
+      window.history.pushState({ komoTab: nextTab }, "", window.location.pathname);
+    }
+  }, []);
+
+  function openCart() {
+    setCartOpen(true);
+    if (!window.history.state?.komoCart) {
+      window.history.pushState({ ...(window.history.state ?? {}), komoCart: true }, "", window.location.pathname);
+    }
+  }
+
+  function closeCart() {
+    if (window.history.state?.komoCart) {
+      window.history.back();
+      return;
+    }
+    setCartOpen(false);
+  }
+
+  useEffect(() => {
+    const currentState = window.history.state ?? {};
+    if (!currentState.komoTab) {
+      window.history.replaceState({ ...currentState, komoTab: tab }, "", window.location.pathname);
+    }
+
+    function handlePopState(event: PopStateEvent) {
+      const stateTab = event.state?.komoTab;
+      if (!event.state?.komoCart) {
+        setCartOpen(false);
+      }
+      if (stateTab && TAB_ORDER.includes(stateTab)) {
+        setShowOrderSummary(false);
+        setOrderSummary(null);
+        setTab(stateTab);
+        return;
+      }
+
+      setCartOpen(false);
+      setShowOrderSummary(false);
+      setOrderSummary(null);
+      setTab("home");
+      window.history.replaceState({ ...(event.state ?? {}), komoTab: "home" }, "", window.location.pathname);
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [tab]);
+
+  function handleTouchStart(event: TouchEvent<HTMLDivElement>) {
+    if (cartOpen || showOrderSummary) return;
+    const target = event.target as HTMLElement;
+    if (target.closest("input, textarea, select, [role='dialog'], [data-gesture-lock='true']")) return;
+    const touch = event.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY, at: Date.now() };
+  }
+
+  function handleTouchEnd(event: TouchEvent<HTMLDivElement>) {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    if (!start || cartOpen || showOrderSummary) return;
+
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    const elapsed = Date.now() - start.at;
+
+    if (Math.abs(dx) < 72 || Math.abs(dx) < Math.abs(dy) * 1.4 || elapsed > 650) return;
+
+    const currentIndex = TAB_ORDER.indexOf(tab);
+    const nextIndex = dx < 0
+      ? Math.min(TAB_ORDER.length - 1, currentIndex + 1)
+      : Math.max(0, currentIndex - 1);
+
+    if (nextIndex !== currentIndex) {
+      event.preventDefault();
+      event.stopPropagation();
+      navigateToTab(TAB_ORDER[nextIndex]);
+    }
+  }
+
   // Función para mostrar el resumen desde CartModal
   function handleShowOrderSummary(summary: { items: any[]; total: number; feedback: string }) {
     if (summary.feedback === "goToOrders") {
       setShowOrderSummary(false);
       setOrderSummary(null);
       setCartOpen(false);
-      setTab(role === "PARENT" ? "wallet" : "orders");
-      // Forzar navegación en la URL si no se usa react-router
-      if (role !== "PARENT" && window.location.pathname !== "/orders") {
-        window.history.pushState({}, "", "/orders");
-      }
+      navigateToTab(role === "PARENT" ? "wallet" : "orders");
       return;
     }
     setOrderSummary(summary);
@@ -71,11 +156,15 @@ function ConsumerApp({ role }: { role: UserRole }) {
     setShowOrderSummary(false);
     setOrderSummary(null);
     setCartOpen(false);
-    setTab(role === "PARENT" ? "wallet" : "orders");
+    navigateToTab(role === "PARENT" ? "wallet" : "orders");
   }
 
   return (
-    <div className="h-svh w-full overflow-hidden bg-gray-50">
+    <div
+      className="h-svh w-full overflow-hidden bg-gray-50"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       {/* ── Screen area ──────────────────────────────────────────── */}
       <div className="h-full w-full overflow-hidden pb-16">
         {tab === "home" && <HomeScreen />}
@@ -97,7 +186,7 @@ function ConsumerApp({ role }: { role: UserRole }) {
             <button
               key={id}
               type="button"
-              onClick={() => setTab(id)}
+              onClick={() => navigateToTab(id)}
               className="flex flex-1 flex-col items-center gap-0.5 pb-2 pt-2 transition-all active:scale-90"
             >
               <Icon className={`h-5 w-5 transition-colors ${active ? "text-[#1C9690]" : "text-slate-400"}`} />
@@ -112,7 +201,7 @@ function ConsumerApp({ role }: { role: UserRole }) {
         <div className="flex flex-col items-center" style={{ flex: "0 0 72px" }}>
           <button
             type="button"
-            onClick={() => setCartOpen(true)}
+            onClick={openCart}
             className="relative -translate-y-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#1C9690] shadow-[0_4px_20px_rgba(28,150,144,0.45)] ring-4 ring-white transition-all active:scale-90 hover:bg-[#169486]"
           >
             <ShoppingCart className="h-6 w-6 text-white" />
@@ -131,7 +220,7 @@ function ConsumerApp({ role }: { role: UserRole }) {
             <button
               key={id}
               type="button"
-              onClick={() => setTab(id)}
+              onClick={() => navigateToTab(id)}
               className="flex flex-1 flex-col items-center gap-0.5 pb-2 pt-2 transition-all active:scale-90"
             >
               <Icon className={`h-5 w-5 transition-colors ${active ? "text-[#1C9690]" : "text-slate-400"}`} />
@@ -146,7 +235,7 @@ function ConsumerApp({ role }: { role: UserRole }) {
       {/* Cart modal y resumen de pedido (solo una instancia de cada uno) */}
       {cartOpen && !showOrderSummary && (
         <CartModal
-          onClose={() => setCartOpen(false)}
+          onClose={closeCart}
           onShowOrderSummary={handleShowOrderSummary}
         />
       )}

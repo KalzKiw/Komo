@@ -830,21 +830,158 @@ function words(value: string): string[] {
     .filter(Boolean);
 }
 
+function estimatedProductInfo(productName: string): ProductInfo {
+  const normalizedName = normalizedText(productName);
+  const has = (value: string) => normalizedName.includes(value);
+  const isDrink = has("cafe") || has("descafeinado") || has("cacao") || has("infusion");
+  const isPackaged = has("zumo") || has("agua") || has("refresco") || has("galleta") || has("barquillo") || has("papa") || has("barrita") || has("tortita") || has("caramelo");
+
+  let categoria: ProductInfo["categoria"] = "extra";
+  let ingredientes = [productName.toLowerCase()];
+  let alergenos: string[] = [];
+  let trazas: string[] = [];
+  let informacionNutricional = nutrition(80, 2, 8, 1, 3, 0.2);
+
+  if (has("cafe") || has("descafeinado")) {
+    categoria = "bebida-caliente";
+    ingredientes = has("leche") || has("cortado") ? [CAFE, LECHE] : [CAFE, AGUA];
+    alergenos = has("leche") || has("cortado") ? ["leche"] : [];
+    trazas = alergenos.length ? [] : ["leche"];
+    informacionNutricional = has("condensada") || has("leche y leche")
+      ? nutrition(118, 2.5, 19.8, 19.6, 4.1, 0.15)
+      : has("leche") || has("cortado")
+        ? nutrition(64, 2.2, 6.1, 6.1, 3.4, 0.11)
+        : nutrition(2, 0, 0.2, 0, 0.1, 0);
+  } else if (has("cacao")) {
+    categoria = "bebida-caliente";
+    ingredientes = [LECHE, CACAO];
+    alergenos = ["leche", "soja"];
+    informacionNutricional = nutrition(145, 3.2, 22.5, 21.4, 6.2, 0.18);
+  } else if (has("infusion")) {
+    categoria = "bebida-caliente";
+    ingredientes = ["infusion", AGUA];
+    informacionNutricional = nutrition(2, 0, 0.1, 0, 0, 0);
+  } else if (has("zumo")) {
+    categoria = "bebida-fria";
+    ingredientes = [ZUMO];
+    informacionNutricional = has("33") ? nutrition(148, 0.3, 33.8, 30.4, 1.3, 0.03) : nutrition(90, 0.2, 20.5, 18.4, 0.8, 0.02);
+  } else if (has("agua")) {
+    categoria = "bebida-fria";
+    ingredientes = has("gas") ? ["agua carbonatada"] : [AGUA];
+    informacionNutricional = nutrition(0, 0, 0, 0, 0, 0);
+  } else if (has("refresco")) {
+    categoria = "bebida-fria";
+    ingredientes = [REFRESCO];
+    informacionNutricional = nutrition(70, 0, 17, 16.5, 0, 0.02);
+  } else if (has("combo")) {
+    categoria = "bocadillo";
+    ingredientes = [PAN_BLANCO, EMBUTIDO, ZUMO, "snack"];
+    alergenos = ["gluten"];
+    trazas = ["leche", "soja", "huevo", "frutos de cascara"];
+    informacionNutricional = nutrition(620, 18, 88, 22, 24, 2.1);
+  } else if (has("bocadillo") || has("pulguita")) {
+    categoria = "bocadillo";
+    ingredientes = has("integral") ? [PAN_INTEGRAL] : [PAN_BLANCO];
+    if (has("tortilla")) ingredientes.push("tortilla de papas");
+    else if (has("lomo") || has("pechuga")) ingredientes.push(PECHUGA_POLLO);
+    else if (has("vegetal") || has("atun")) ingredientes.push(VEGETAL_ATUN);
+    else if (has("serrano")) ingredientes.push("jamon serrano");
+    else ingredientes.push(EMBUTIDO);
+    alergenos = ["gluten"];
+    if (has("tortilla")) alergenos.push("huevo");
+    if (has("atun") || has("vegetal")) alergenos.push("pescado", "soja", "huevo");
+    if (has("lomo") || has("pechuga") || has("embutido")) trazas.push("leche", "soja");
+    informacionNutricional = has("medio")
+      ? nutrition(250, 5, 42, 4, 10, 1)
+      : nutrition(340, 7, 55, 5, 15, 1.5);
+  } else if (has("sandwich")) {
+    categoria = "sandwich";
+    ingredientes = [PAN_MOLDE, FIAMBRE_PALETA, QUESO_GOUDA];
+    if (has("vegetal")) ingredientes.push(VEGETAL_ATUN);
+    alergenos = has("vegetal") ? ["gluten", "pescado", "soja", "huevo", "leche"] : ["gluten", "soja", "leche"];
+    informacionNutricional = has("triple") || has("vegetal") ? nutrition(360, 18, 34, 4.2, 18, 1.8) : nutrition(279, 11.3, 31.8, 3.5, 12.3, 1.91);
+  } else if (has("croissant")) {
+    categoria = "croissant";
+    ingredientes = [CROISSANT_BASE];
+    if (has("mixto")) ingredientes.push(FIAMBRE_PALETA, QUESO_GOUDA);
+    if (has("vegetal")) ingredientes.push(VEGETAL_ATUN);
+    alergenos = has("vegetal") ? ["gluten", "soja", "pescado", "huevo"] : has("mixto") ? ["gluten", "soja", "leche"] : ["gluten", "soja"];
+    trazas = has("vegetal") || (!has("mixto") && !has("vegetal")) ? ["leche", "huevo"] : [];
+    informacionNutricional = has("vegetal") ? nutrition(390, 24, 31, 5.3, 12, 1.4) : has("mixto") ? nutrition(375, 22.9, 27.4, 2.1, 10, 1.6) : nutrition(295, 17.5, 29, 7.2, 5.8, 0.75);
+  } else if (has("galleta")) {
+    categoria = "golosina";
+    ingredientes = [GALLETAS];
+    alergenos = ["gluten", "leche", "soja"];
+    trazas = ["huevo", "frutos de cascara"];
+    informacionNutricional = nutrition(170, 6.4, 25.5, 10.2, 2.6, 0.28);
+  } else if (has("barquillo")) {
+    categoria = "golosina";
+    ingredientes = ["barquillo de trigo", "azucar", "aceites vegetales"];
+    alergenos = ["gluten"];
+    trazas = ["leche", "soja", "frutos de cascara"];
+    informacionNutricional = nutrition(190, 7.2, 29, 16, 2.4, 0.18);
+  } else if (has("papa")) {
+    categoria = "golosina";
+    ingredientes = ["patata", "aceite vegetal", "sal"];
+    trazas = ["gluten", "leche", "soja"];
+    informacionNutricional = nutrition(160, 10, 15, 0.5, 2, 0.55);
+  } else if (has("barrita")) {
+    categoria = "golosina";
+    ingredientes = [BARRITA];
+    alergenos = ["gluten", "leche", "soja", "frutos de cascara"];
+    trazas = ["cacahuetes"];
+    informacionNutricional = nutrition(135, 4.2, 20.5, 8.6, 3.1, 0.16);
+  } else if (has("tortita")) {
+    categoria = "golosina";
+    ingredientes = [TORTITA];
+    trazas = ["gluten", "leche", "soja", "sesamo"];
+    informacionNutricional = nutrition(115, 1.6, 23.4, 1.3, 2.2, 0.22);
+  } else if (has("caramelo")) {
+    categoria = "golosina";
+    ingredientes = [CARAMELO];
+    trazas = ["sulfitos"];
+    informacionNutricional = nutrition(22, 0, 5.5, 4.8, 0, 0);
+  } else if (has("queso")) {
+    ingredientes = [QUESO_GOUDA];
+    alergenos = ["leche"];
+    informacionNutricional = nutrition(54, 4.2, 0.2, 0.2, 3.8, 0.22);
+  } else if (has("tomate")) {
+    ingredientes = ["tomate", "lechuga"];
+    informacionNutricional = nutrition(8, 0.1, 1.5, 1.2, 0.4, 0.01);
+  } else if (has("celiac")) {
+    ingredientes = ["pan especial sin gluten"];
+    trazas = ["huevo", "leche", "soja"];
+    informacionNutricional = nutrition(180, 3.8, 34, 2.4, 3.1, 0.65);
+  }
+
+  return {
+    nombre: productName,
+    categoria,
+    ingredientes,
+    alergenos: [...new Set(alergenos)],
+    trazas: [...new Set(trazas)],
+    informacionNutricional,
+    conservacion: isDrink || !isPackaged ? "consumo inmediato" : "conservar en lugar fresco y seco; seguir indicacion del envase",
+    caducidad: isDrink || !isPackaged ? "consumir en el momento de servicio" : "segun fecha indicada en envase",
+    fuente: ["valores estimados para racion habitual; revisar contra ficha del proveedor si se dispone de ella"]
+  };
+}
+
 export function resolveProductInfo(productName: string): ProductInfo | null {
   const normalizedName = normalizedText(productName);
   const exact = productInfoCatalog.find((item) => normalizedName === normalizedText(item.nombre ?? ""));
   if (exact) return exact;
 
   const nameWords = words(productName);
-  return (
-    productInfoCatalog.find((item) => {
-      const catalogName = normalizedText(item.nombre ?? "");
-      const catalogWords = words(item.nombre ?? "");
-      return (
-        normalizedName.includes(catalogName) ||
-        catalogName.includes(normalizedName) ||
-        catalogWords.every((word) => nameWords.includes(word))
-      );
-    }) ?? null
-  );
+  const catalogMatch = productInfoCatalog.find((item) => {
+    const catalogName = normalizedText(item.nombre ?? "");
+    const catalogWords = words(item.nombre ?? "");
+    return (
+      normalizedName.includes(catalogName) ||
+      catalogName.includes(normalizedName) ||
+      catalogWords.every((word) => nameWords.includes(word))
+    );
+  });
+
+  return catalogMatch ?? estimatedProductInfo(productName);
 }

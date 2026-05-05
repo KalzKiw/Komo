@@ -62,3 +62,4 @@ El JDK 26 falla con Gradle por versión de bytecode demasiado nueva.
 ## Release firmado
 
 El APK debug sirve para probar. Para distribuir fuera de desarrollo hay que crear una build release firmada desde Android Studio o configurando un keystore en Gradle.
+a 
