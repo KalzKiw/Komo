@@ -83,6 +83,33 @@ function readableIngredient(value: string) {
   };
 }
 
+function isStandaloneCatalogProduct(product: ApiProduct) {
+  const infoId = product.productInfo?.id ?? "";
+  const name = product.name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  const hiddenAddonIds = new Set([
+    "suplemento-para-llevar",
+    "ingrediente-extra-queso",
+    "ingrediente-extra-tomate-lechuga",
+    "salsa-mojo-alioli-mostaza",
+  ]);
+  const hiddenAddonNames = [
+    "suplemento para llevar",
+    "ingrediente extra queso",
+    "ingrediente extra tomate y lechuga",
+    "salsa mojo alioli mostaza",
+  ];
+
+  return (
+    product.isActive !== false &&
+    product.productInfo?.categoria !== "extra" &&
+    !hiddenAddonIds.has(infoId) &&
+    !hiddenAddonNames.includes(name)
+  );
+}
+
 // ─── Home Screen ──────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
@@ -101,9 +128,7 @@ export default function HomeScreen() {
     apiFetch<ApiProductsResponse>("/api/products")
       .then((res) =>
         setProducts(
-          res.data.filter((product) =>
-            product.isActive !== false && product.productInfo?.categoria !== "extra"
-          )
+          res.data.filter(isStandaloneCatalogProduct)
         )
       )
       .catch((err: unknown) =>
