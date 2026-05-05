@@ -29,6 +29,7 @@ const RIGHT_NAV: Array<{ id: Tab; label: string; Icon: typeof Home }> = [
 
 function ConsumerApp({ role }: { role: UserRole }) {
   const [tab, setTab] = useState<Tab>("home");
+  const [tabMotion, setTabMotion] = useState<"slide-left" | "slide-right" | "fade">("fade");
   const [cartOpen, setCartOpen] = useState(false);
   const touchStartRef = useRef<{ x: number; y: number; at: number } | null>(null);
   const { itemCount } = useCart();
@@ -48,6 +49,13 @@ function ConsumerApp({ role }: { role: UserRole }) {
   const [showOrderSummary, setShowOrderSummary] = useState(false);
 
   const navigateToTab = useCallback((nextTab: Tab, pushHistory = true) => {
+    setTabMotion(
+      TAB_ORDER.indexOf(nextTab) > TAB_ORDER.indexOf(tab)
+        ? "slide-left"
+        : TAB_ORDER.indexOf(nextTab) < TAB_ORDER.indexOf(tab)
+          ? "slide-right"
+          : "fade"
+    );
     setCartOpen(false);
     setShowOrderSummary(false);
     setOrderSummary(null);
@@ -86,6 +94,13 @@ function ConsumerApp({ role }: { role: UserRole }) {
       if (stateTab && TAB_ORDER.includes(stateTab)) {
         setShowOrderSummary(false);
         setOrderSummary(null);
+        setTabMotion(
+          TAB_ORDER.indexOf(stateTab) > TAB_ORDER.indexOf(tab)
+            ? "slide-left"
+            : TAB_ORDER.indexOf(stateTab) < TAB_ORDER.indexOf(tab)
+              ? "slide-right"
+              : "fade"
+        );
         setTab(stateTab);
         return;
       }
@@ -93,6 +108,7 @@ function ConsumerApp({ role }: { role: UserRole }) {
       setCartOpen(false);
       setShowOrderSummary(false);
       setOrderSummary(null);
+      setTabMotion("slide-right");
       setTab("home");
       window.history.replaceState({ ...(event.state ?? {}), komoTab: "home" }, "", window.location.pathname);
     }
@@ -100,6 +116,17 @@ function ConsumerApp({ role }: { role: UserRole }) {
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, [tab]);
+
+  function renderTab() {
+    if (tab === "home") return <HomeScreen />;
+    if (tab === "wallet") return <WalletScreen role={role} parentView="children" />;
+    if (tab === "orders") {
+      return role === "PARENT"
+        ? <WalletScreen role={role} parentView="stats" />
+        : <OrdersScreen onShowOrderSummary={handleShowOrderSummary} />;
+    }
+    return <ProfileScreenWrapper />;
+  }
 
   function handleTouchStart(event: TouchEvent<HTMLDivElement>) {
     if (cartOpen || showOrderSummary) return;
@@ -167,14 +194,9 @@ function ConsumerApp({ role }: { role: UserRole }) {
     >
       {/* ── Screen area ──────────────────────────────────────────── */}
       <div className="h-full w-full overflow-hidden pb-16">
-        {tab === "home" && <HomeScreen />}
-        {tab === "wallet" && <WalletScreen role={role} parentView="children" />}
-        {tab === "orders" && (
-          role === "PARENT"
-            ? <WalletScreen role={role} parentView="stats" />
-            : <OrdersScreen onShowOrderSummary={handleShowOrderSummary} />
-        )}
-        {tab === "profile" && <ProfileScreenWrapper />}
+        <div key={tab} className={`h-full komo-tab-view komo-tab-${tabMotion}`}>
+          {renderTab()}
+        </div>
       </div>
 
       {/* ── Bottom Nav ───────────────────────────────────────────── */}

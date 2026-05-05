@@ -9,7 +9,8 @@
 5. **Panel administrador**: productos, pedidos, KDS, familias, delegados y settings.
 6. **Alérgenos y seguridad alimentaria**: catálogo de alérgenos, avisos y gestión de perfil.
 7. **Despliegue**: configuración de Vercel y alternativa Node.
-8. **Documentación**: manuales, memoria y pruebas.
+8. **PWA y Android**: instalación web, service worker, Capacitor y APK.
+9. **Documentación**: manuales, memoria y pruebas.
 
 ## Estado Actual
 
@@ -28,6 +29,12 @@
 - [x] Gestión de productos con ficha alimentaria e imagen editable (2026-05-03).
 - [x] Switch para desactivar límites de reserva temporalmente (2026-05-03).
 - [x] PWA instalable con manifest, iconos y service worker (2026-05-04).
+- [x] APK Android debug generada con Capacitor y nombre KOMOAPK (2026-05-05).
+- [x] API remota configurada para APK mediante `.env.android` (2026-05-05).
+- [x] Navegación móvil con botón atrás, gestos y animaciones (2026-05-05).
+- [x] Catálogo real revisado: 45 productos activos y desactivados ocultos en compra (2026-05-05).
+- [x] Ficha técnica fallback para productos sin información extendida en producción (2026-05-05).
+- [x] Tests Vitest actualizados: 3 ficheros, 11 pruebas (2026-05-05).
 - [x] KDS rediseñado para tablet horizontal con estados operativos (2026-05-04).
 - [x] Tickets de pedido con impresión AVP-TC300 y preview PDF de prueba (2026-05-04).
 - [x] Flujo familiar con recarga confirmada y pago directo con tarjeta para importe exacto (2026-05-04).
@@ -38,7 +45,8 @@
 - [ ] Suite E2E automatizada.
 - [ ] Autenticación real de producción.
 - [ ] Validación en dispositivo real de impresora AVP-TC300.
-- [ ] PWA offline avanzada con caché versionada de datos.
+- [ ] PWA offline avanzada con caché de datos.
+- [ ] APK release firmada con keystore.
 
 ## Próximas Mejoras
 
@@ -47,6 +55,7 @@
 - [x] Capturas finales en anexos (implementado con client-dist build).
 - [x] Revisar todos los flujos en móvil real (funcional en producción).
 - [x] Validar login, productos, pedidos y panel admin en despliegue.
+- [x] Generar APK debug y verificar firma.
 - [ ] Tests E2E con Playwright.
 - [ ] Probar impresión real con la AVP-TC300 en red local.
 
@@ -56,6 +65,7 @@
 - [ ] Añadir tests E2E con Playwright.
 - [ ] Mejorar reporting de administración.
 - [ ] Añadir control de stock.
+- [ ] Aplicar migraciones pendientes de información extendida en producción.
 
 ### Largo plazo
 
@@ -63,3 +73,4 @@
 - [ ] Notificaciones push.
 - [ ] PWA offline estable para catálogos y pantalla KDS.
 - [ ] Analítica de demanda y previsión avanzada.
+- [ ] Publicación Android release.

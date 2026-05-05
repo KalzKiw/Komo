@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-05-05
+
+### Añadido
+
+- APK Android de pruebas generada con Capacitor bajo el nombre visible **KOMOAPK**.
+- Icono Android regenerado desde el logo de la app.
+- Pantalla completa en Android para evitar la barra superior del sistema durante el uso.
+- Navegación móvil con historial interno: botón atrás cierra detalle/carrito o vuelve a la pestaña anterior antes de salir.
+- Gestos horizontales para cambiar de pestaña en web, PWA y APK.
+- Animaciones de deslizamiento entre pestañas y entrada del detalle de producto.
+- Ficha técnica estimada en frontend para productos sin información extendida disponible en producción.
+- Documentación ampliada y memoria académica desarrollada.
+
+### Cambiado
+
+- La build Android lee `.env.android` desde la raíz del proyecto.
+- La APK usa `VITE_API_BASE_URL` para conectarse a una API remota y no depender del PC encendido.
+- El service worker se versionó para evitar cachés antiguas tras desplegar la PWA.
+- El catálogo de compra filtra productos desactivados.
+- El menú real de cafetería quedó revisado con 45 productos activos.
+- Se retiró la carpeta legacy `frontend/` y la ruta estática `/legacy`; el frontend válido queda centralizado en `client/`.
+- Se sustituyó el manual de usuario antiguo por manuales separados de usuario y administración.
+
+### Validado
+
+- `npm run build:client` correcto.
+- `npm test`: 3 ficheros y 11 pruebas superadas.
+- `npm run android:apk:debug` correcto.
+- Firma debug de APK verificada.
+
 ## 2026-05-04
 
 ### Añadido
@@ -144,9 +174,9 @@
 
 - Diseño e implementación del shell móvil (header fijo, scroll interno, nav inferior).
 - Backend Express + TypeScript con Supabase; estructura de rutas por dominio.
-- Frontend inicial en HTML/CSS/JS (`frontend/`).
+- Frontend inicial en HTML/CSS/JS, retirado posteriormente al consolidar la app React en `client/`.
 - Swagger / OpenAPI documentado con cabeceras mock (`x-user-id`, `x-user-role`).
-- Ficha sanitaria tipada de productos (`frontend/productInfo.ts`).
+- Ficha sanitaria tipada de productos, migrada después al catálogo de producto actual.
 - Modal de producto con alérgenos, resumen nutricional y tabla bajo demanda.
 - Pantalla de Pedidos con filtros y detalle in-page.
 - Perfil simplificado: sin dirección, sin historial directo, botón logout rediseñado.

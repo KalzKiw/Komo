@@ -402,7 +402,7 @@ export default function ProductDetail({
     <div
       ref={scrollRef}
       data-gesture-lock="true"
-      className="relative h-screen overflow-y-scroll bg-gray-50 pb-44 [&::-webkit-scrollbar]:hidden"
+      className="komo-detail-enter relative h-screen overflow-y-scroll bg-gray-50 pb-44 [&::-webkit-scrollbar]:hidden"
       style={{ scrollbarWidth: "none" }}
     >
       {/* ── 1. Hero Image ─────────────────────────────────────────────────── */}

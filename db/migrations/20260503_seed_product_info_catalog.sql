@@ -1,4 +1,4 @@
--- Seed products from frontend/productInfo.ts as editable catalogue items.
+-- Seed products from the product info catalogue as editable catalogue items.
 BEGIN;
 
 WITH source_products(slug, name, description, price, image_url, product_info) AS (

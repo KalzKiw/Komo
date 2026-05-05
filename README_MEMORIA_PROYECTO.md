@@ -1,63 +1,46 @@
-# Memoria del Proyecto - CafeteriaSolo
+# Resumen de Memoria del Proyecto - CafeteriaSolo / KOMO
 
-Este documento sirve como bitacora diaria de trabajo hasta el cierre del proyecto.
+La memoria académica completa está en [Memoria.md](Memoria.md). Este archivo resume el estado del proyecto y enlaza la documentación complementaria.
 
 ## Objetivo general
-Entregar una plataforma funcional de cafeteria escolar con:
-- API estable y documentada.
-- Frontend movil usable para alumnado/familias.
-- Flujo operativo para administracion y KDS.
 
-## Como usar esta memoria
-- Cada dia agregar una entrada nueva al final.
-- Registrar trabajo real realizado, bloqueos y proximo paso.
-- Mantener formato corto y accionable.
+Entregar una plataforma funcional de cafetería escolar con:
 
-Plantilla diaria:
+- API Express estable, validada y documentada.
+- Frontend React/Vite usable en móvil para alumnado y familias.
+- Panel operativo para administración y KDS.
+- Base de datos Supabase/PostgreSQL.
+- Monedero, sistema familiar, alérgenos, Stripe en modo test y tickets.
+- PWA instalable y APK Android generada con Capacitor.
 
-```text
-## YYYY-MM-DD
-### Lo hecho
-- ...
+## Estado final documentado
 
-### Decisiones tomadas
-- ...
+- Catálogo real de cafetería cargado y depurado.
+- Productos desactivados ocultos en la vista de compra.
+- Fichas técnicas alimentarias disponibles mediante datos de catálogo o fallback estimado.
+- Gestos móviles y botón atrás adaptados en web/PWA/APK.
+- Animaciones de deslizamiento entre pestañas y detalle de producto.
+- APK de pruebas con nombre **KOMOAPK**, icono, pantalla completa y API remota.
+- Tests Vitest actualizados: 3 ficheros y 11 pruebas superadas.
 
-### Bloqueos o riesgos
-- ...
+## Documentación principal
 
-### Proximo paso
-- ...
-```
+- [Memoria académica](Memoria.md)
+- [Guía funcional y técnica](README_APP.md)
+- [Documentación técnica](documentacion/01-Documentacion-Tecnica.md)
+- [Manual de usuario](documentacion/09-Manual-Usuario.md)
+- [Manual de administrador](documentacion/10-Manual-Administrador.md)
+- [Explicación del ERD](documentacion/11-Explicacion-ERD.md)
+- [Manual de desarrollador](documentacion/04-Manual-Desarrollador.md)
+- [Pruebas](documentacion/05-Pruebas.md)
+- [Despliegue](documentacion/06-Despliegue.md)
+- [Changelog](documentacion/07-Changelog.md)
+- [Android APK](documentacion/08-Android-APK.md)
 
----
+## Pendientes relevantes
 
-## 2026-03-25
-### Lo hecho
-- Rediseno de la app movil del consumidor (header fijo, contenido interno scrolleable y navegacion inferior).
-- Mejora de pantalla de Pedidos con filtros, acciones y vista de detalle in-page.
-- Integracion de ficha sanitaria tipada en frontend/productInfo.ts.
-- Rediseno de detalle de producto con prioridad de alergenos y nutricion progresiva.
-- Simplificacion de Perfil:
-  - eliminacion del acceso directo a historial desde ese bloque,
-  - boton de cerrar sesion redisenado,
-  - eliminacion de direccion no relevante,
-  - eliminacion del titulo redundante de datos del alumno.
-- Revision de Swagger para alinear autenticacion documentada con autenticacion real por cabeceras en entorno actual.
-
-### Decisiones tomadas
-- Mantener frontend principal en HTML/CSS/JS para iterar rapido sobre UX.
-- Priorizar claridad de informacion sanitaria sobre densidad visual.
-- Documentar seguridad API segun implementacion real actual (x-user-role) en lugar de JWT ficticio.
-
-### Bloqueos o riesgos
-- Parte del dataset sanitario existe en TypeScript separado y puede divergir del consumo runtime si no se unifica.
-- Aun no hay suite de tests automatizados end-to-end para cubrir los flujos criticos.
-
-### Proximo paso
-- Unificar origen de datos sanitarios para evitar duplicidad.
-- Añadir ejemplos detallados en Swagger (requests/responses de exito y error).
-- Definir checklist de cierre (QA funcional, seguridad basica, despliegue).
-
-## Registro futuro
-Anadir aqui las proximas fechas usando la plantilla.
+- Autenticación real de producción con Supabase Auth o JWT.
+- Webhooks Stripe y conciliación final de pagos reales.
+- Suite E2E completa con Playwright.
+- Validación física de impresión en AVP-TC300.
+- APK release firmada con keystore.

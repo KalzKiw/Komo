@@ -1,90 +1,81 @@
-# CafeteriaSolo - Documentación de la App
+# CafeteriaSolo / KOMO - Documentación de la App
 
 ## 1. Resumen
-CafeteriaSolo es una aplicación para gestión de pedidos anticipados en cafeterías escolares.
-Incluye:
-- **Backend API**: Node.js + Express + TypeScript (puerto 3001).
-- **Frontend Web Móvil**: React 19 + Vite 8 + Tailwind v4 (puerto 5173, incluida en build de producción).
+
+CafeteriaSolo, mostrado como **KOMO** en la interfaz, es una aplicación para gestionar pedidos anticipados en una cafetería escolar. Incluye:
+
+- **Backend API**: Node.js + Express + TypeScript.
+- **Frontend web móvil**: React 19 + Vite 8 + Tailwind CSS v4.
+- **Base de datos**: Supabase/PostgreSQL.
 - **Documentación OpenAPI**: Swagger UI en `/api-docs`.
-- **Pagos**: integración Stripe para recargas de monedero familiar y gestión de tarjetas.
-- **PWA**: instalable desde navegador con manifest, iconos y service worker.
-- **Android APK**: empaquetado con Capacitor/Ionic a partir de la build Vite.
-- **Tickets**: impresión de pedidos en AVP-TC300 y previsualización PDF de prueba.
+- **Pagos**: integración Stripe para tarjetas y recargas en modo test.
+- **PWA**: manifest, iconos instalables y service worker versionado.
+- **Android APK**: empaquetado con Capacitor a partir de la build Vite.
+- **Tickets**: impresión best-effort en AVP-TC300 y previsualización PDF de prueba.
 
 ## 2. Módulos principales
 
 ### Autenticación
-- Login por email (modo demo con headers mock).
-- Registro 3 pasos: email/contraseña → rol (STUDENT/PARENT) → alérgenos opcionales.
+
+- Login por email en modo demo.
+- Registro en 3 pasos: email/contraseña, rol y alérgenos opcionales.
+- Roles soportados: STUDENT, PARENT, ADMIN, STAFF y DELEGATE.
 
 ### App de alumno/familia
-- **Perfil**: datos persistentes (teléfono, tarjeta resumida).
-- **Productos**: catálogo dinámico con alérgenos.
-- **Personalizaciones**: detalles de producto con información sanitaria.
-- **Carrito**: creación de pedidos en turnos (MORNING/AFTERNOON/NIGHT).
-- **Pedidos**: historial, detalle, cancelación con devolución de saldo.
-- **Monedero**: saldo de alumno, movimientos de transacciones.
-- **Sistema familiar**: vinculación mediante códigos temporales, recarga confirmada de saldo de hijos y pago directo con tarjeta para pedidos concretos.
-- **Alérgenos**: edición completa con picker visual, aviso al confirmar pedidos.
+
+- **Productos**: catálogo activo con categorías, alérgenos y fichas técnicas.
+- **Detalle de producto**: información alimentaria, personalizaciones, extras y retirada de ingredientes.
+- **Carrito**: cálculo de total, validaciones y creación de pedidos.
+- **Pedidos**: historial, detalle, estados y cancelación cuando las reglas lo permiten.
+- **Monedero**: saldo del alumno y movimientos.
+- **Sistema familiar**: vinculación mediante códigos, consulta de hijos, recargas y pago directo con tarjeta guardada.
+- **Alérgenos**: edición en perfil y aviso al confirmar pedidos.
+- **UX móvil**: navegación por pestañas, botón atrás controlado, gestos horizontales y animaciones de deslizamiento.
 
 ### Panel de administración
-- **Estudiantes**: listado, asignación de delegados, gestión de beneficiarios.
-- **Productos**: CRUD con alérgenos, información sanitaria, imágenes.
-- **Pedidos**: listado con filtros simplificados, cambio de estado, vista KDS.
-- **KDS**: pantalla completa para tablet horizontal con extras, ingredientes retirados y notas de cocina.
-- **Familias**: relaciones padre-hijo, códigos de vinculación.
-- **Configuración**: horarios de corte, bypass para pruebas, preview PDF e impresión de ticket de prueba.
+
+- **Estudiantes**: listado, delegados y datos operativos.
+- **Productos**: alta, edición, activación/desactivación, alérgenos e información alimentaria.
+- **Pedidos**: filtros operativos y cambio de estado.
+- **KDS**: pantalla para cocina, pensada para tablet horizontal.
+- **Familias**: relaciones padre/madre-alumno.
+- **Configuración**: horarios de corte, bypass de pruebas, preview PDF e impresión de ticket de prueba.
 
 ## 3. Stack técnico
-- **Frontend**: React 19, Vite 8, Tailwind CSS v4, lucide-react, Context API.
-- **Android**: Capacitor 8 con proyecto nativo en `/android`.
-- **Backend**: Node.js, Express 4, TypeScript, Zod.
+
+- **Frontend**: React 19, Vite 8, Tailwind CSS v4, lucide-react y Context API.
+- **Backend**: Node.js, Express 4, TypeScript y Zod.
 - **Base de datos**: Supabase/PostgreSQL.
-- **Pagos**: Stripe API (SetupIntent para tarjetas, PaymentIntent para recargas).
-- **Autenticación mock**: headers `x-user-id`, `x-user-role`, `x-user-beneficiary`.
-- **Documentación API**: Swagger UI + swagger-jsdoc.
+- **Pagos**: Stripe API, SetupIntent y PaymentIntent.
+- **PWA**: manifest, iconos y service worker propio.
+- **Android**: Capacitor 8 con proyecto nativo en `/android`.
+- **Documentación API**: Swagger UI y swagger-jsdoc.
 - **Pruebas**: Vitest.
-- **Despliegue**: Vercel (frontend + API serverless) o Node autohospedado.
+- **Despliegue**: Vercel, Railway o Node autohospedado.
 
 ## 4. Estructura de carpetas
 
-```
-client/                    ← App React (Vite)
-  screens/                 ← Pantallas completas
-    LoginScreen.tsx        ← 3 accesos rápido (alumno/padre/admin)
-    HomeScreen.tsx         ← Catálogo + carrito
-    OrdersScreen.tsx       ← Historial y detalle de pedidos
-    WalletScreen.tsx       ← Monedero (alumno/padre con hijos)
-    AdminScreen.tsx        ← Panel admin (estudiantes, productos, KDS)
-    AllergenPickerScreen.tsx
-    ChildProfileScreen.tsx ← Perfil hijo (vista padre)
-    ProfileScreenWrapper.tsx ← Enrutamiento por rol
-  components/
-    family/                ← Gestión familiar (StudentFamilyLink, ParentFamilyManager)
-    CartModal.tsx, ProductDetail.tsx, StripeTopUpModal.tsx, etc.
-  context/                 ← AuthContext, CartContext, ToastContext
-  hooks/                   ← useApi (fetch automático con headers)
-  lib/                     ← utils (money, allergens, family, productInfo, sanitary)
+```text
+client/                    App React/Vite
+  screens/                 Pantallas completas
+  components/              Componentes reutilizables
+  context/                 AuthContext, CartContext, ToastContext
+  hooks/                   useApi
+  lib/                     utilidades y datos auxiliares
 
-src/                       ← Backend Express
-  routes/                  ← Rutas por dominio
-    auth.routes.ts, main-app.routes.ts, orders.routes.ts, 
-    family.routes.ts, payment.routes.ts, admin.routes.ts, health.routes.ts
-  controllers/             ← Handlers finos
-  services/                ← Lógica de negocio
-    main-app.service.ts, auth.service.ts, order.service.ts, 
-    family.service.ts, payment.service.ts, admin.service.ts, settings.service.ts,
-    ticket-printer.service.ts
-  middlewares/             ← auth, error, require-role, order-time-window
-  validators/              ← Schemas Zod
-  config/                  ← env, supabase, swagger
-  types/                   ← domain.ts, express.d.ts
+src/                       Backend Express
+  routes/                  Rutas por dominio
+  controllers/             Handlers HTTP
+  services/                Lógica de negocio
+  middlewares/             auth, error, roles y ventanas horarias
+  validators/              Schemas Zod
+  config/                  env, supabase, swagger y horarios
+  types/                   tipos compartidos de dominio
 
-db/
-  schema.sql               ← DDL completo
-  seed.sql                 ← Datos iniciales
-  migrations/              ← Incrementales por fecha (20260325..20260503)
-  erd.mmd                  ← Diagrama relacional
+api/                       Entrada serverless para Vercel
+android/                   Proyecto nativo Android Capacitor
+db/                        Esquema, seed, migraciones y ERD
+documentacion/             Manuales y documentación del proyecto
 ```
 
 ## 5. Configuración local
@@ -92,172 +83,170 @@ db/
 ```bash
 cp .env.example .env
 npm install
-npm run dev
 ```
 
-### Variables de entorno
-```
+Variables principales:
+
+```text
 PORT=3001
 NODE_ENV=development
 SUPABASE_URL=https://...
 SUPABASE_SERVICE_ROLE_KEY=...
-SUPABASE_ANON_KEY=...         (opcional)
-STRIPE_SECRET_KEY=...         (opcional, para pagos)
-VITE_STRIPE_PUBLISHABLE_KEY=...(opcional, para pagos)
-BYPASS_ORDER_CUTOFF=true      (salta límites horarios en dev)
+SUPABASE_ANON_KEY=...
+STRIPE_SECRET_KEY=...
+VITE_STRIPE_PUBLISHABLE_KEY=...
+VITE_API_BASE_URL=...
+BYPASS_ORDER_CUTOFF=true
 ```
 
-## 6. Ejecución y build
+No se deben versionar `.env` ni `.env.android`.
+
+## 6. Ejecución, build y APK
+
+Desarrollo local:
 
 ```bash
-npm run dev              # Backend + Frontend paralelo (3001 + 5173)
-npm run dev:client       # Solo frontend (5173)
-npm run build:client     # Build frontend (Vite → client-dist/)
-npm run build            # Build backend (tsc)
-npm run start            # Producción: backend en puerto 3001
+npm run dev
+npm run dev:client
 ```
+
+`npm run dev` arranca el backend en `http://localhost:3001`. `npm run dev:client` arranca Vite en `http://localhost:5173`.
+
+Build y pruebas:
+
+```bash
+npm run build:client
+npm run build
+npm test
+```
+
+Producción Node:
+
+```bash
+npm start
+```
+
+APK Android:
+
+```bash
+npm run android:apk:debug
+```
+
+La APK queda en `android/app/build/outputs/apk/debug/app-debug.apk`. Para móvil real debe existir `.env.android` con `VITE_API_BASE_URL` apuntando a una API remota.
 
 ## 7. Endpoints principales
 
 ### Autenticación
-- `POST /api/auth/login` — login demo por email.
-- `POST /api/auth/register` — registro 3 pasos.
+
+- `POST /api/auth/login`: login demo por email.
+- `POST /api/auth/register`: registro de alumno o familiar.
 
 ### Perfil y alérgenos
-- `GET /api/me` — datos del usuario autenticado.
-- `PATCH /api/me` — actualizar teléfono, tarjeta resumida, etc.
-- `GET /api/me/allergies` — alérgenos del usuario.
-- `PUT /api/me/allergies` — actualizar alérgenos.
-- `GET /api/allergens` — listado de alérgenos del catálogo.
+
+- `GET /api/me`: datos del usuario autenticado.
+- `PATCH /api/me`: actualizar teléfono, tarjeta resumida y datos persistentes.
+- `GET /api/me/allergies`: alérgenos del usuario.
+- `PUT /api/me/allergies`: actualizar alérgenos.
+- `GET /api/allergens`: listado de alérgenos.
 
 ### Monedero
-- `GET /api/me/wallet-movements` — movimientos del monedero.
-- `POST /api/me/wallet/topup` — recarga directa del monedero propio.
+
+- `GET /api/me/wallet-movements`: movimientos del monedero.
+- `POST /api/me/wallet/topup`: recarga directa del monedero propio.
 
 ### Productos
-- `GET /api/products` — catálogo activo con filtros.
+
+- `GET /api/products`: catálogo activo con filtros.
 
 ### Pedidos
-- `POST /api/orders` — crear pedido. Puede usar monedero o tarjeta guardada (`paymentMethod`).
-- `GET /api/orders` — listado para admin (con filtros).
-- `GET /api/orders/:orderId` — detalle de pedido.
-- `PATCH /api/orders/:orderId/status` — cambiar estado (admin).
-- `PATCH /api/orders/:orderId/cancel` — cancelar pedido.
-- `GET /api/me/orders` — mis pedidos.
+
+- `POST /api/orders`: crear pedido con monedero o tarjeta guardada.
+- `GET /api/me/orders`: pedidos del usuario.
+- `GET /api/orders`: listado operativo para administración.
+- `GET /api/orders/:orderId`: detalle de pedido.
+- `PATCH /api/orders/:orderId/status`: cambiar estado.
+- `PATCH /api/orders/:orderId/cancel`: cancelar pedido.
 
 ### Sistema familiar
-- `GET /api/family/children` — hijos vinculados.
-- `POST /api/family/token` — generar código de vinculación.
-- `POST /api/family/link` — canjear código de vinculación.
-- `DELETE /api/family/links/:linkId` — desvinculación.
-- `GET /api/family/children/:studentId/orders` — pedidos del hijo.
-- `GET /api/family/children/:studentId/profile` — perfil completo del hijo.
-- `POST /api/family/topup` — recarga de saldo del hijo (transferencia directa).
+
+- `GET /api/family/children`: hijos vinculados.
+- `POST /api/family/token`: generar código de vinculación.
+- `POST /api/family/link`: canjear código.
+- `DELETE /api/family/links/:linkId`: desvincular.
+- `GET /api/family/children/:studentId/orders`: pedidos del hijo.
+- `GET /api/family/children/:studentId/profile`: perfil completo del hijo.
+- `POST /api/family/topup`: recarga directa de saldo.
 
 ### Pagos con Stripe
-- `GET /api/payments/config` — obtener clave pública de Stripe.
-- `POST /api/payments/profile/card-setup-intent` — crear SetupIntent para guardar tarjeta.
-- `GET /api/payments/profile/cards` — listar tarjetas guardadas.
-- `POST /api/payments/profile/card-setup-confirm` — confirmar tarjeta guardada.
-- `DELETE /api/payments/profile/cards/:paymentMethodId` — eliminar tarjeta.
-- `POST /api/payments/family/topup-intent` — crear PaymentIntent para recarga.
-- `POST /api/payments/family/topup-confirm` — confirmar recarga (webhook).
-- `POST /api/payments/family/topup-saved-card` — recarga con tarjeta guardada.
 
-### Admin
-- `GET /api/admin/students` — listado de alumnos.
-- `PATCH /api/admin/students/:studentId/delegate` — asignar delegado.
-- `GET /api/admin/kds` — cola de cocina (KDS).
-- `GET /api/admin/products` — gestión de productos.
-- `POST /api/admin/products` — crear producto.
-- `PATCH /api/admin/products/:productId` — actualizar producto.
-- `GET /api/admin/print-test-ticket/preview` — ver ticket de prueba en PDF.
-- `POST /api/admin/print-test-ticket` — imprimir ticket de prueba.
+- `GET /api/payments/config`: configuración pública de Stripe.
+- `POST /api/payments/profile/card-setup-intent`: crear SetupIntent.
+- `GET /api/payments/profile/cards`: listar tarjetas.
+- `POST /api/payments/profile/card-setup-confirm`: confirmar tarjeta.
+- `DELETE /api/payments/profile/cards/:paymentMethodId`: eliminar tarjeta.
+- `POST /api/payments/family/topup-intent`: crear PaymentIntent.
+- `POST /api/payments/family/topup-confirm`: confirmar recarga.
+- `POST /api/payments/family/topup-saved-card`: recarga con tarjeta guardada.
+
+### Administración
+
+- `GET /api/admin/students`: listado de alumnos.
+- `PATCH /api/admin/students/:studentId/delegate`: asignar delegado.
+- `GET /api/admin/kds`: cola de cocina.
+- `GET /api/admin/products`: gestión de productos.
+- `POST /api/admin/products`: crear producto.
+- `PATCH /api/admin/products/:productId`: actualizar producto.
+- `GET /api/admin/print-test-ticket/preview`: ticket de prueba en PDF.
+- `POST /api/admin/print-test-ticket`: imprimir ticket de prueba.
 
 ### Utilidades
-- `GET /api/health` — estado del servidor.
-- `GET /api-docs` — Swagger UI.
+
+- `GET /api/health`: estado del servidor.
+- `GET /api-docs`: Swagger UI.
 
 ## 8. Swagger / OpenAPI
 
 - **URL local**: http://localhost:3001/api-docs
-- **Autenticación mock**: la API usa headers `x-user-id` y `x-user-role`.
-- **Roles permitidos**: ADMIN, STAFF, STUDENT, DELEGATE, PARENT.
-- **Pruebas en Swagger**: incluir headers en el formulario de autenticación.
+- **Autenticación demo**: headers `x-user-id`, `x-user-role` y `x-user-beneficiary`.
+- **Roles permitidos**: ADMIN, STAFF, STUDENT, DELEGATE y PARENT.
 
 ## 9. Pantallas frontend
 
 | Pantalla | Archivo | Notas |
-|---|---|---|
-| Login | `LoginScreen.tsx` | 3 accesos rápido |
-| Home/Catálogo | `HomeScreen.tsx` | carrito flotante |
-| Pedidos | `OrdersScreen.tsx` | historial + detalle |
-| Monedero | `WalletScreen.tsx` | alumno/padre con hijos |
-| Perfil | `ProfileScreenWrapper.tsx` | subvistas (familia, alérgenos) |
-| Picker alérgenos | `AllergenPickerScreen.tsx` | solo STUDENT |
-| Perfil hijo | `ChildProfileScreen.tsx` | solo PARENT |
-| Admin | `AdminScreen.tsx` | productos, pedidos, KDS |
+| --- | --- | --- |
+| Login | `LoginScreen.tsx` / `LoginModern.tsx` | Accesos demo y formulario |
+| Home/Catálogo | `HomeScreen.tsx` | Productos activos, categorías y detalle |
+| Pedidos | `OrdersScreen.tsx` | Historial, detalle y cancelación |
+| Monedero | `WalletScreen.tsx` | Alumno y familiar con hijos |
+| Perfil | `ProfileScreenWrapper.tsx` | Perfil por rol |
+| Picker alérgenos | `AllergenPickerScreen.tsx` | Gestión de alérgenos |
+| Perfil hijo | `ChildProfileScreen.tsx` | Vista familiar |
+| Admin | `AdminScreen.tsx` | Productos, pedidos, KDS y ajustes |
 
-## 10. Autenticación de desarrollo
+## 10. Usuarios demo
 
+```text
+Alumno:  student1@cafes.app    STUDENT
+Padre:   parent1@cafes.app     PARENT
+Admin:   admin1@cafes.app      ADMIN
 ```
-Alumno:  student1@cafes.app    (STUDENT, color sky)
-Padre:   parent1@cafes.app     (PARENT, color violet, Carmen García)
-Admin:   admin1@cafes.app      (ADMIN, color amber)
-```
 
-Con `BYPASS_ORDER_CUTOFF=true` en `.env`, se saltan los límites horarios.
-- x-user-id: opcional (si falta, se usa un UUID por defecto).
-- x-user-beneficiary: opcional (true/false).
+Con `BYPASS_ORDER_CUTOFF=true` en `.env`, se saltan los límites horarios durante pruebas.
 
-## 8. Endpoints principales
-Auth:
-- POST /api/auth/login
+## 11. Estado actual
 
-Health:
-- GET /api/health
+- Web desplegada y funcional.
+- PWA instalable con service worker versionado.
+- APK Android debug generada como **KOMOAPK**.
+- Catálogo real de cafetería cargado.
+- Productos desactivados ocultos en compra.
+- Gestos móviles y animaciones aplicados.
+- Tests Vitest: 3 ficheros y 11 pruebas superadas.
 
-Main app:
-- GET /api/me
-- GET /api/products
-- GET /api/me/orders
-- GET /api/me/allergies
+## 12. Pendientes recomendados
 
-Orders:
-- POST /api/orders
-- GET /api/orders
-- GET /api/orders/{orderId}
-- DELETE /api/orders/{orderId}
-
-Admin:
-- GET /api/admin/students
-- PATCH /api/admin/students/{studentId}/delegate
-- GET /api/admin/kds
-- GET /api/admin/products
-- POST /api/admin/products
-- PATCH /api/admin/products/{productId}
-
-## 9. Flujo funcional resumido
-1. Usuario inicia sesion.
-2. Consulta perfil y catalogo.
-3. Personaliza producto y agrega al carrito.
-4. Crea pedido anticipado.
-5. Consulta estado del pedido y puede cancelarlo segun reglas.
-6. Admin monitoriza productos, estudiantes y cola KDS.
-
-## 10. Estado actual de UI frontend
-- Shell movil edge-to-edge.
-- Header fijo con contenido scrolleable.
-- Pantalla de Pedidos con filtros y detalle.
-- Perfil simplificado para alumno.
-- Modal de producto con enfoque de divulgacion progresiva:
-  - alerta de alergenos,
-  - resumen nutricional,
-  - tabla nutricional completa bajo demanda,
-  - ingredientes y conservacion.
-
-## 11. Pendientes recomendados
-- Unificar completamente frontend/productInfo.ts con el consumo runtime en frontend/app.js.
-- Añadir tests de integracion de API.
-- Mejorar ejemplos de request/response en Swagger para todos los endpoints.
-- Definir estrategia real de autenticacion (JWT o sesion).
+- Sustituir autenticación demo por Supabase Auth o JWT.
+- Añadir suite E2E con Playwright.
+- Validar físicamente la impresora AVP-TC300.
+- Completar estrategia offline avanzada para catálogo y KDS.
+- Preparar APK release firmada.

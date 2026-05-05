@@ -2,11 +2,12 @@
 
 ## Arquitectura General
 
-CafeteriaSolo es una aplicación web para la gestión de pedidos anticipados en una cafetería escolar. La solución está organizada en tres capas principales:
+CafeteriaSolo / KOMO es una aplicación web, PWA y APK Android para la gestión de pedidos anticipados en una cafetería escolar. La solución está organizada en capas principales:
 
 - **Frontend**: aplicación React en `/client`, construida con Vite y Tailwind CSS.
 - **Backend**: API Node.js/Express en `/src`, escrita en TypeScript.
 - **Persistencia**: base de datos PostgreSQL gestionada mediante Supabase, con scripts SQL en `/db`.
+- **Empaquetado móvil**: proyecto Android Capacitor en `/android`.
 
 La aplicación puede ejecutarse como un servicio Node único que sirve tanto la API como la build del frontend, o como despliegue en Vercel mediante una función serverless que redirige las rutas `/api/*` al backend Express.
 
@@ -15,19 +16,21 @@ La aplicación puede ejecutarse como un servicio Node único que sirve tanto la 
 - `/client`: frontend principal en React.
 - `/src`: backend Express, rutas, controladores, servicios, validadores y configuración.
 - `/api`: entrada serverless para Vercel.
+- `/android`: proyecto nativo Android generado con Capacitor.
 - `/db`: esquema, migraciones, seed y diagrama ERD.
 - `/documentacion`: documentación del proyecto.
-- `/frontend`: versión legacy o experimental conservada como referencia.
 
 ## Tecnologías Usadas
 
-- **Frontend**: React, Vite, Tailwind CSS, lucide-react.
+- **Frontend**: React 19, Vite 8, Tailwind CSS v4, lucide-react.
 - **Backend**: Node.js, Express, TypeScript, Zod.
 - **Base de datos**: Supabase/PostgreSQL.
+- **Pagos**: Stripe API (SetupIntent y PaymentIntent).
 - **PWA**: manifest, iconos instalables y service worker propio.
+- **Android**: Capacitor 8, Gradle y JDK 21.
 - **Documentación API**: Swagger UI y swagger-jsdoc.
 - **Pruebas**: Vitest.
-- **Despliegue**: Vercel para frontend/API serverless y opción Node con `npm start`.
+- **Despliegue**: Vercel, Railway y opción Node con `npm start`.
 
 ## API Endpoints Principales
 
@@ -66,7 +69,7 @@ La aplicación puede ejecutarse como un servicio Node único que sirve tanto la 
 - `GET /api/family/children/:studentId/profile`: perfil completo del hijo.
 - `POST /api/family/topup`: recarga de saldo del hijo (transferencia directa).
 
-### Pagos con Stripe (integración en progreso)
+### Pagos con Stripe
 - `GET /api/payments/config`: obtener configuración de Stripe (clave pública).
 - `POST /api/payments/profile/card-setup-intent`: crear SetupIntent para guardar tarjeta.
 - `GET /api/payments/profile/cards`: listar tarjetas guardadas del usuario.
@@ -112,7 +115,7 @@ El modelo se basa en las siguientes entidades:
 - `linking_tokens`: códigos temporales de vinculación familiar.
 - `wallet_transactions`: movimientos de recarga del monedero (id, user_id, amount, concept, created_at).
 - `settings`: configuración global (horarios de corte MORNING 09:00, AFTERNOON 15:00, NIGHT 18:00).
-- `stripe_payment_methods`: tarjetas guardadas de usuarios (integración con Stripe).
+- Campos Stripe en `users`: `stripe_customer_id`, `stripe_payment_method_id` y `payment_card_last4`.
 
 El diagrama se mantiene en `db/erd.mmd`.
 
@@ -137,4 +140,40 @@ El diagrama se mantiene en `db/erd.mmd`.
 
 ## PWA
 
-La app incluye manifest en `client/public/manifest.json`, iconos `icon-192.png` y `icon-512.png` con fondo blanco para asegurar legibilidad, y service worker en `client/public/sw.js`. En producción, `client/main.tsx` registra el service worker para permitir instalación desde navegador móvil/desktop.
+La app incluye manifest en `client/public/manifest.json`, iconos `icon-192.png` y `icon-512.png` con fondo blanco para asegurar legibilidad, y service worker en `client/public/sw.js`. En producción, `client/main.tsx` registra el service worker para permitir instalación desde navegador móvil/desktop. El service worker se versiona para evitar cachés obsoletas después de cada entrega.
+
+## APK Android
+
+La aplicación se empaqueta con Capacitor a partir de la build Vite en modo Android. La APK debug se genera con:
+
+```bash
+npm run android:apk:debug
+```
+
+El archivo resultante queda en:
+
+```text
+android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+La build Android usa `.env.android` para definir `VITE_API_BASE_URL`, ya que un dispositivo móvil no puede usar el proxy local `/api` de Vite ni `localhost` del PC. La APK de pruebas está configurada como **KOMOAPK**, con icono propio, pantalla completa y navegación móvil adaptada.
+
+## Experiencia móvil
+
+El frontend incorpora una capa de navegación pensada para móvil:
+
+- Historial interno para que el botón atrás cierre detalle, carrito o vuelva a la pestaña anterior antes de cerrar la app.
+- Gestos horizontales para cambiar entre catálogo, monedero, pedidos y perfil.
+- Bloqueo de gestos sobre formularios y diálogos para no romper interacciones.
+- Animaciones de deslizamiento entre pestañas y detalle de producto.
+- Filtro de productos activos para que el alumnado no vea artículos desactivados.
+
+## Pruebas
+
+La validación automatizada actual se ejecuta con:
+
+```bash
+npm test
+```
+
+Resultado documentado: 3 ficheros de test y 11 pruebas superadas.

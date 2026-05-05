@@ -11,9 +11,8 @@ import { apiRouter } from "./routes";
 
 export const app = express();
 
-// Serve the Vite React build (client-dist/) — falls back to legacy frontend/
+// Serve the Vite React build (client-dist/).
 const clientDistDir = path.resolve(process.cwd(), "client-dist");
-const legacyFrontendDir = path.resolve(process.cwd(), "frontend");
 
 app.use(cors());
 app.use(express.json());
@@ -23,8 +22,6 @@ app.use("/api", apiRouter);
 
 // React SPA — static assets
 app.use("/", express.static(clientDistDir));
-// Legacy vanilla app assets (CSS, JS modules, images)
-app.use("/legacy", express.static(legacyFrontendDir));
 
 // SPA fallback — any non-API, non-asset route returns index.html
 app.get("*splat", (_req, res) => {

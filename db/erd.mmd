@@ -2,12 +2,14 @@ erDiagram
     COURSES ||--o{ USERS : has
     USERS ||--o{ FAMILY_LINKS : parent
     USERS ||--o{ FAMILY_LINKS : student
+    USERS ||--o{ LINKING_TOKENS : creates
+    USERS ||--o{ WALLET_TRANSACTIONS : owns
     USERS ||--o{ USER_ALLERGIES : declares
     ALLERGENS ||--o{ USER_ALLERGIES : belongs_to
     PRODUCTS ||--o{ PRODUCT_ALLERGENS : contains
     ALLERGENS ||--o{ PRODUCT_ALLERGENS : labels
-    USERS ||--o{ ORDERS : places
-    USERS ||--o{ ORDERS : places_for
+    USERS ||--o{ ORDERS : beneficiary
+    USERS ||--o{ ORDERS : placed_by
     ORDERS ||--o{ ORDER_ITEMS : includes
     PRODUCTS ||--o{ ORDER_ITEMS : references
 
@@ -26,6 +28,10 @@ erDiagram
         uuid course_id FK
         boolean is_beneficiary
         numeric wallet_balance
+        text phone
+        text payment_card_last4
+        text stripe_customer_id
+        text stripe_payment_method_id
         timestamptz created_at
         timestamptz updated_at
     }
@@ -35,6 +41,24 @@ erDiagram
         uuid parent_user_id FK
         uuid student_user_id FK
         family_relation relation
+        text status
+        timestamptz created_at
+    }
+
+    LINKING_TOKENS {
+        uuid id PK
+        text token_code UK
+        uuid parent_id FK
+        boolean used
+        timestamptz expires_at
+        timestamptz created_at
+    }
+
+    WALLET_TRANSACTIONS {
+        uuid id PK
+        uuid user_id FK
+        numeric amount
+        text concept
         timestamptz created_at
     }
 
@@ -42,8 +66,9 @@ erDiagram
         uuid id PK
         text name
         text description
+        text image_url
+        jsonb product_info
         numeric price
-        boolean is_official_menu
         boolean is_active
         timestamptz created_at
         timestamptz updated_at
@@ -88,5 +113,13 @@ erDiagram
         int quantity
         numeric unit_price
         numeric line_total
+        jsonb customization_json
+        text kitchen_note
         timestamptz created_at
+    }
+
+    SETTINGS {
+        text key PK
+        text value
+        timestamptz updated_at
     }

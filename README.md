@@ -4,8 +4,13 @@ Aplicación web para gestión de pedidos anticipados en cafeterías escolares. I
 
 **Documentación ampliada:**
 - **Guía funcional y técnica**: [README_APP.md](README_APP.md)
-- **Memoria del proyecto**: [README_MEMORIA_PROYECTO.md](README_MEMORIA_PROYECTO.md)
+- **Memoria académica del proyecto**: [Memoria.md](Memoria.md)
+- **Resumen de memoria y seguimiento**: [README_MEMORIA_PROYECTO.md](README_MEMORIA_PROYECTO.md)
 - **Documentación técnica**: [documentacion/01-Documentacion-Tecnica.md](documentacion/01-Documentacion-Tecnica.md)
+- **Manual de usuario**: [documentacion/09-Manual-Usuario.md](documentacion/09-Manual-Usuario.md)
+- **Manual de administrador**: [documentacion/10-Manual-Administrador.md](documentacion/10-Manual-Administrador.md)
+- **Explicación del ERD**: [documentacion/11-Explicacion-ERD.md](documentacion/11-Explicacion-ERD.md)
+- **Pruebas**: [documentacion/05-Pruebas.md](documentacion/05-Pruebas.md)
 - **Empaquetado Android APK**: [documentacion/08-Android-APK.md](documentacion/08-Android-APK.md)
 - **Changelog completo**: [documentacion/07-Changelog.md](documentacion/07-Changelog.md)
 
@@ -16,7 +21,7 @@ Aplicación web para gestión de pedidos anticipados en cafeterías escolares. I
 - **Base de datos**: Supabase/PostgreSQL
 - **Pagos**: Stripe API (SetupIntent + PaymentIntent)
 - **PWA**: manifest, iconos instalables y service worker
-- **Android**: Capacitor/Ionic wrapper para generar APK
+- **Android**: Capacitor 8 para generar APK a partir de la build Vite
 - **Tickets**: impresión AVP-TC300 y preview PDF de prueba
 - **Documentación API**: Swagger UI + swagger-jsdoc
 
@@ -62,12 +67,11 @@ npm install
 ### Desarrollo
 
 ```bash
-# Inicia backend (3001) + frontend (5173) en paralelo
+# Terminal 1: backend (3001)
 npm run dev
 
-# O por separado:
-npm run dev:client     # Solo frontend (5173)
-npm run dev:backend    # Solo backend (3001)
+# Terminal 2: frontend (5173)
+npm run dev:client
 ```
 
 **Acceso:**
@@ -88,7 +92,7 @@ npm run start       # Inicia server en puerto 3001 (sirve frontend compilado)
 npm run android:apk:debug
 ```
 
-El APK debug se genera en `android/app/build/outputs/apk/debug/app-debug.apk`. Antes de usarlo en móvil real, configura `VITE_API_BASE_URL` en `.env.android` con una API accesible desde el dispositivo.
+El APK debug se genera en `android/app/build/outputs/apk/debug/app-debug.apk`. Antes de usarlo en móvil real, configura `VITE_API_BASE_URL` en `.env.android` con una API accesible desde el dispositivo. La APK de pruebas está configurada con nombre visible **KOMOAPK**, icono de la app, pantalla completa y navegación móvil con botón atrás/gestos.
 
 ### Variables de entorno
 
@@ -100,6 +104,7 @@ SUPABASE_SERVICE_ROLE_KEY=...
 SUPABASE_ANON_KEY=...
 STRIPE_SECRET_KEY=...              (opcional, para pagos)
 VITE_STRIPE_PUBLISHABLE_KEY=...    (opcional, para pagos)
+VITE_API_BASE_URL=...              (necesario para APK o frontend/API separados)
 BYPASS_ORDER_CUTOFF=true           (salta límites horarios en dev)
 ```
 
@@ -140,6 +145,14 @@ Las migraciones se aplican automáticamente al crear la base de datos. Si necesi
 ## API completa
 
 Consulta [documentacion/01-Documentacion-Tecnica.md](documentacion/01-Documentacion-Tecnica.md) para la lista completa de endpoints (autenticación, perfil, alérgenos, productos, pedidos, sistema familiar, pagos Stripe, tickets, PWA y admin).
+
+## Pruebas
+
+```bash
+npm test
+```
+
+Estado documentado: 3 ficheros de test y 11 pruebas superadas. Consulta [documentacion/05-Pruebas.md](documentacion/05-Pruebas.md).
 
 ## Despliegue
 
