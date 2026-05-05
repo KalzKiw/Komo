@@ -207,6 +207,7 @@ export default function CartModal({ onClose, onOrderPlaced, onShowOrderSummary }
         acknowledgedAllergenWarning,
       };
       const res = await apiFetch("/api/orders", { method: "POST", body: JSON.stringify(payload) });
+      void res;
       const summary = {
         items: cart.map((line) => ({
           name: line.name,
@@ -221,13 +222,13 @@ export default function CartModal({ onClose, onOrderPlaced, onShowOrderSummary }
           : "✓ Pedido creado correctamente",
       };
       clear();
-      setLastOrder(summary);
       setFeedback(summary.feedback);
-      setShowSummary(true);
       window.dispatchEvent(new Event("walletBalanceChanged"));
-      console.log("RESUMEN (success)", summary);
       if (typeof onShowOrderSummary === "function") {
         onShowOrderSummary(summary);
+      } else {
+        setLastOrder(summary);
+        setShowSummary(true);
       }
       onOrderPlaced?.();
     } catch (err) {
@@ -237,11 +238,11 @@ export default function CartModal({ onClose, onOrderPlaced, onShowOrderSummary }
         feedback: err instanceof Error ? err.message : "No se pudo procesar el pedido",
       };
       setFeedback(summary.feedback);
-      setLastOrder(summary);
-      setShowSummary(true);
-      console.log("RESUMEN (error)", summary);
       if (typeof onShowOrderSummary === "function") {
         onShowOrderSummary(summary);
+      } else {
+        setLastOrder(summary);
+        setShowSummary(true);
       }
     } finally {
       setConfirmedWarning(false);

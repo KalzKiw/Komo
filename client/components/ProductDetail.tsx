@@ -84,7 +84,22 @@ export function defaultModifierGroups(product: ProductDetailProduct): ModifierGr
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 
-  if (text.includes("bocadillo") || text.includes("sandwich")) {
+  const isSandwichLike =
+    text.includes("bocadillo") ||
+    text.includes("sandwich") ||
+    text.includes("pulguita");
+  const isHotDrink =
+    text.includes("cafe") ||
+    text.includes("cacao") ||
+    text.includes("infusion");
+  const isColdDrink =
+    text.includes("zumo") ||
+    text.includes("agua") ||
+    text.includes("refresco") ||
+    text.includes("bebida");
+  const canHeat = text.includes("croissant") || text.includes("bizcocho");
+
+  if (isSandwichLike) {
     return [
       {
         id: "exclusions",
@@ -121,7 +136,7 @@ export function defaultModifierGroups(product: ProductDetailProduct): ModifierGr
     ];
   }
 
-  if (text.includes("zumo") || text.includes("cafe") || text.includes("bebida")) {
+  if (isHotDrink || isColdDrink) {
     return [
       {
         id: "extras-bebida",
@@ -133,7 +148,7 @@ export function defaultModifierGroups(product: ProductDetailProduct): ModifierGr
           { id: "con-hielo", label: "Con hielo" },
         ],
       },
-      ...(text.includes("cafe") || text.includes("cacao") || text.includes("infusion")
+      ...(isHotDrink
         ? [
             {
               id: "suplementos-bebida",
@@ -147,18 +162,19 @@ export function defaultModifierGroups(product: ProductDetailProduct): ModifierGr
     ];
   }
 
-  return [
-    {
-      id: "extras-general",
-      title: "Personalizar",
-      subtitle: "Opcional",
-      type: "extra",
-      options: [
-        { id: "extra-salsa", label: "Salsa", priceAdd: 0.2 },
-        { id: "calentar", label: "Calentar", priceAdd: 0 },
-      ],
-    },
-  ];
+  if (canHeat) {
+    return [
+      {
+        id: "preparacion",
+        title: "Preparación",
+        subtitle: "Opcional",
+        type: "exclusion",
+        options: [{ id: "calentar", label: "Calentar" }],
+      },
+    ];
+  }
+
+  return [];
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

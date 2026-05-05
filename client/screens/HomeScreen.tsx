@@ -99,7 +99,13 @@ export default function HomeScreen() {
   useEffect(() => {
     setLoading(true);
     apiFetch<ApiProductsResponse>("/api/products")
-      .then((res) => setProducts(res.data.filter((product) => product.isActive !== false)))
+      .then((res) =>
+        setProducts(
+          res.data.filter((product) =>
+            product.isActive !== false && product.productInfo?.categoria !== "extra"
+          )
+        )
+      )
       .catch((err: unknown) =>
         setError(err instanceof Error ? err.message : "Error al cargar productos")
       )
@@ -173,7 +179,7 @@ export default function HomeScreen() {
 
   function handleAdd(payload: AddToCartPayload, product: ApiProduct) {
     const options = [
-      ...payload.exclusions.map((x) => `Sin ${x}`),
+      ...payload.exclusions,
       ...payload.extras.map((x) => `+ ${x.label}`),
       ...Object.values(payload.requiredChoices),
     ];

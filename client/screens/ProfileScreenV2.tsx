@@ -539,7 +539,7 @@ export default function ProfileScreenV2() {
                   </div>
                 )
               ) : (
-                <StudentFamilyLink readonly />
+                <StudentFamilyLink />
               )}
             </div>
           </div>
