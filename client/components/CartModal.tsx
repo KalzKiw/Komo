@@ -56,6 +56,22 @@ function productInfoAllergens(product?: ApiProduct): Array<{ name: string; code?
     .map((name) => ({ name, code: name }));
 }
 
+function isAllergenConflictMessage(message: string): boolean {
+  return normalizedText(message).includes("contiene alergenos");
+}
+
+function warningFromBackendMessage(message: string): AllergenWarning {
+  const [, productNamesText] = message.split(/:\s*/, 2);
+  const productNames = productNamesText?.trim() ? [productNamesText.trim()] : ["Producto del pedido"];
+
+  return {
+    allergenId: "backend-allergen-warning",
+    allergenName: "Alérgenos configurados",
+    allergenCode: "alergenos-configurados",
+    productNames,
+  };
+}
+
 export default function CartModal({ onClose, onOrderPlaced, onShowOrderSummary }: Props) {
   const { cart, updateQty, total, clear } = useCart();
   const { state } = useAuth();
@@ -114,6 +130,10 @@ export default function CartModal({ onClose, onOrderPlaced, onShowOrderSummary }
       .then((allergiesRes) => setUserAllergens(allergiesRes.data ?? []))
       .catch(() => setUserAllergens([]));
   }, [apiFetch, isParent, selectedStudentId]);
+
+  useEffect(() => {
+    setConfirmedWarning(false);
+  }, [cart, selectedStudentId, userAllergens]);
 
   function detectAllergenWarnings(): AllergenWarning[] {
     if (userAllergens.length === 0) return [];
@@ -191,7 +211,6 @@ export default function CartModal({ onClose, onOrderPlaced, onShowOrderSummary }
     if (cart.length === 0) return;
     setFeedback("");
     setLoading(true);
-    setShowAllergenWarning(false);
     try {
       const payload = {
         ...(isParent ? { studentId: selectedStudentId } : {}),
@@ -223,6 +242,8 @@ export default function CartModal({ onClose, onOrderPlaced, onShowOrderSummary }
       };
       clear();
       setFeedback(summary.feedback);
+      setShowAllergenWarning(false);
+      setConfirmedWarning(false);
       window.dispatchEvent(new Event("walletBalanceChanged"));
       if (typeof onShowOrderSummary === "function") {
         onShowOrderSummary(summary);
@@ -232,12 +253,36 @@ export default function CartModal({ onClose, onOrderPlaced, onShowOrderSummary }
       }
       onOrderPlaced?.();
     } catch (err) {
+      const message = err instanceof Error ? err.message : "No se pudo procesar el pedido";
+
+      if (!acknowledgedAllergenWarning && isAllergenConflictMessage(message)) {
+        const warnings = detectAllergenWarnings();
+        setAllergenWarnings(warnings.length > 0 ? warnings : [warningFromBackendMessage(message)]);
+        setShowAllergenWarning(true);
+        setConfirmedWarning(false);
+        return;
+      }
+
       const summary = {
-        items: [],
-        total: 0,
-        feedback: err instanceof Error ? err.message : "No se pudo procesar el pedido",
+        items: cart.map((line) => ({
+          name: line.name,
+          quantity: line.qty,
+          unitPrice: line.price,
+          customizations: line.options,
+          kitchenNote: line.note,
+        })),
+        total,
+        feedback: message,
       };
       setFeedback(summary.feedback);
+      // If error occurred after confirming allergens, keep the confirmation state
+      // so user can retry without waiting again. Otherwise, reset and close modal.
+      if (!acknowledgedAllergenWarning) {
+        setShowAllergenWarning(false);
+        setConfirmedWarning(false);
+      }
+      // If acknowledgedAllergenWarning was true, we keep it true and modal closed
+      // so user can retry immediately by clicking confirm button again
       if (typeof onShowOrderSummary === "function") {
         onShowOrderSummary(summary);
       } else {
@@ -245,7 +290,6 @@ export default function CartModal({ onClose, onOrderPlaced, onShowOrderSummary }
         setShowSummary(true);
       }
     } finally {
-      setConfirmedWarning(false);
       setLoading(false);
     }
   }

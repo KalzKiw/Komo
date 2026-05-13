@@ -15,7 +15,7 @@ export const createOrderSchema = z.object({
     )
     .min(1),
   paymentMethod: z.enum(["WALLET", "CARD"]).optional().default("WALLET"),
-  acknowledgedAllergenWarning: z.boolean().optional().default(false)
+  acknowledgedAllergenWarning: z.coerce.boolean().optional().default(false)
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;

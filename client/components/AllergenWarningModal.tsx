@@ -51,7 +51,7 @@ export default function AllergenWarningModal({
   const canContinue = secondsLeft === 0 && !isLoading;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 py-6">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 py-6">
       <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl overflow-hidden max-h-[85svh] flex flex-col">
         {/* Header */}
         <div className="flex items-center gap-3 bg-amber-50 px-5 py-5 shrink-0">
