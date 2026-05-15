@@ -1422,7 +1422,7 @@ function SettingsTab({
           <div className="min-w-0 flex-1">
             <h3 className="font-bold text-slate-900">Depuración de impresora</h3>
             <p className="mt-1 text-xs leading-5 text-slate-400">
-              Envía un ticket de prueba a la AVP-TC300 configurada en 192.168.30.10:80.
+              Envía un ticket de prueba a la AVP-TC300 configurada en 192.168.30.10:9100.
             </p>
           </div>
         </div>

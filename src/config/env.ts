@@ -11,7 +11,9 @@ const envSchema = z.object({
   SUPABASE_ANON_KEY: z.string().min(1).optional(),
   STRIPE_SECRET_KEY: z.string().min(1).optional(),
   VITE_STRIPE_PUBLISHABLE_KEY: z.string().min(1).optional(),
-  BYPASS_ORDER_CUTOFF: z.enum(["true", "false"]).default("false")
+  BYPASS_ORDER_CUTOFF: z.enum(["true", "false"]).default("false"),
+  PRINTER_HOST: z.string().min(1).default("192.168.30.10"),
+  PRINTER_PORT: z.coerce.number().int().positive().default(9100)
 });
 
 const parsed = envSchema.safeParse(process.env);

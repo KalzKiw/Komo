@@ -1,7 +1,6 @@
-import http from "node:http";
+import net from "node:net";
 
-const PRINTER_HOST = "192.168.30.10";
-const PRINTER_PORT = 80;
+import { env } from "../config/env";
 
 export type TicketItem = {
   name: string;
@@ -58,21 +57,15 @@ function center(text: string, width = 42) {
 }
 
 function line(text = "") {
-  return `${text}\n`;
+  return `${text}\r\n`;
 }
 
 function buildTicket(order: TicketOrder): Buffer {
   const rows: string[] = [];
-  rows.push("\x1b@");
-  rows.push("\x1ba\x01");
-  rows.push("\x1b!\x30");
   rows.push(line("KOMO"));
-  rows.push("\x1b!\x00");
   rows.push(line(center("Cafeteria escolar")));
   rows.push(line("------------------------------------------"));
-  rows.push("\x1b!\x20");
   rows.push(line(center(`PEDIDO ${pickupNumber(order.id)}`)));
-  rows.push("\x1b!\x00");
   rows.push(line(`Fecha: ${new Date(order.createdAt).toLocaleString("es-ES")}`));
   rows.push(line(`Alumno: ${order.studentName ?? "Alumno"}`));
   rows.push(line(`Turno: ${order.shift}`));
@@ -86,9 +79,9 @@ function buildTicket(order: TicketOrder): Buffer {
   rows.push(line(`TOTAL: ${order.total.toFixed(2)} EUR`));
   rows.push(line(""));
   rows.push(line(center("Gracias")));
-  rows.push(line("\n\n"));
-  rows.push("\x1dV\x00");
-  return Buffer.from(rows.join(""), "latin1");
+  rows.push(line(""));
+  rows.push(line(""));
+  return Buffer.from(rows.join(""), "ascii");
 }
 
 function pdfSafe(text: string): string {
@@ -172,25 +165,28 @@ export function buildTicketPdf(order: TicketOrder): Buffer {
 export async function printOrderTicket(order: TicketOrder): Promise<void> {
   const body = buildTicket(order);
   await new Promise<void>((resolve, reject) => {
-    const req = http.request(
-      {
-        host: PRINTER_HOST,
-        port: PRINTER_PORT,
-        method: "POST",
-        path: "/",
-        headers: {
-          "Content-Type": "application/octet-stream",
-          "Content-Length": body.length,
-        },
-        timeout: 2500,
-      },
-      (res) => {
-        res.resume();
-        res.on("end", resolve);
+    const socket = net.createConnection({ host: env.PRINTER_HOST, port: env.PRINTER_PORT });
+    let settled = false;
+
+    const finish = (error?: Error) => {
+      if (settled) return;
+      settled = true;
+      socket.destroy();
+      if (error) {
+        reject(error);
+        return;
       }
-    );
-    req.on("error", reject);
-    req.on("timeout", () => req.destroy(new Error("Printer timeout")));
-    req.end(body);
+      resolve();
+    };
+
+    socket.setTimeout(2500);
+    socket.on("connect", () => {
+      socket.end(body);
+    });
+    socket.on("error", finish);
+    socket.on("timeout", () => finish(new Error(`Printer timeout at ${env.PRINTER_HOST}:${env.PRINTER_PORT}`)));
+    socket.on("close", (hadError) => {
+      if (!hadError) finish();
+    });
   });
 }

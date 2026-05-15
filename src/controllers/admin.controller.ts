@@ -15,6 +15,7 @@ import {
   updateProductBodySchema,
   updateProductParamsSchema
 } from "../validators/admin.validator";
+import { AppError } from "../errors/app-error";
 import { buildTicketPdf, createTestTicketOrder, printOrderTicket } from "../services/ticket-printer.service";
 
 export async function listStudentsAdminController(
@@ -105,7 +106,8 @@ export async function printTestTicketController(
     await printOrderTicket(createTestTicketOrder());
     res.status(200).json({ ok: true });
   } catch (error) {
-    next(error);
+    console.error("Unable to print test ticket", error);
+    next(new AppError("No se pudo conectar con la impresora. Revisa que el servidor tenga red hacia 192.168.30.10:9100.", 502));
   }
 }
 

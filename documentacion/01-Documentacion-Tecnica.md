@@ -132,7 +132,7 @@ El diagrama se mantiene en `db/erd.mmd`.
 - Las recargas de monedero actualizan el saldo en backend y se registran como movimientos.
 - Teléfono y tarjeta se guardan en el perfil del usuario; por seguridad solo se conserva el último bloque visible de la tarjeta (ej: `****1234`).
 - Administración y cocina pueden consultar la cola KDS. El KDS está pensado para tablet en horizontal y separa entrada, preparación y pedidos listos.
-- Cada pedido intenta imprimir un ticket operativo en la impresora AVP-TC300 configurada en `192.168.30.10:80`. La impresión es best-effort y no bloquea la creación del pedido si falla.
+- Cada pedido intenta imprimir un ticket operativo por TCP raw en la impresora AVP-TC300 configurada con `PRINTER_HOST` y `PRINTER_PORT` (`192.168.30.10:9100` por defecto). La impresión es best-effort y no bloquea la creación del pedido si falla.
 - El ticket incluye logo textual, número de recogida, fecha/hora, alumno, turno, líneas, extras, ingredientes retirados, notas de cocina y total.
 - Los pagos con Stripe usan SetupIntent para guardar tarjetas (sin cobro inicial) y PaymentIntent para recargas de monedero.
 - Las recargas de monedero pueden realizarse de forma manual (transferencia directa) o con Stripe (tarjeta on-file o nuevo pago).
