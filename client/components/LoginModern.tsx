@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { ExternalLink } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { allergenVisual } from "../lib/allergens";
 import { apiUrl } from "../lib/api";
@@ -153,6 +154,16 @@ const LoginModern: React.FC = () => {
               className="h-20 w-auto object-contain"
             />
           </div>
+          <a
+            href="https://kalzdev.vercel.app/"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-[#1C9690]/20 bg-white px-4 py-2 text-sm font-bold text-[#1C9690] shadow-sm transition hover:border-[#1C9690]/40 hover:bg-[#d9f4ee] focus:outline-none focus:ring-2 focus:ring-[#1C9690]/25"
+            aria-label="Abrir portfolio de Alejandro en una nueva pestaña"
+          >
+            Portfolio de Alejandro
+            <ExternalLink className="h-4 w-4" aria-hidden="true" />
+          </a>
         </header>
 
         <section className="bg-surface-container-lowest ambient-shadow rounded-[1.5rem] p-8 md:p-12 flex flex-col gap-6" style={{ boxShadow: "0 8px 32px -8px rgba(25,28,27,0.06)" }}>
