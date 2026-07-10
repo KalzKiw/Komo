@@ -157,3 +157,5 @@ Estado documentado: 3 ficheros de test y 11 pruebas superadas. Consulta [documen
 ## Despliegue
 
 Ver [documentacion/06-Despliegue.md](documentacion/06-Despliegue.md) para instrucciones de despliegue en Vercel o Node autohospedado.
+
+Para publicar una versión segura y de solo lectura en un portfolio, consulta [documentacion/13-Demo-Portfolio-Vercel.md](documentacion/13-Demo-Portfolio-Vercel.md).

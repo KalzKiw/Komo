@@ -10,6 +10,8 @@ const QUICK_USERS = [
   { label: "Admin", email: "admin1@cafes.app", color: "bg-amber-50 text-amber-700 border-amber-200" },
 ];
 
+const IS_DEMO = import.meta.env.VITE_DEMO_MODE === "true";
+
 const ACCOUNT_ROLES = [
   { value: "STUDENT", label: "Alumno" },
   { value: "PARENT", label: "Padre" },
@@ -123,7 +125,7 @@ const LoginModern: React.FC = () => {
   );
 
   return (
-    <div className="bg-surface text-on-surface min-h-screen flex items-start justify-center p-6 pt-10 font-body relative">
+    <div className="bg-surface text-on-surface h-full min-h-0 overflow-y-auto flex items-start justify-center p-6 pt-10 font-body relative">
       <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 items-end">
         <button
           type="button"
@@ -167,8 +169,27 @@ const LoginModern: React.FC = () => {
         </header>
 
         <section className="bg-surface-container-lowest ambient-shadow rounded-[1.5rem] p-8 md:p-12 flex flex-col gap-6" style={{ boxShadow: "0 8px 32px -8px rgba(25,28,27,0.06)" }}>
+          {IS_DEMO && (
+            <div className="rounded-2xl border border-[#1C9690]/20 bg-[#d9f4ee] p-4 text-center">
+              <p className="text-sm font-black text-[#126b66]">Demo interactiva · datos ficticios</p>
+              <p className="mt-1 text-xs text-slate-600">Elige un perfil para explorar la aplicación. No se realizan cobros ni se guardan cambios.</p>
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                {QUICK_USERS.map((user) => (
+                  <button
+                    key={user.email}
+                    type="button"
+                    disabled={isLoading}
+                    onClick={() => void login(user.email, "demo")}
+                    className={`rounded-xl border px-2 py-3 text-xs font-bold shadow-sm transition active:scale-95 disabled:opacity-50 ${user.color}`}
+                  >
+                    {user.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-2 rounded-3xl bg-white p-2 shadow-inner">
-            {modeTabs.map((tab) => (
+            {modeTabs.filter((tab) => !IS_DEMO || tab.id === "login").map((tab) => (
               <button
                 key={tab.id}
                 type="button"
@@ -184,7 +205,7 @@ const LoginModern: React.FC = () => {
             ))}
           </div>
 
-          <div className="bg-white rounded-[1.5rem] p-8 md:p-10 shadow-lg" style={{ boxShadow: "0 8px 40px -4px rgba(1,45,29,0.18), 0 1.5px 8px 0 rgba(1,45,29,0.10)" }}>
+          <div className={`${IS_DEMO ? "hidden" : "block"} bg-white rounded-[1.5rem] p-8 md:p-10 shadow-lg`} style={{ boxShadow: "0 8px 40px -4px rgba(1,45,29,0.18), 0 1.5px 8px 0 rgba(1,45,29,0.10)" }}>
             <h2 className="text-primary font-headline text-3xl font-bold mb-6 text-center tracking-tight">
               {mode === "login" ? "Iniciar Sesión" : "Crear Cuenta"}
             </h2>

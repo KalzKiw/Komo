@@ -216,7 +216,7 @@ export default function ProfileScreenV2() {
   }
 
   return (
-    <div className="bg-surface text-on-surface antialiased h-[100dvh] overflow-hidden flex flex-col">
+    <div className="bg-surface text-on-surface antialiased h-full overflow-hidden flex flex-col">
       <header className="shrink-0 bg-white px-4 pt-5 pb-3 shadow-sm">
         <div className="flex items-center justify-between gap-3">
           <img src="/logotipo-transparente.png" alt="KOMO" className="h-10 w-auto" />

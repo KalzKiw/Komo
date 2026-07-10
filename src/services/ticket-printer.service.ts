@@ -14,6 +14,7 @@ export type TicketOrder = {
   id: string;
   createdAt: string;
   studentName?: string | null;
+  studentAllergens?: string[];
   shift: string;
   total: number;
   items: TicketItem[];
@@ -23,7 +24,8 @@ export function createTestTicketOrder(): TicketOrder {
   return {
     id: "00000000-0000-4000-8000-000000000123",
     createdAt: new Date().toISOString(),
-    studentName: "Ticket de prueba",
+    studentName: "Alumno de prueba",
+    studentAllergens: ["Gluten", "Huevo"],
     shift: "MORNING",
     total: 4.75,
     items: [
@@ -56,8 +58,16 @@ function center(text: string, width = 42) {
   return `${" ".repeat(left)}${clean}`;
 }
 
+function printSafe(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[€]/g, "EUR")
+    .replace(/[^\x20-\x7E]/g, "");
+}
+
 function line(text = "") {
-  return `${text}\r\n`;
+  return `${printSafe(text)}\r\n`;
 }
 
 function buildTicket(order: TicketOrder): Buffer {
@@ -68,6 +78,7 @@ function buildTicket(order: TicketOrder): Buffer {
   rows.push(line(center(`PEDIDO ${pickupNumber(order.id)}`)));
   rows.push(line(`Fecha: ${new Date(order.createdAt).toLocaleString("es-ES")}`));
   rows.push(line(`Alumno: ${order.studentName ?? "Alumno"}`));
+  rows.push(line(`Alergenos: ${(order.studentAllergens?.length ? order.studentAllergens.join(", ") : "Sin declarar")}`));
   rows.push(line(`Turno: ${order.shift}`));
   rows.push(line("------------------------------------------"));
   order.items.forEach((item) => {
@@ -81,7 +92,10 @@ function buildTicket(order: TicketOrder): Buffer {
   rows.push(line(center("Gracias")));
   rows.push(line(""));
   rows.push(line(""));
-  return Buffer.from(rows.join(""), "ascii");
+  return Buffer.concat([
+    Buffer.from(rows.join(""), "ascii"),
+    Buffer.from([0x1d, 0x56, 0x42, 0x00])
+  ]);
 }
 
 function pdfSafe(text: string): string {
@@ -107,6 +121,7 @@ function ticketPreviewLines(order: TicketOrder): string[] {
     `PEDIDO ${pickupNumber(order.id)}`,
     `Fecha: ${new Date(order.createdAt).toLocaleString("es-ES")}`,
     `Alumno: ${order.studentName ?? "Alumno"}`,
+    `Alergenos: ${(order.studentAllergens?.length ? order.studentAllergens.join(", ") : "Sin declarar")}`,
     `Turno: ${order.shift}`,
     "--------------------------------"
   ];

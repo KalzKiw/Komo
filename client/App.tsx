@@ -188,7 +188,7 @@ function ConsumerApp({ role }: { role: UserRole }) {
 
   return (
     <div
-      className="h-svh w-full overflow-hidden bg-gray-50"
+      className="h-full w-full overflow-hidden bg-gray-50"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -290,6 +290,29 @@ function AuthScreen() {
   return <LoginModern />;
 }
 
+function MobileShowcase({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative flex h-svh w-full items-center justify-center overflow-hidden bg-[#e7f4f1] md:p-6">
+      <div className="pointer-events-none absolute inset-0 hidden md:block">
+        <div className="absolute -left-32 -top-40 h-[34rem] w-[34rem] rounded-full bg-[#92dbc8]/30 blur-3xl" />
+        <div className="absolute -bottom-52 -right-24 h-[38rem] w-[38rem] rounded-full bg-[#1C9690]/20 blur-3xl" />
+      </div>
+
+      <div className="relative h-svh w-full overflow-hidden bg-white md:h-[min(860px,calc(100vh-48px))] md:w-[430px] md:transform-gpu md:rounded-[3rem] md:border-[10px] md:border-slate-900 md:shadow-[0_30px_90px_rgba(15,23,42,0.28)]">
+        <div className="pointer-events-none absolute left-1/2 top-0 z-[120] hidden h-6 w-28 -translate-x-1/2 rounded-b-2xl bg-slate-900 md:block" />
+        {children}
+      </div>
+
+      <div className="absolute bottom-8 left-8 hidden text-slate-700 xl:block">
+        <p className="text-xs font-black uppercase tracking-[0.28em] text-[#1C9690]">Demo interactiva</p>
+        <p className="mt-2 max-w-xs text-sm leading-relaxed text-slate-500">
+          Experiencia móvil de pedidos escolares. Explora los perfiles de alumno y familia.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const { state } = useAuth();
 
@@ -302,8 +325,24 @@ export default function App() {
   }
 
   if (state.status === "authenticated") {
-    return <AuthenticatedApp />;
+    const isAdmin = state.user.role === "ADMIN" || state.user.role === "STAFF";
+    if (isAdmin) return <AuthenticatedApp />;
+
+    return (
+      <MobileShowcase>
+        {import.meta.env.VITE_DEMO_MODE === "true" && (
+          <div className="fixed left-1/2 top-2 z-[100] -translate-x-1/2 rounded-full bg-slate-900/90 px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-lg backdrop-blur">
+            Demo · datos ficticios
+          </div>
+        )}
+        <AuthenticatedApp />
+      </MobileShowcase>
+    );
   }
 
-  return <AuthScreen />;
+  return (
+    <MobileShowcase>
+      <AuthScreen />
+    </MobileShowcase>
+  );
 }

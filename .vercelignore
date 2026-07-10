@@ -1,3 +1,9 @@
-dist/
-frontend/
-server.log
+.git
+.android-sdk
+android
+client-dist
+dist
+db
+documentacion
+node_modules
+*.md

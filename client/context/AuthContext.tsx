@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { apiUrl } from "../lib/api";
+import { demoUsers } from "../lib/demoApi";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -83,6 +84,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     setState({ status: "loading" });
+    if (import.meta.env.VITE_DEMO_MODE === "true") {
+      const user = demoUsers[email.toLowerCase() as keyof typeof demoUsers];
+      if (!user || password !== "demo") {
+        setState({ status: "unauthenticated", error: "Selecciona uno de los perfiles de demostración." });
+        return;
+      }
+      persist({ user, accessToken: null });
+      setAccessToken(null);
+      setState({ status: "authenticated", user });
+      return;
+    }
     try {
       const res = await fetch(apiUrl("/api/auth/login"), {
         method: "POST",

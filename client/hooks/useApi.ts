@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
 import { apiUrl } from "../lib/api";
+import { demoApi } from "../lib/demoApi";
 
 /**
  * Returns a `apiFetch` wrapper that automatically injects auth headers
@@ -11,6 +12,9 @@ export function useApi() {
 
   const apiFetch = useCallback(
     async <T>(input: string, init: RequestInit = {}): Promise<T> => {
+      if (import.meta.env.VITE_DEMO_MODE === "true") {
+        return demoApi<T>(input, init);
+      }
       const res = await fetch(apiUrl(input), {
         ...init,
         headers: {

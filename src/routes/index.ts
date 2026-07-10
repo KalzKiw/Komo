@@ -7,9 +7,11 @@ import { healthRouter } from "./health.routes";
 import { mainAppRouter } from "./main-app.routes";
 import { ordersRouter } from "./orders.routes";
 import { paymentRouter } from "./payment.routes";
+import { demoModeMiddleware } from "../middlewares/demo-mode.middleware";
 
 export const apiRouter = Router();
 
+apiRouter.use(demoModeMiddleware);
 apiRouter.use(healthRouter);
 apiRouter.use(authRouter);
 apiRouter.use(adminRouter);

@@ -90,6 +90,10 @@ CREATE TABLE orders (
   cancellation_deadline TIMESTAMPTZ NOT NULL,
   cancelled_at TIMESTAMPTZ,
   credited_to_wallet BOOLEAN NOT NULL DEFAULT FALSE,
+  ticket_printed_at TIMESTAMPTZ,
+  ticket_print_error TEXT,
+  ticket_print_attempts INTEGER NOT NULL DEFAULT 0 CHECK (ticket_print_attempts >= 0),
+  ticket_print_last_attempt_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -111,6 +115,7 @@ CREATE INDEX idx_users_course_id ON users(course_id);
 CREATE INDEX idx_orders_user_id ON orders(user_id);
 CREATE INDEX idx_orders_shift_scheduled_for ON orders(shift, scheduled_for);
 CREATE INDEX idx_orders_status ON orders(status);
+CREATE INDEX idx_orders_ticket_print_pending ON orders(created_at) WHERE ticket_printed_at IS NULL AND status <> 'CANCELLED';
 CREATE INDEX idx_order_items_order_id ON order_items(order_id);
 
 CREATE OR REPLACE FUNCTION set_updated_at()

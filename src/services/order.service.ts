@@ -10,7 +10,6 @@ import { ListOrdersQuery } from "../validators/order.validator";
 import { getOrderSchedule } from "./settings.service";
 import { roundMoney } from "../utils/money";
 import { buildCancellationDeadline } from "../utils/schedule";
-import { printOrderTicket } from "./ticket-printer.service";
 
 const stripe = env.STRIPE_SECRET_KEY
   ? new Stripe(env.STRIPE_SECRET_KEY)
@@ -426,23 +425,6 @@ export async function createOrder(user: AuthUser, payload: unknown): Promise<Rec
       500
     );
   }
-
-  void printOrderTicket({
-    id: insertedOrder.id,
-    createdAt: insertedOrder.created_at,
-    studentName: undefined,
-    shift: insertedOrder.shift,
-    total,
-    items: orderItems.map((item) => ({
-      name: productMap.get(item.productId)?.name ?? "Producto",
-      quantity: item.quantity,
-      lineTotal: item.lineTotal,
-      customizations: item.customizations,
-      kitchenNote: item.kitchenNote,
-    })),
-  }).catch((error) => {
-    console.error("Unable to print order ticket", error);
-  });
 
   return {
     id: insertedOrder.id,

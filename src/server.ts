@@ -1,9 +1,11 @@
 import { app } from "./app";
 import { env } from "./config/env";
+import { startTicketPrintWorker } from "./services/ticket-print-worker.service";
 
 const startServer = (port: number): void => {
   const server = app.listen(port, () => {
     console.log(`CafES APP backend listening on port ${port}`);
+    startTicketPrintWorker();
   });
 
   server.on("error", (error: NodeJS.ErrnoException) => {

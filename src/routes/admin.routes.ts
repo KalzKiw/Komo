@@ -8,6 +8,7 @@ import {
   listStudentsAdminController,
   previewTestTicketController,
   printTestTicketController,
+  reprintOrderTicketController,
   updateProductAdminController
 } from "../controllers/admin.controller";
 import {
@@ -216,3 +217,4 @@ adminRouter.get("/admin/settings/schedule", getScheduleController);
 adminRouter.patch("/admin/settings/schedule", updateScheduleController);
 adminRouter.post("/admin/print-test-ticket", printTestTicketController);
 adminRouter.get("/admin/print-test-ticket/preview", previewTestTicketController);
+adminRouter.post("/admin/orders/:orderId/print-ticket", reprintOrderTicketController);

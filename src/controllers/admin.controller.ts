@@ -16,7 +16,13 @@ import {
   updateProductParamsSchema
 } from "../validators/admin.validator";
 import { AppError } from "../errors/app-error";
+import { queueTicketReprint } from "../services/ticket-print-worker.service";
 import { buildTicketPdf, createTestTicketOrder, printOrderTicket } from "../services/ticket-printer.service";
+import { z } from "zod";
+
+const reprintTicketParamsSchema = z.object({
+  orderId: z.string().uuid()
+});
 
 export async function listStudentsAdminController(
   _req: Request,
@@ -126,6 +132,20 @@ export async function previewTestTicketController(
         "Content-Length": String(pdf.length)
       })
       .send(pdf);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function reprintOrderTicketController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { orderId } = reprintTicketParamsSchema.parse(req.params);
+    const result = await queueTicketReprint(orderId);
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }

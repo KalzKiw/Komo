@@ -12,8 +12,12 @@ const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string().min(1).optional(),
   VITE_STRIPE_PUBLISHABLE_KEY: z.string().min(1).optional(),
   BYPASS_ORDER_CUTOFF: z.enum(["true", "false"]).default("false"),
+  DEMO_MODE: z.enum(["true", "false"]).default("false"),
   PRINTER_HOST: z.string().min(1).default("192.168.30.10"),
-  PRINTER_PORT: z.coerce.number().int().positive().default(9100)
+  PRINTER_PORT: z.coerce.number().int().positive().default(9100),
+  PRINT_WORKER_ENABLED: z.enum(["true", "false"]).default("false"),
+  PRINT_WORKER_INTERVAL_MS: z.coerce.number().int().positive().default(5000),
+  PRINT_WORKER_IGNORE_BEFORE: z.string().datetime().optional()
 });
 
 const parsed = envSchema.safeParse(process.env);

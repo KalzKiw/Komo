@@ -2,6 +2,7 @@ import { supabase, supabaseAuth } from "../config";
 import { AppError } from "../errors/app-error";
 import { UserRole } from "../types/domain";
 import { LoginInput, RegisterInput } from "../validators/auth.validator";
+import { env } from "../config/env";
 
 interface UserRow {
   id: string;
@@ -10,6 +11,30 @@ interface UserRow {
   role: UserRole;
   is_beneficiary: boolean;
 }
+
+const demoUsers: Record<string, UserRow> = {
+  "student1@cafes.app": {
+    id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    email: "student1@cafes.app",
+    full_name: "Alumno Demo",
+    role: "STUDENT",
+    is_beneficiary: true,
+  },
+  "parent1@cafes.app": {
+    id: "eeeeeeee-0000-0000-0000-000000000001",
+    email: "parent1@cafes.app",
+    full_name: "Familia Demo",
+    role: "PARENT",
+    is_beneficiary: false,
+  },
+  "admin1@cafes.app": {
+    id: "dddddddd-dddd-dddd-dddd-dddddddddddd",
+    email: "admin1@cafes.app",
+    full_name: "Administración Demo",
+    role: "ADMIN",
+    is_beneficiary: false,
+  },
+};
 
 function mapUser(user: UserRow): Record<string, unknown> {
   return {
@@ -61,6 +86,19 @@ async function getLegacyProfileByEmail(email: string): Promise<UserRow | null> {
 export async function login(payload: LoginInput): Promise<Record<string, unknown>> {
   const lowerEmail = payload.email.toLowerCase();
 
+  if (env.DEMO_MODE === "true") {
+    const demoUser = demoUsers[lowerEmail];
+    if (!demoUser || payload.password !== "demo") {
+      throw new AppError("En la demo utiliza uno de los accesos rápidos.", 401);
+    }
+    return {
+      user: mapUser(demoUser),
+      accessToken: null,
+      authHeaders: authHeadersFor(demoUser),
+      demo: true,
+    };
+  }
+
   const { data: authData, error: authError } = await supabaseAuth.auth.signInWithPassword({
     email: lowerEmail,
     password: payload.password
@@ -95,6 +133,9 @@ export async function login(payload: LoginInput): Promise<Record<string, unknown
 }
 
 export async function register(payload: RegisterInput): Promise<Record<string, unknown>> {
+  if (env.DEMO_MODE === "true") {
+    throw new AppError("El registro está desactivado en la demo pública.", 403);
+  }
   const lowerEmail = payload.email.toLowerCase();
   const { data: existingUser, error: existingError } = await supabase
     .from("users")
