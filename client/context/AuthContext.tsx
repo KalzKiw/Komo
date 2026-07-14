@@ -107,7 +107,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const fallbackError =
           res.status === 401
             ? "Credenciales incorrectas"
-            : "No se pudo conectar con el backend. Verifica que esté iniciado.";
+            : res.status === 404 || res.status === 502 || res.status === 503
+              ? "Backend no disponible. Ejecuta `npm run dev:kiosk` en la raíz del proyecto."
+              : "No se pudo conectar con el backend. Verifica que esté iniciado.";
         setState({
           status: "unauthenticated",
           error: body.message ?? fallbackError,

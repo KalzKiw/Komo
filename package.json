@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "dev:client": "vite",
-    "dev:kiosk": "concurrently -n api,web -c blue,green \"npm run dev\" \"npm run dev:client\"",
+    "dev:client:kiosk": "vite --port 5180 --strictPort",
+    "dev:kiosk": "node scripts/ensure-dev-env.mjs && node scripts/dev-kiosk.mjs",
     "build": "tsc -p tsconfig.json && vite build",
     "build:client": "vite build",
     "build:android": "vite build --mode android",

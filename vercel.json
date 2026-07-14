@@ -1,7 +1,18 @@
 {
   "buildCommand": "npm run build:client",
   "outputDirectory": "client-dist",
+  "env": {
+    "VITE_DEMO_MODE": "true",
+    "DEMO_MODE": "true",
+    "SUPABASE_URL": "https://placeholder.supabase.co",
+    "SUPABASE_SERVICE_ROLE_KEY": "vercel-demo-service-role-key",
+    "SUPABASE_ANON_KEY": "vercel-demo-anon-key"
+  },
   "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index?path=$1"
+    },
     {
       "source": "/((?!api/|assets/|.*\\..*).*)",
       "destination": "/index.html"

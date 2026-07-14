@@ -10,6 +10,13 @@ const startServer = (port: number): void => {
 
   server.on("error", (error: NodeJS.ErrnoException) => {
     if (error.code === "EADDRINUSE") {
+      if (env.NODE_ENV === "development") {
+        console.error(
+          `Port ${port} is already in use. Stop other backend instances (npm run dev) and retry.`
+        );
+        process.exit(1);
+      }
+
       console.warn(`Port ${port} is busy. Attempting port ${port + 1}...`);
       server.close();
       startServer(port + 1);

@@ -17,7 +17,10 @@ const envSchema = z.object({
   PRINTER_PORT: z.coerce.number().int().positive().default(9100),
   PRINT_WORKER_ENABLED: z.enum(["true", "false"]).default("false"),
   PRINT_WORKER_INTERVAL_MS: z.coerce.number().int().positive().default(5000),
-  PRINT_WORKER_IGNORE_BEFORE: z.string().datetime().optional()
+  PRINT_WORKER_IGNORE_BEFORE: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().datetime().optional()
+  )
 });
 
 const parsed = envSchema.safeParse(process.env);

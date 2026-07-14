@@ -6,7 +6,10 @@ import { CreditCard, X } from "lucide-react";
 import { useApi } from "../hooks/useApi";
 import { money } from "../lib/utils";
 
-const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
+const IS_DEMO = import.meta.env.VITE_DEMO_MODE === "true";
+const publishableKey = IS_DEMO
+  ? undefined
+  : (import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined);
 const initialStripePromise = publishableKey ? loadStripe(publishableKey) : null;
 
 type Props = {

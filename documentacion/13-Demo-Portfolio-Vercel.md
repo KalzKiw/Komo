@@ -11,6 +11,8 @@ NODE_ENV=production
 VITE_DEMO_MODE=true
 ```
 
+Con `VITE_DEMO_MODE=true` el login y el catálogo se simulan en el navegador y **no dependen de `/api/*`**. Si despliegas sin modo demo, necesitas además las variables de Supabase y el rewrite de API incluido en `vercel.json`.
+
 No configures claves de Supabase, Stripe ni una impresora en la demo.
 
 ## 2. Publicar
