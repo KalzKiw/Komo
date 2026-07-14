@@ -2,14 +2,16 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
-// En Vercel, activar demo por defecto si no hay VITE_DEMO_MODE explícito.
-if (!process.env.VITE_DEMO_MODE && process.env.VERCEL) {
-  process.env.VITE_DEMO_MODE = "true";
-}
+const demoMode =
+  process.env.VITE_DEMO_MODE ?? (process.env.VERCEL ? "true" : "false");
 
 // https://vite.dev/config/
-export default defineConfig({  root: "client",
+export default defineConfig({
+  root: "client",
   envDir: "..",
+  define: {
+    "import.meta.env.VITE_DEMO_MODE": JSON.stringify(demoMode),
+  },
   plugins: [react(), tailwindcss()],
   build: {
     outDir: "../client-dist",

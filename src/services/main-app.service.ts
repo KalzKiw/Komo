@@ -1,5 +1,7 @@
 import { supabase } from "../config";
+import { env } from "../config/env";
 import { AppError } from "../errors/app-error";
+import { demoProductsResponse } from "../data/demo-catalog";
 import { AuthUser, UserRole, OrderShift, OrderStatus } from "../types/domain";
 import { ListMyOrdersQuery, ListProductsQuery, UpdateMyProfileBody } from "../validators/main-app.validator";
 import { roundMoney } from "../utils/money";
@@ -282,6 +284,10 @@ export async function listProductsForMainApp(
   user: AuthUser,
   query: ListProductsQuery
 ): Promise<Record<string, unknown>> {
+  if (env.DEMO_MODE === "true") {
+    return demoProductsResponse();
+  }
+
   const productSelectWithDetails = `id, name, description, image_url, product_info, price, is_active,
        product_allergens (
          allergen_id,
