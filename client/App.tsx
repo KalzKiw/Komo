@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type TouchEvent } from "react";
 import { Home, Wallet, UserCircle, Clock, ShoppingCart } from "lucide-react";
 
+import KioskApp, { isKioskRoute } from "./KioskApp";
 import { useAuth } from "./context/AuthContext";
 import { useCart } from "./context/CartContext";
 import LoginModern from "./components/LoginModern";
@@ -315,6 +316,10 @@ function MobileShowcase({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const { state } = useAuth();
+
+  if (isKioskRoute()) {
+    return <KioskApp />;
+  }
 
   if (state.status === "loading") {
     return (
